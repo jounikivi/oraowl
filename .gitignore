@@ -172,3 +172,9 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# ORAOwl-projektin turvatut tiedostot
+.env
+db.sqlite3
+/media/
+# ORAOwl-projektin kehitysympäristön tiedostot
