@@ -26,11 +26,11 @@ pip install -r requirements.txt
 
 4. **Luo `.env`-tiedosto**
 - Luo tiedosto projektin juureen
-- Käytä mukana olevaa mallia: `.env.example`
+- Käytä mukana olevaa mallia: `.env`
 
 📄 `.env`:
 ```env
-SECRET_KEY=lisää-tähän-oma-salainen-avain
+SECRET_KEY=lisää-tähän-salainen-avain
 DEBUG=True
 ALLOWED_HOSTS=127.0.0.1,localhost
 ```
