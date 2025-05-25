@@ -3,9 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OraOwl</title>
+    <title>ORAOwl</title>
 </head>
 <body>
     <h1>Test</h1>
+    {%for Text in posts%}
+        <h2>{{Text.title}}</h2>
+        <p>{{Text.content}}</p>
+    {%endfor%}
 </body>
 </html>
