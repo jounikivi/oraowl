@@ -18,8 +18,8 @@ Tämä dokumentti toimii tiekarttana ORAOwl-projektin tekniselle toteutukselle j
 ---
 
 ## VAIHE 2: Käyttöliittymäpohja ja teknologiat (Toukokuu)
-- [ ] Integroi AdminLTE + Bootstrap, luo `base.html`
-- [ ] Luo sivupohjat: `home.html`, `login.html`, `register.html`, jne.
+- [x] ✅ Integroi AdminLTE + Bootstrap, luo `base.html`
+- [x] ✅ Luo sivupohjat: `home.html`, `login.html`, `register.html`, jne.
 - [ ] Kirjoita raporttiin käytettävät teknologiat ja työkalut
 - [ ] Perustele valinnat: miksi Django, miksi Bootstrap
 
