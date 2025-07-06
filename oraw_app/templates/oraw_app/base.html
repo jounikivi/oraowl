@@ -13,6 +13,10 @@
     <!-- Bootstrap framework -->
     <link rel="stylesheet" href="{% static 'adminlte/plugins/bootstrap/css/bootstrap.min.css' %}">
 
+    {% load sass_tags %}
+    <link rel="stylesheet" href="{% sass_src 'adminlte/scss/main.scss' %}">
+
+
     {% block extra_css %}{% endblock %}
 </head>
 <body class="hold-transition sidebar-mini">

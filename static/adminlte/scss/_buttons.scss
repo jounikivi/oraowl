@@ -1,0 +1,16 @@
+.btn-oraowl {
+  background-color: $color-primary;
+  color: white;
+
+  &:hover {
+    background-color: $color-accent;
+    color: black;
+  }
+}
+
+
+.btn-accent{
+  background-color: $color-accent;
+  border-color: $color-accent;
+  color: black;
+}

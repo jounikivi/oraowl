@@ -1,16 +1,11 @@
 {% extends "oraw_app/base.html" %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ORAOwl</title>
-</head>
-<body>
-    <h1>Test</h1>
-    {%for Text in posts%}
-        <h2>{{Text.title}}</h2>
-        <p>{{Text.content}}</p>
-    {%endfor%}
-</body>
-</html>
+
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center" style="height: 80vh;">
+    <div class="text-center">
+        <h1 class="display-4 text-success">Tervetuloa ORAOwl-sovellukseen</h1>
+        <p class="lead">Sivupohja on valmiina. Voit aloittaa rakentamisen tästä.</p>
+        <button class="btn btn-primary">Testinappi</button>
+    </div>
+</div>
+{% endblock %}
