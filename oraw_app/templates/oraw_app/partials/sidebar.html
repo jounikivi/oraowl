@@ -1,0 +1,73 @@
+{% load static %}
+
+<!-- Main Sidebar Container -->
+<aside class="main-sidebar sidebar-dark-primary elevation-4" style="background-color: #2E7D32;">
+
+  <!-- Brand Logo -->
+  <a href="{% url 'home' %}" class="brand-link text-center">
+    <span class="brand-text font-weight-light text-white">OraOwl</span>
+  </a>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+
+    <!-- Sidebar user panel -->
+    <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+      <div class="image">
+        <img src="{% static 'adminlte/img/user2-160x160.jpg' %}" class="img-circle elevation-2" alt="User Image">
+      </div>
+      <div class="info">
+        <a href="#" class="d-block text-white">{{ request.user.username }}</a>
+      </div>
+    </div>
+
+    <!-- Sidebar Menu -->
+    <nav class="mt-2">
+      <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+
+        <!-- Dashboard -->
+        <li class="nav-item">
+          <a href="{% url 'dashboard' %}" class="nav-link text-white">
+            <i class="nav-icon fas fa-tachometer-alt"></i>
+            <p>Dashboard</p>
+          </a>
+        </li>
+
+        <!-- Tulokset -->
+        <li class="nav-item">
+          <a href="{% url 'products' %}" class="nav-link text-white">
+            <i class="nav-icon fas fa-chart-bar"></i>
+            <p>Tulokset</p>
+          </a>
+        </li>
+
+        <!-- Tapahtumat -->
+        <li class="nav-item">
+          <a href="{% url 'orders' %}" class="nav-link text-white">
+            <i class="nav-icon fas fa-calendar-alt"></i>
+            <p>Tapahtumat</p>
+          </a>
+        </li>
+
+        <!-- Yhteystiedot -->
+        <li class="nav-item">
+          <a href="{% url 'contact' %}" class="nav-link text-white">
+            <i class="nav-icon fas fa-envelope"></i>
+            <p>Yhteys</p>
+          </a>
+        </li>
+
+        <!-- Kirjaudu ulos -->
+        <li class="nav-item">
+          <a href="{% url 'logout' %}" class="nav-link text-white">
+            <i class="nav-icon fas fa-sign-out-alt"></i>
+            <p>Kirjaudu ulos</p>
+          </a>
+        </li>
+
+      </ul>
+    </nav>
+    <!-- /.sidebar-menu -->
+  </div>
+  <!-- /.sidebar -->
+</aside>
