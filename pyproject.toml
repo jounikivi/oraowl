@@ -1,5 +1,6 @@
 [tool.ruff]
 line-length = 100
+exclude = ["migrations"]
 
 [tool.black]
 line-length = 100
