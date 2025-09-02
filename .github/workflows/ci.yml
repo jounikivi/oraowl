@@ -10,14 +10,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt || true
-          pip install pytest pytest-django
+          pip install pytest pytest-django ruff
+
+      # ✅ Ruff vaihe 1: vain vakavat virheet, jotta CI pysyy vihreänä
+      # - name: Ruff (lint — phase 1)
+      #   run: ruff check . --select E9,F63,F7,F82
+
+      - name: Ruff (lint — phase 2)
+        run: ruff check . --select E,F
+
+
       - name: Pytest
         env:
           DJANGO_SETTINGS_MODULE: oraowl.settings
