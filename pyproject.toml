@@ -1,8 +1,8 @@
 [tool.ruff]
 line-length = 100
 
-# Älä huomioi E501-muotoiluvaroitusta migraatioissa,
-# mutta muut Ruffin tarkistukset (E,F) pysyvät voimassa.
+# Migraatioissa sallitaan pitkät rivit (E501), mutta muut Ruffin tarkistukset (E,F) pysyvät.
+# Allow long lines (E501) in migrations, but keep other Ruff checks (E,F) enabled.
 [tool.ruff.per-file-ignores]
 "**/migrations/*.py" = ["E501"]
 
