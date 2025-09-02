@@ -1,6 +1,10 @@
 [tool.ruff]
 line-length = 100
-exclude = ["migrations"]
+
+# Älä huomioi E501-muotoiluvaroitusta migraatioissa,
+# mutta muut Ruffin tarkistukset (E,F) pysyvät voimassa.
+[tool.ruff.per-file-ignores]
+"**/migrations/*.py" = ["E501"]
 
 [tool.black]
 line-length = 100
