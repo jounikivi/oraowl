@@ -1,7 +1,9 @@
-from django.shortcuts import render
-from .models import Text
+from django.http import HttpResponse
+
+
 
 # Create your views here.
-def home(request):
-    posts = Text.objects.all()
-    return render(request, 'oraw_app/home.html', {"posts":posts})
+def health(request):
+    # FI: Yksinkertainen "elossa" -vastaus, jotta URLit toimivat.
+    # EN: Simple "alive" response so URLs work.
+    return HttpResponse("OK")
