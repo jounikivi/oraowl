@@ -1,16 +1,49 @@
+import uuid
 from django.db import models
+
 
 class Competition(models.Model):
     """
-    FI: Kilpailun perusmetatiedot (nimi, päivä, paikka). GDPR: ei henkilötietoja.
-    EN: Core metadata for a competition (name, date, location). No personal data.
+    FI: Competition-malli tallentaa kilpailun perustiedot.
+        - Käytämme UUID-avainta turvallisuuden vuoksi.
+        - Nimi, päivämäärä ja sijainti kuvaavat kilpailua.
+        - iof_event_id mahdollistaa linkityksen IOFXML-dataan.
+    EN: Competition model stores the basic event information.
+        - UUID primary key for security.
+        - Name, date, and location describe the event.
+        - iof_event_id links to IOFXML event data.
     """
-    # FI: Nimi ja päivämäärä riittävät yksilöimään useimmat kisat.
-    # EN: Name and date are enough to uniquely identify most events.
+
+    # Primary key: UUID for uniqueness and security
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    # Basic fields
     name = models.CharField(max_length=200)
     date = models.DateField()
+    location = models.CharField(max_length=200, blank=True)
 
-    def __str__(self) -> str:
-        # FI: Näytetään nimi ja päivämäärä listauksissa/adminissa (kun kentät lisätty).
-        # EN: Friendly display in lists/admin (once fields exist).
-        return getattr(self, "name", "Competition")
+    # Optional external reference (IOFXML Event ID or similar)
+    iof_event_id = models.CharField(
+        max_length=64,
+        blank=True,
+        null=True,
+        unique=True,
+        help_text="Optional external reference, e.g. IOFXML Event ID",
+    )
+
+    # Metadata
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        """
+        FI: Järjestää kilpailut oletuksena uusin ensin.
+        EN: Orders competitions by newest first.
+        """
+        ordering = ["-date", "name"]
+
+    def __str__(self):
+        """
+        FI: Mallin tekstiesitys: kilpailun nimi + päivämäärä.
+        EN: String representation: competition name + date.
+        """
+        return f"{self.name} ({self.date})"
