@@ -1,9 +1,5 @@
-from django.http import HttpResponse
-
-
+from django.shortcuts import render
 
 # Create your views here.
-def health(request):
-    # FI: Yksinkertainen "elossa" -vastaus, jotta URLit toimivat.
-    # EN: Simple "alive" response so URLs work.
-    return HttpResponse("OK")
+def home(request):
+    return render(request, 'oraw_app/home.html')
