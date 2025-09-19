@@ -3,88 +3,66 @@ from django.db import models
 
 class Result(models.Model):
     """
-    FI: Result-malli tallentaa urheilijan suorituksen tietyllä radalla.
-        - UUID pääavaimena turvallisuuden vuoksi.
-        - Viittaus Courseen (rata) ja Athleteen (henkilörekisteri).
-        - Aika sekunteina ja (valinnainen) vauhti s/km.
-        - Status (OK, DNF, DSQ, MP, DNS) kuvaa suorituksen tilaa.
-    EN: Result model stores an athlete's performance on a course.
-        - UUID primary key for security.
-        - References Course (track) and Athlete (personal register).
-        - Finish time in seconds and optional pace (s/km).
-        - Status (OK, DNF, DSQ, MP, DNS) describes the outcome.
+    FI: Yksittäisen urheilijan tulos tietyllä radalla. Näkyvyys ja soft delete GDPR:ää varten.
+    EN: An athlete's result on a specific course. Visibility & soft delete for GDPR.
     """
-    
-    # Primary key
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    
-    # Realtions
-    course = models.ForeignKey(
-      'oraw_app.Course',
-      on_delete=models.CASCADE,
-      related_name='results',
-      help_text="The course this result belongs to"
-    )
-    
-    # FI: PROTECT estää henkilön poistamisen, jos tuloksia on.
-    # EN: PROTECT prevents deleting a person if results exist.
+
     athlete = models.ForeignKey(
-      'oraw_app.Athlete',
-      on_delete=models.PROTECT,
-      related_name='results',
-      help_text="The athlete this result belongs to"
+        "oraw_app.Athlete",
+        on_delete=models.CASCADE,
+        related_name="results",
     )
-    
-    # Timing
-    # FI: Maaliaika sekunteina (helpottaa laskentaa).
-    # EN: Finish time in seconds (easier for computation).
+    course = models.ForeignKey(
+        "oraw_app.Course",
+        on_delete=models.CASCADE,
+        related_name="results",
+    )
+
+    # FI: Kokonaisaika sekunteina; IOFXML voidaan muuntaa parse-vaiheessa.
+    # EN: Finish time in seconds; parsed from IOFXML.
     finish_time_s = models.PositiveIntegerField(null=True, blank=True)
-    
-    # FI: Vauhti sekuntia per kilometri (johdettu arvo, vapaaehtoinen).
-    # EN: Pace in seconds per kilometer (derived, optional)
-    pace_s_per_km = models.PositiveIntegerField(null=True, blank=True)
-    
-    # FI: Suorituksen tila (OK, DNF, DSQ, MP, DNS).
-    # EN: Status of the performance (OK, DNF, DSQ, MP, DNS).
-    STATUS_OK = 'OK'
-    STATUS_DNF = 'DNF'
-    STATUS_DSQ = 'DSQ'
-    STATUS_MP = 'MP'
-    STATUS_DNS = 'DNS'
+
+    # FI: Tilan koodi: OK, DSQ (hylätty), DNS (ei startannut) jne.
+    # EN: Status code.
     STATUS_CHOICES = [
-        ('OK', 'OK'),
-        ('DNF', 'Did Not Finish'),
-        ('DSQ', 'Disqualified'),
-        ('MP', 'Missing Punches'),
-        ('DNS', 'Did Not Start'),
+        ("OK", "OK"),
+        ("DSQ", "Disqualified"),
+        ("DNS", "DidNotStart"),
+        ("DNF", "DidNotFinish"),
+        ("MP", "MissingPunch"),
+        ("UNK", "Unknown"),
     ]
-    status = models.CharField(max_length=3, choices=STATUS_CHOICES)
-    
-    # Misc
-    note = models.CharField(max_length=200, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    
-    
+    status = models.CharField(max_length=8, choices=STATUS_CHOICES, default="UNK")
+
+    # FI: Johdettu: sekuntia / km, voi tallentaa analyysin nopeuttamiseksi.
+    # EN: Derived: seconds per km; optional cache for faster analytics.
+    pace_s_per_km = models.PositiveIntegerField(null=True, blank=True)
+
+    # FI: Sijoitus (valinnainen jos puuttuu lähteestä).
+    # EN: Position/ranking if available.
+    position = models.PositiveIntegerField(null=True, blank=True)
+
+    # FI: Näkyvyys ja soft delete (GDPR).
+    # EN: Visibility & soft delete (GDPR).
+    is_visible = models.BooleanField(default=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    deletion_reason = models.CharField(max_length=255, null=True, blank=True)
+
     class Meta:
-      """
-      FI: Indeksit hakua ja listauksia varten (status, vauhti, yhdistelmät).
-      EN: Indexes for lookups and listings (status, pace, combinations).
-      
-      """
-      
-      indexes = [
-          models.Index(fields=['status']),
-          models.Index(fields=['pace_s_per_km']),
-          models.Index(fields=['course', 'athlete']),
-      ]
-      
-      # FI: Tuoreimmat ensin toimii usein listauksissa luontevasti.
-      # EN: Newest first is convenient in listings.
-      ordering = ['finish_time_s', 'athlete__last_name', 'athlete__first_name']
-      
-      def __str__(self) -> str:
-        """
-        FI: Tekstiesitys: Athleten näyttönimi + rata.
-        EN: String representation: athlete display name + course.
-        """
+        ordering = ["finish_time_s", "athlete__last_name", "athlete__first_name"]
+        constraints = [
+            # FI: Yksi virallinen tulos / urheilija / rata (muuta jos haluat yritys-numeron).
+            # EN: One official result per athlete per course (add attempt_no if needed).
+            models.UniqueConstraint(fields=["course", "athlete"], name="uniq_result_per_course_athlete"),
+        ]
+        indexes = [
+            models.Index(fields=["status"]),
+            models.Index(fields=["pace_s_per_km"]),
+            models.Index(fields=["course", "athlete"]),
+            models.Index(fields=["is_visible"]),
+            models.Index(fields=["deleted_at"]),
+        ]
+
+    def __str__(self) -> str:
         return f"Result({self.athlete} @ {self.course})"
