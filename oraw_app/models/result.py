@@ -1,11 +1,13 @@
 import uuid
 from django.db import models
 
+
 class Result(models.Model):
     """
-    FI: Yksittäisen urheilijan tulos tietyllä radalla. Näkyvyys ja soft delete GDPR:ää varten.
+    FI: Urheilijan tulos tietyllä radalla. Näkyvyys ja soft delete GDPR:ää varten.
     EN: An athlete's result on a specific course. Visibility & soft delete for GDPR.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     athlete = models.ForeignKey(
@@ -19,8 +21,8 @@ class Result(models.Model):
         related_name="results",
     )
 
-    # FI: Kokonaisaika sekunteina; IOFXML voidaan muuntaa parse-vaiheessa.
-    # EN: Finish time in seconds; parsed from IOFXML.
+    # FI: Kokonaisaika sekunteina; IOFXML parsitaan tallennettaessa.
+    # EN: Finish time in seconds; populated by IOFXML parser.
     finish_time_s = models.PositiveIntegerField(null=True, blank=True)
 
     # FI: Tilan koodi: OK, DSQ (hylätty), DNS (ei startannut) jne.
@@ -33,7 +35,11 @@ class Result(models.Model):
         ("MP", "MissingPunch"),
         ("UNK", "Unknown"),
     ]
-    status = models.CharField(max_length=8, choices=STATUS_CHOICES, default="UNK")
+    status = models.CharField(
+        max_length=8,
+        choices=STATUS_CHOICES,
+        default="UNK",
+    )
 
     # FI: Johdettu: sekuntia / km, voi tallentaa analyysin nopeuttamiseksi.
     # EN: Derived: seconds per km; optional cache for faster analytics.
@@ -52,9 +58,11 @@ class Result(models.Model):
     class Meta:
         ordering = ["finish_time_s", "athlete__last_name", "athlete__first_name"]
         constraints = [
-            # FI: Yksi virallinen tulos / urheilija / rata (muuta jos haluat yritys-numeron).
-            # EN: One official result per athlete per course (add attempt_no if needed).
-            models.UniqueConstraint(fields=["course", "athlete"], name="uniq_result_per_course_athlete"),
+            # One result per (course, athlete); add attempt_no if you need multiples
+            models.UniqueConstraint(
+                fields=["course", "athlete"],
+                name="uniq_result_per_course_athlete",
+            ),
         ]
         indexes = [
             models.Index(fields=["status"]),

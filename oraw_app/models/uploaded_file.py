@@ -1,11 +1,13 @@
 import uuid
 from django.db import models
 
+
 class UploadedFile(models.Model):
     """
     FI: Alkuperäiset IOFXML-tiedostot (deduplikointi + lähde + re-prosessointi).
     EN: Original IOFXML files (dedup + provenance + re-processing).
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     competition = models.ForeignKey(

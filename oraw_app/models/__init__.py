@@ -10,8 +10,13 @@ from .uploaded_file import UploadedFile
 from .split import Split
 
 __all__ = [
-    "Athlete", "AthleteIdentifier",
-    "Competition", "Course", "Result",
-    "PrivacyPreference", "AuditLog",
-    "UploadedFile", "Split",
+    "Athlete",
+    "AthleteIdentifier",
+    "Competition",
+    "Course",
+    "Result",
+    "PrivacyPreference",
+    "AuditLog",
+    "UploadedFile",
+    "Split",
 ]

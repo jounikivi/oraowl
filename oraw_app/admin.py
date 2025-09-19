@@ -14,14 +14,16 @@ class AthleteAdmin(admin.ModelAdmin):
     search_fields = ("public_alias", "first_name", "last_name")
     list_filter = ("is_public",)
 
+
 @admin.register(PrivacyPreference)
 class PrivacyPreferenceAdmin(admin.ModelAdmin):
-  list_display = ('athlete', 'show_name', 'hide_until', 'suppressed_at')
-  list_filter = ('show_name',)
-  search_fields = ('athlete__first_name', 'athlete__last_name')
-  
+    list_display = ("athlete", "show_name", "hide_until", "suppressed_at")
+    list_filter = ("show_name",)
+    search_fields = ("athlete__first_name", "athlete__last_name")
+
+
 @admin.register(AuditLog)
 class AuditLogAdmin(admin.ModelAdmin):
-  list_display = ('athlete', 'event', 'by', 'at')
-  list_filter = ('event', 'by')
-  search_fields= ('athlete__first_name', 'athlete__last_name', 'by', 'reason')
+    list_display = ("athlete", "event", "by", "at")
+    list_filter = ("event", "by")
+    search_fields = ("athlete__first_name", "athlete__last_name", "by", "reason")

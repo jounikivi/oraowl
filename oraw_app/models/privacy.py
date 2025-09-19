@@ -1,10 +1,12 @@
 from django.db import models
 
+
 class PrivacyPreference(models.Model):
     """
     FI: Henkilökohtaiset tietosuoja-asetukset / pyyntöjen seuranta.
     EN: Per-athlete privacy settings / subject request tracking.
     """
+
     athlete = models.OneToOneField(
         "oraw_app.Athlete",
         on_delete=models.CASCADE,
@@ -25,10 +27,26 @@ class PrivacyPreference(models.Model):
 
     # FI: Oikeusperuste / pyyntöjen seuranta / säilytys.
     # EN: Legal basis / DSR tracking / retention.
-    consent_basis = models.CharField(max_length=50, default="legitimate_interest")
+    consent_basis = models.CharField(
+        max_length=50,
+        default="legitimate_interest",
+    )
     data_subject_request_at = models.DateTimeField(null=True, blank=True)
-    data_subject_request_type = models.CharField(max_length=32, null=True, blank=True)   # access|erasure|...
-    data_subject_request_status = models.CharField(max_length=20, null=True, blank=True) # pending|done|rejected
+
+    # access | erasure | rectification | restriction
+    data_subject_request_type = models.CharField(
+        max_length=32,
+        null=True,
+        blank=True,
+    )
+
+    # pending | done | rejected
+    data_subject_request_status = models.CharField(
+        max_length=20,
+        null=True,
+        blank=True,
+    )
+
     retention_until = models.DateField(null=True, blank=True)
 
     def __str__(self) -> str:
@@ -40,6 +58,7 @@ class AuditLog(models.Model):
     FI: Yksinkertainen audit-loki tietosuojatoimille (kuka, mitä, milloin, miksi).
     EN: Simple audit log for privacy actions (who, what, when, why).
     """
+
     athlete = models.ForeignKey(
         "oraw_app.Athlete",
         on_delete=models.CASCADE,
@@ -50,10 +69,18 @@ class AuditLog(models.Model):
     at = models.DateTimeField(auto_now_add=True)
     by = models.CharField(max_length=200)
 
-    # FI: Lisätieto: tietoryhmä ja käsittelyn oikeusperuste.
-    # EN: Extra context: data category and processing basis.
-    data_category = models.CharField(max_length=64, null=True, blank=True)     # identity|performance|...
-    processing_basis = models.CharField(max_length=50, null=True, blank=True)  # legitimate_interest|...
+    # data_category: identity | performance | contact
+    data_category = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+    )
+    # processing_basis: legitimate_interest | consent | public_record
+    processing_basis = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+    )
 
     class Meta:
         ordering = ["-at"]
