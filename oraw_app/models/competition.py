@@ -1,49 +1,36 @@
 import uuid
 from django.db import models
 
-
 class Competition(models.Model):
     """
-    FI: Competition-malli tallentaa kilpailun perustiedot.
-        - Käytämme UUID-avainta turvallisuuden vuoksi.
-        - Nimi, päivämäärä ja sijainti kuvaavat kilpailua.
-        - iof_event_id mahdollistaa linkityksen IOFXML-dataan.
-    EN: Competition model stores the basic event information.
-        - UUID primary key for security.
-        - Name, date, and location describe the event.
-        - iof_event_id links to IOFXML event data.
+    FI: Kilpailun perustiedot. Lähdetieto (source) helpottaa osoitusvelvollisuutta.
+    EN: Core competition data. Source fields aid GDPR accountability.
     """
-
-    # Primary key: UUID for uniqueness and security
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    # Basic fields
-    name = models.CharField(max_length=200)
-    date = models.DateField()
-    location = models.CharField(max_length=200, blank=True)
+    name = models.CharField(max_length=160)
+    date = models.DateField(null=True, blank=True)
+    organizer = models.CharField(max_length=160, null=True, blank=True)
+    location = models.CharField(max_length=160, null=True, blank=True)
 
-    # Optional external reference (IOFXML Event ID or similar)
-    iof_event_id = models.CharField(
-        max_length=64,
-        blank=True,
-        null=True,
-        unique=True,
-        help_text="Optional external reference, e.g. IOFXML Event ID",
-    )
+    # FI: (Valinn.) IOF:n event-id jos lähteessä on.
+    # EN: Optional IOF event id if present in source.
+    iof_event_id = models.CharField(max_length=64, null=True, blank=True, unique=True)
 
-    # Metadata
-    created_at = models.DateTimeField(auto_now_add=True)
+    # FI: Läpinäkyvyys/lähdeviite.
+    # EN: Transparency / provenance.
+    source_name = models.CharField(max_length=120, null=True, blank=True)
+    source_url = models.URLField(null=True, blank=True)
 
     class Meta:
-        """
-        FI: Järjestää kilpailut oletuksena uusin ensin.
-        EN: Orders competitions by newest first.
-        """
         ordering = ["-date", "name"]
+        constraints = [
+            models.UniqueConstraint(fields=["name", "date"], name="uniq_competition_name_date"),
+        ]
+        indexes = [
+            models.Index(fields=["date"]),
+            models.Index(fields=["name"]),
+        ]
 
-    def __str__(self):
-        """
-        FI: Mallin tekstiesitys: kilpailun nimi + päivämäärä.
-        EN: String representation: competition name + date.
-        """
-        return f"{self.name} ({self.date})"
+    def __str__(self) -> str:
+        return f"{self.name} ({self.date})" if self.date else self.name
