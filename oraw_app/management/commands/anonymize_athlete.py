@@ -143,17 +143,14 @@ class Command(BaseCommand):
         if name:
             # case-insensitive partial match on either name part
             qs = qs.filter(
-                models.Q(first_name__icontains=name)
-                | models.Q(last_name__icontains=name)
+                models.Q(first_name__icontains=name) | models.Q(last_name__icontains=name)
             )
 
         athletes = list(qs)
         if not athletes:
             raise CommandError("No athletes matched criteria.")
 
-        self.stdout.write(
-            f"Matched {len(athletes)} athlete(s). dry_run={dry_run}"
-        )
+        self.stdout.write(f"Matched {len(athletes)} athlete(s). dry_run={dry_run}")
 
         if not assume_yes and not dry_run:
             self.stdout.write("Proceed? Type 'yes' to continue: ", ending="")
