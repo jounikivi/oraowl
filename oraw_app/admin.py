@@ -1,21 +1,13 @@
 # oraw_app/admin.py
+from __future__ import annotations
+
 from django.contrib import admin
 from .models import Athlete, Competition, Course, Result, UploadedFile
 
 
 @admin.register(Athlete)
 class AthleteAdmin(admin.ModelAdmin):
-    """
-    FI: Yksinkertainen listaus kentillä, jotka ovat varmasti olemassa.
-    EN: Minimal list using fields that safely exist.
-    """
-    list_display = (
-        "id",
-        "last_name",
-        "first_name",
-        "public_alias",
-        "is_public",
-    )
+    list_display = ("id", "last_name", "first_name", "public_alias", "is_public")
     search_fields = ("first_name", "last_name", "public_alias")
     list_filter = ("is_public",)
     ordering = ("last_name", "first_name")
@@ -47,10 +39,6 @@ class ResultAdmin(admin.ModelAdmin):
 
 @admin.register(UploadedFile)
 class UploadedFileAdmin(admin.ModelAdmin):
-    """
-    FI: Huom: UploadedFile ei enää viittaa Competitioniin.
-    EN: Note: UploadedFile no longer has a FK to Competition.
-    """
     list_display = ("original_name", "uploaded_at", "size_bytes", "sha256")
     search_fields = ("original_name", "sha256")
     list_filter = ("uploaded_at",)

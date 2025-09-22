@@ -1,4 +1,6 @@
 # oraw_app/models/competition.py
+from __future__ import annotations
+
 import uuid
 from django.db import models
 
@@ -40,7 +42,8 @@ class Competition(models.Model):
         ordering = ["-date", "name"]
         constraints = [
             models.UniqueConstraint(
-                fields=["name", "date"], name="uniq_competition_name_date"
+                fields=["name", "date"],
+                name="uniq_competition_name_date",
             ),
         ]
         indexes = [

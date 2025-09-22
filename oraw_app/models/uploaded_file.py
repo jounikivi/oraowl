@@ -1,4 +1,6 @@
 # oraw_app/models/uploaded_file.py
+from __future__ import annotations
+
 import uuid
 from django.db import models
 
@@ -11,9 +13,13 @@ class UploadedFile(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    # FI: Fyysinen tiedosto (MEDIA_ROOT / iofxml/...). Säilytä lähde.
-    # EN: Actual file on disk (MEDIA_ROOT / iofxml/...).
-    stored_file = models.FileField(upload_to="iofxml/%Y/%m/%d")
+    # FI: Fyysinen tiedosto (MEDIA_ROOT / iofxml/...). Sallitaan NULL siirtymävaiheessa.
+    # EN: Actual file on disk (MEDIA_ROOT / iofxml/...). Allow NULL during transition.
+    stored_file = models.FileField(
+        upload_to="iofxml/%Y/%m/%d",
+        null=True,
+        blank=True,
+    )
 
     original_name = models.CharField(max_length=255)
     size_bytes = models.BigIntegerField()
@@ -32,7 +38,6 @@ class UploadedFile(models.Model):
         indexes = [
             models.Index(fields=["uploaded_at"]),
             models.Index(fields=["sha256"]),
-            
         ]
 
     def __str__(self) -> str:
