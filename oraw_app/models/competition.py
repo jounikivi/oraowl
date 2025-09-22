@@ -1,3 +1,4 @@
+# oraw_app/models/competition.py
 import uuid
 from django.db import models
 
@@ -15,12 +16,23 @@ class Competition(models.Model):
     organizer = models.CharField(max_length=160, null=True, blank=True)
     location = models.CharField(max_length=160, null=True, blank=True)
 
+    # FI: Alkuperäinen IOFXML-tiedosto, josta kilpailu luotu (valinnainen).
+    # EN: Original IOFXML file this competition was created from (optional).
+    source_file = models.ForeignKey(
+        "oraw_app.UploadedFile",
+        on_delete=models.SET_NULL,
+        related_name="competitions_primary",
+        null=True,
+        blank=True,
+        help_text="Original IOFXML file this competition was created from.",
+    )
+
     # FI: (Valinnainen) IOF:n event-id, jos lähteessä on.
     # EN: Optional IOF event id if present in source.
     iof_event_id = models.CharField(max_length=64, null=True, blank=True, unique=True)
 
-    # FI: Läpinäkyvyys/lähdeviite.
-    # EN: Transparency / provenance.
+    # FI: Läpinäkyvyys/lähdeviite (esim. järjestäjän nimi/URL).
+    # EN: Transparency / provenance (e.g., organizer label/URL).
     source_name = models.CharField(max_length=120, null=True, blank=True)
     source_url = models.URLField(null=True, blank=True)
 
@@ -28,8 +40,7 @@ class Competition(models.Model):
         ordering = ["-date", "name"]
         constraints = [
             models.UniqueConstraint(
-                fields=["name", "date"],
-                name="uniq_competition_name_date",
+                fields=["name", "date"], name="uniq_competition_name_date"
             ),
         ]
         indexes = [
