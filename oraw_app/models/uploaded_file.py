@@ -32,6 +32,7 @@ class UploadedFile(models.Model):
         indexes = [
             models.Index(fields=["uploaded_at"]),
             models.Index(fields=["sha256"]),
+            
         ]
 
     def __str__(self) -> str:
