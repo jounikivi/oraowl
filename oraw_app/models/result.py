@@ -20,6 +20,16 @@ class Result(models.Model):
         on_delete=models.CASCADE,
         related_name="results",
     )
+    
+    # FI: Leimauskortti, jos tiedossa (Emit/SI/..). Ei pakollinen.
+    # EN: Control card used, if known (Emit/SI/..). Optional.
+    control_card = models.ForeignKey(
+        "oraw_app.ControlCard",
+        on_delete=models.SET_NULL,
+        related_name="results",
+        null=True,
+        blank=True,
+    )
 
     # FI: Kokonaisaika sekunteina; IOFXML parsitaan tallennettaessa.
     # EN: Finish time in seconds; populated by IOFXML parser.

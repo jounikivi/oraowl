@@ -8,6 +8,7 @@ from .result import Result
 from .privacy import PrivacyPreference, AuditLog
 from .uploaded_file import UploadedFile
 from .split import Split
+from .control_card import ControlCard
 
 __all__ = [
     "Athlete",
@@ -19,4 +20,5 @@ __all__ = [
     "AuditLog",
     "UploadedFile",
     "Split",
+    "ControlCard",
 ]
