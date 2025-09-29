@@ -33,6 +33,10 @@ class UploadedFile(models.Model):
     source_url = models.URLField(null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
 
+    # FI: Säilytysaika: poista automaattisesti tämän päivän jälkeen (GDPR).
+    # EN: Retention: purge automatically after this date (GDPR).
+    retention_until = models.DateField(null=True, blank=True)
+
     class Meta:
         ordering = ["-uploaded_at"]
         indexes = [
