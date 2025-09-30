@@ -5,12 +5,35 @@ from django.contrib import admin
 from .models import Athlete, Competition, Course, Result, UploadedFile
 
 
+# --- Admin actions (GDPR) --------------------------------------------
+
+@admin.action(description="Anonymize selected athletes (GDPR)")
+def anonymize_athletes(modeladmin, request, queryset):
+    """
+    FI: Piilota urheilijan henkilöllisyys julkaistuissa näkymissä.
+    EN: Hide athlete identity in public views.
+    """
+    queryset.update(is_public=False, public_alias="Anonyymi")
+
+
+@admin.action(description="Clear control cards for selected results (GDPR)")
+def clear_control_cards(modeladmin, request, queryset):
+    """
+    FI: Poista leimauskorttitieto tuloksista (pyynnöstä).
+    EN: Remove control card info from results (on request).
+    """
+    queryset.update(control_card=None)
+
+
+# --- Model admins -----------------------------------------------------
+
 @admin.register(Athlete)
 class AthleteAdmin(admin.ModelAdmin):
     list_display = ("id", "last_name", "first_name", "public_alias", "is_public")
     search_fields = ("first_name", "last_name", "public_alias")
     list_filter = ("is_public",)
     ordering = ("last_name", "first_name")
+    actions = [anonymize_athletes]
 
 
 @admin.register(Competition)
@@ -35,11 +58,12 @@ class ResultAdmin(admin.ModelAdmin):
     search_fields = ("course__name", "athlete__first_name", "athlete__last_name")
     list_filter = ("course", "status")
     ordering = ("course", "position")
+    actions = [clear_control_cards]
 
 
 @admin.register(UploadedFile)
 class UploadedFileAdmin(admin.ModelAdmin):
-    list_display = ("original_name", "uploaded_at", "size_bytes", "sha256")
+    list_display = ("original_name", "uploaded_at", "size_bytes", "sha256", "retention_until")
     search_fields = ("original_name", "sha256")
-    list_filter = ("uploaded_at",)
+    list_filter = ("uploaded_at", "retention_until")
     ordering = ("-uploaded_at",)
