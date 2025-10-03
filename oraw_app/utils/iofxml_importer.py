@@ -61,7 +61,12 @@ def _text(el: Optional[ET.Element], *path: str) -> Optional[str]:
     return clean_text(found.text if found is not None else None)
 
 
-def _attr(el: Optional[ET.Element], first: str, attr: str, *rest: str) -> Optional[str]:
+def _attr(
+    el: Optional[ET.Element],
+    first: str,
+    attr: str,
+    *rest: str,
+) -> Optional[str]:
     """
     FI: Palauta polun attribuutti nimialue huomioiden.
     EN: Return attribute value at namespaced path.
@@ -72,7 +77,10 @@ def _attr(el: Optional[ET.Element], first: str, attr: str, *rest: str) -> Option
     return clean_text(found.get(attr) if found is not None else None)
 
 
-def _length_to_km(length_text: Optional[str], unit: Optional[str]) -> Optional[float]:
+def _length_to_km(
+    length_text: Optional[str],
+    unit: Optional[str],
+) -> Optional[float]:
     """
     FI: Muunna IOFXML Course/Length arvo kilometreiksi. Unit voi olla 'm' tai 'km'.
     EN: Convert Course/Length to kilometers. Unit may be 'm' or 'km'.
@@ -87,6 +95,25 @@ def _length_to_km(length_text: Optional[str], unit: Optional[str]) -> Optional[f
     if unit == "m":
         return round(val / 1000.0, 2)
     return round(val, 2)  # assume km if not specified
+
+
+# --------------------------------------------------------------------
+# Normalizations
+# --------------------------------------------------------------------
+
+def _norm_gender(value: Optional[str]) -> Optional[str]:
+    """
+    FI: Mapita vapaamuotoiset arvot choices-arvoihin: M/F/X.
+    EN: Map freeform values to choices: M/F/X.
+    """
+    if not value:
+        return None
+    v = value.strip().upper()
+    if v in {"M", "MALE"}:
+        return "M"
+    if v in {"F", "FEMALE", "W"}:
+        return "F"
+    return "X"
 
 
 # --------------------------------------------------------------------
@@ -113,7 +140,12 @@ def import_result_list(
     event_el = root.find(_p("Event"))
     comp_name = _text(event_el, "Name") or "Unnamed event"
     comp_date = _text(event_el, "StartTime", "Date")  # YYYY-MM-DD
-    organizer = _text(event_el, "Organizer", "Name")
+    # FI: IOF:ssa näkee molemmat kirjoitusasut → tuetaan kumpaakin.
+    # EN: IOF uses Organizer/Organiser → support both.
+    organizer = (
+        _text(event_el, "Organizer", "Name")
+        or _text(event_el, "Organiser", "Name")
+    )
     location = _text(event_el, "Place")
 
     competition, _ = Competition.objects.get_or_create(
@@ -152,12 +184,12 @@ def import_result_list(
             first = _text(pr, "Person", "Name", "Given") or ""
             last = _text(pr, "Person", "Name", "Family") or ""
             club = _text(pr, "Organisation", "Name")
-            gender = _text(pr, "Person", "Sex")
+            gender = _norm_gender(_text(pr, "Person", "Sex"))
 
             athlete, created_a = Athlete.objects.get_or_create(
                 first_name=first,
                 last_name=last,
-                defaults={"club": club, "gender": (gender or "").upper()[:1]},
+                defaults={"club": club, "gender": gender},
             )
             if created_a:
                 athletes_created += 1
