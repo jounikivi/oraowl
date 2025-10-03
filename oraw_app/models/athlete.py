@@ -21,6 +21,28 @@ class Athlete(models.Model):
     first_name = models.CharField(max_length=80, blank=True)
     last_name = models.CharField(max_length=80, blank=True)
     year_of_birth = models.PositiveIntegerField(null=True, blank=True)
+    
+        # FI: Seura / organisaatio (valinnainen).
+    # EN: Club / organisation (optional).
+    club = models.CharField(max_length=120, null=True, blank=True)
+
+    # FI: Sukupuoli (M/F/X), valinnainen.
+    # EN: Gender (M/F/X), optional.
+    GENDER_M = "M"
+    GENDER_F = "F"
+    GENDER_X = "X"
+    GENDER_CHOICES = [
+        (GENDER_M, "Male"),
+        (GENDER_F, "Female"),
+        (GENDER_X, "Other/Unspecified"),
+    ]
+    gender = models.CharField(
+        max_length=1,
+        choices=GENDER_CHOICES,
+        null=True,
+        blank=True,
+    )
+
 
     # FI: Privacy by default → ei julkinen ilman lupaa.
     # EN: Privacy by default → not public unless allowed.
