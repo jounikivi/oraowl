@@ -3,7 +3,7 @@
 # EN: Smoke test for IOF XML import: create small XML, run importer, assert row counts.
 
 import textwrap
-from pathlib import Path
+
 
 import pytest
 from django.core.management import call_command
