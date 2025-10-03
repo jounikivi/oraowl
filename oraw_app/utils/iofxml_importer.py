@@ -113,7 +113,11 @@ def import_result_list(
     event_el = root.find(_p("Event"))
     comp_name = _text(event_el, "Name") or "Unnamed event"
     comp_date = _text(event_el, "StartTime", "Date")  # YYYY-MM-DD
-    organizer = _text(event_el, "Organizer", "Name")
+    organizer = (
+    _text(event_el, "Organizer", "Name")
+    or _text(event_el, "Organiser", "Name")
+)
+
     location = _text(event_el, "Place")
 
     competition, _ = Competition.objects.get_or_create(
@@ -153,6 +157,12 @@ def import_result_list(
             last = _text(pr, "Person", "Name", "Family") or ""
             club = _text(pr, "Organisation", "Name")
             gender = _text(pr, "Person", "Sex")
+            gender = (gender_raw or "").strip().upper()
+            if gender not in {"M", "F"}:
+                gender = "X"
+            defaults={"club": club, "gender": gender},
+            
+            
 
             athlete, created_a = Athlete.objects.get_or_create(
                 first_name=first,
