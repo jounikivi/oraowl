@@ -167,7 +167,7 @@ def import_result_list(
 
         # Optional course length
         length_text = _text(class_res, "Course", "Length")
-        length_unit = _attr(class_res, "Course", "Length", "unit")
+        length_unit = _attr(class_res, "Course", "unit", "Length")
         length_km = _length_to_km(length_text, length_unit)
 
         course, _ = Course.objects.get_or_create(
