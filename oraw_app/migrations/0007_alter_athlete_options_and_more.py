@@ -16,14 +16,8 @@ class Migration(migrations.Migration):
             name="athlete",
             options={"ordering": ["last_name", "first_name"]},
         ),
-        migrations.RemoveIndex(
-            model_name="athleteidentifier",
-            name="oraw_app_at_kind_c53154_idx",
-        ),
-        migrations.RemoveField(
-            model_name="athleteidentifier",
-            name="is_active",
-        ),
+        
+        
         migrations.AddField(
             model_name="athlete",
             name="created_at",
