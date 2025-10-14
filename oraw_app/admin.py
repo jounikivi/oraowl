@@ -53,14 +53,28 @@ class AthleteAdmin(admin.ModelAdmin):
         "first_name",
         "club",
         "gender",
-        "year_of_birth",
+        "get_birth_year",  # <-- admin-metodi alla
         "public_alias",
         "is_public",
     )
     search_fields = ("first_name", "last_name", "public_alias", "club")
+
+    # HUOM: list_filter pitää viitata todelliseen mallikenttään
     list_filter = ("is_public", "gender", "club", "year_of_birth")
+
     ordering = ("last_name", "first_name")
     actions = [anonymize_athletes]
+
+    # Admin-metodi, joka näyttää syntymävuoden
+    def get_birth_year(self, obj):
+        """
+        FI: Näytä urheilijan syntymävuosi, jos se on asetettu.
+        EN: Display athlete's birth year if available.
+        """
+        return getattr(obj, "year_of_birth", None)
+    get_birth_year.short_description = "Birth year"
+    get_birth_year.admin_order_field = "year_of_birth"
+
 
 
 @admin.register(Competition)
@@ -99,7 +113,7 @@ class ResultAdmin(admin.ModelAdmin):
 
     list_display = ("course", "athlete", "position", "status", "finish_time_s")
     search_fields = ("course__name", "athlete__first_name", "athlete__last_name")
-    list_filter = ("course", "status")
+    list_filter = ("course", "status", "is_public")
     ordering = ("course", "position")
     actions = [clear_control_cards]
     list_select_related = ("course", "athlete")
@@ -121,8 +135,8 @@ class ControlCardAdmin(admin.ModelAdmin):
 @admin.register(UploadedFile)
 class UploadedFileAdmin(admin.ModelAdmin):
     """
-    FI: Alkuperäisten IOF-XML -tiedostojen hallinta (retention näkyvissä).
-    EN: Original IOF-XML files (show retention).
+    FI: Alkuperäisten IOF-XML -tiedostojen hallinta.
+    EN: Original IOF-XML files.
     """
 
     list_display = (
@@ -130,8 +144,9 @@ class UploadedFileAdmin(admin.ModelAdmin):
         "uploaded_at",
         "size_bytes",
         "sha256",
-        "retention_until",
+        "source_name",
     )
-    search_fields = ("original_name", "sha256")
-    list_filter = ("uploaded_at", "retention_until")
+    search_fields = ("original_name", "sha256", "source_name", "source_url")
+    list_filter = ("uploaded_at",)
     ordering = ("-uploaded_at",)
+    readonly_fields = ("uploaded_at", "created_at", "updated_at", "sha256", "size_bytes")
