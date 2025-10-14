@@ -113,6 +113,8 @@ class AuditLog(models.Model):
     description = models.CharField(max_length=200, null=True, blank=True)
     details = models.TextField(null=True, blank=True)
 
+
+
     class Meta:
         ordering = ["-at"]
         indexes = [
