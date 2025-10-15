@@ -21,6 +21,10 @@ class PrivacyPreference(models.Model):
         related_name="privacy",
     )
 
+    # FI: Näytetäänkö urheilijan nimi julkisesti (testi odottaa tätä kenttää).
+    # EN: Whether athlete's name is shown publicly (test expects this field).
+    show_name = models.BooleanField(default=True)
+
     # FI: Käsittelyn oikeusperuste (esim. oikeutettu etu, suostumus).
     # EN: Legal basis for processing (e.g., legitimate interest, consent).
     consent_basis = models.CharField(
@@ -69,6 +73,7 @@ class PrivacyPreference(models.Model):
     class Meta:
         ordering = ["athlete"]
         indexes = [
+            models.Index(fields=["show_name"]),
             models.Index(fields=["retention_until"]),
             models.Index(fields=["data_subject_request_status"]),
         ]
@@ -112,8 +117,6 @@ class AuditLog(models.Model):
     # EN: Short description and free-form note (avoid PII here).
     description = models.CharField(max_length=200, null=True, blank=True)
     details = models.TextField(null=True, blank=True)
-
-
 
     class Meta:
         ordering = ["-at"]
