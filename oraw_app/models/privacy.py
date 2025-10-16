@@ -110,11 +110,19 @@ class AuditLog(models.Model):
         blank=True,
     )
 
-    action = models.CharField(max_length=12, choices=ACTION_CHOICES)
+    # FI: Yhteensopivuus testin kanssa: 'event' ja 'by'.
+    # EN: Test compatibility: 'event' and 'by'.
+    event = models.CharField(max_length=64, null=True, blank=True)
+    by = models.CharField(max_length=64, null=True, blank=True)
+
+    # FI: Toimintatyyppi (jos käytetään sisäisesti).
+    # EN: Action type (if used internally).
+    action = models.CharField(max_length=12, choices=ACTION_CHOICES, null=True, blank=True)
+
     at = models.DateTimeField(auto_now_add=True)
 
-    # FI: Lyhyt selite ja vapaa muistiinpano (PII vältetään).
-    # EN: Short description and free-form note (avoid PII here).
+    # FI: Lyhyt selite ja vapaa muistiinpano (vältä PII).
+    # EN: Short description and free-form note (avoid PII).
     description = models.CharField(max_length=200, null=True, blank=True)
     details = models.TextField(null=True, blank=True)
 
@@ -123,8 +131,13 @@ class AuditLog(models.Model):
         indexes = [
             models.Index(fields=["athlete"]),
             models.Index(fields=["at"]),
+            models.Index(fields=["event"]),
+            models.Index(fields=["by"]),
         ]
 
     def __str__(self) -> str:
         who = self.athlete_id or "-"
-        return f"{self.action} @ {self.at:%Y-%m-%d %H:%M:%S} (athlete={who})"
+        # Näytä mieluummin event kuin action, jos saatavilla.
+        tag = self.event or self.action or "-"
+        return f"{tag} @ {self.at:%Y-%m-%d %H:%M:%S} (athlete={who})"
+
