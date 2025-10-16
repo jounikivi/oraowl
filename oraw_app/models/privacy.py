@@ -105,7 +105,7 @@ class AuditLog(models.Model):
     athlete = models.ForeignKey(
         "oraw_app.Athlete",
         on_delete=models.SET_NULL,
-        related_name="audit_logs",
+        related_name="privacy_audit_logs",
         null=True,
         blank=True,
     )
