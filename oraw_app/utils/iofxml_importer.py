@@ -173,7 +173,7 @@ def import_result_list(
         course, _ = Course.objects.get_or_create(
             competition=competition,
             name=class_name,
-            defaults={"clazz": class_name, "length_km": length_km},
+            defaults={"length_km": length_km},
         )
         if course.length_km is None and length_km is not None:
             course.length_km = length_km
@@ -207,9 +207,10 @@ def import_result_list(
                     # FI: Oletetaan vendor tuntemattomaksi; voidaan laajentaa hekulla.
                     # EN: Default vendor as UNKNOWN; can refine with heuristics later.
                     card, _ = ControlCard.objects.get_or_create(
-                        vendor=ControlCard.UNKNOWN,
+                        vendor=ControlCard.VENDOR_UNKNOWN,
                         uid=card_uid,
-                    )
+                        )
+
 
                 # Upsert result
                 result, created_r = Result.objects.update_or_create(
