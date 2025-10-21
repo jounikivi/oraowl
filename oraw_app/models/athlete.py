@@ -1,97 +1,109 @@
+# oraw_app/models/athlete.py
+from __future__ import annotations
+
 import uuid
+import secrets
+import string
 from django.db import models
-from django.utils.crypto import get_random_string
 
 
-def generate_alias() -> str:
+def generate_alias(length: int = 16) -> str:
     """
-    FI: Satunnainen alias julkisiin URL:eihin (ei paljasta ID:tä).
-    EN: Random alias for public URLs (prevents leaking the DB ID).
+    FI: Historiallisen migraation käyttämä oletusarvo alias-kentälle.
+        Palauttaa lyhyen 'anon-xxxxx' -merkkijonon (max length 16).
+    EN: Default generator used by old migration for alias field.
+        Returns a short 'anon-xxxxx' string (max length 16).
     """
-    return get_random_string(10)
+    prefix = "anon-"
+    rand_len = max(4, length - len(prefix))
+    alphabet = string.ascii_lowercase + string.digits
+    suffix = "".join(secrets.choice(alphabet) for _ in range(rand_len))
+    return (prefix + suffix)[:length]
 
 
 class Athlete(models.Model):
     """
-    FI: Urheilijan perustiedot (henkilörekisteri, GDPR).
-    EN: Athlete’s core personal data (separate registry, GDPR).
+    FI: Urheilija (henkilötiedot minimissä). GDPR:lle tuki anonymisointiin.
+    EN: Athlete (minimal PII). Supports GDPR-friendly anonymization.
     """
 
+    GENDER_M = "M"
+    GENDER_F = "F"
+    GENDER_X = "X"
+    GENDER_CHOICES = [
+        (GENDER_M, "Male"),
+        (GENDER_F, "Female"),
+        (GENDER_X, "Other/Unknown"),
+    ]
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    first_name = models.CharField(max_length=80, blank=True)
-    last_name = models.CharField(max_length=80, blank=True)
+    first_name = models.CharField(max_length=80, blank=True, default="")
+    last_name = models.CharField(max_length=120, blank=True, default="")
+    club = models.CharField(max_length=120, null=True, blank=True)
+    gender = models.CharField(
+        max_length=1, choices=GENDER_CHOICES, null=True, blank=True
+    )
     year_of_birth = models.PositiveIntegerField(null=True, blank=True)
 
-    # FI: Privacy by default → ei julkinen ilman lupaa.
-    # EN: Privacy by default → not public unless allowed.
-    is_public = models.BooleanField(default=False)
+    # FI: Julkisuus ja vaihtoehtoinen julkinen nimi (alias).
+    # EN: Public visibility and optional public alias.
+    is_public = models.BooleanField(default=True)
+    public_alias = models.CharField(max_length=120, null=True, blank=True)
 
-    # FI: Julkinen alias URL:eihin.
-    # EN: Public alias for URLs.
-    public_alias = models.SlugField(max_length=16, unique=True, default=generate_alias)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    # --- Helpers -----------------------------------------------------
 
     def display_name(self) -> str:
         """
-        FI: Palauttaa nimen vain jos julkinen; muuten 'Anonyymi'.
-        EN: Returns name only if public; otherwise 'Anonyymi'.
+        FI: Jos ei julkinen, näytä alias (tai 'Anonyymi' varalla).
+        EN: If not public, show alias (or 'Anonyymi' fallback).
         """
         if not self.is_public:
-            return "Anonyymi"
+            return self.public_alias or "Anonyymi"
         full = f"{self.first_name} {self.last_name}".strip()
         return full or "Anonyymi"
 
     def __str__(self) -> str:
-        # FI/EN: Admin/debug-friendly representation.
         return self.display_name()
+
+    class Meta:
+        ordering = ["last_name", "first_name"]
+        indexes = [
+            models.Index(fields=["last_name", "first_name"]),
+            models.Index(fields=["club"]),
+            models.Index(fields=["gender"]),
+        ]
 
 
 class AthleteIdentifier(models.Model):
     """
-    FI: Urheilijan ulkoiset tunnisteet (esim. EMIT/SI, kansallinen ID).
-    EN: Athlete’s external identifiers (e.g., EMIT/SI, national ID).
+    FI: Ulkoiset tunnisteet (esim. lisenssi, fed-id). Ei pakollisia.
+    EN: External identifiers (e.g., license, federation id). Optional.
     """
 
-    # FI: N:1 → monta tunnistetta per urheilija.
-    # EN: N:1 → many identifiers per athlete.
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     athlete = models.ForeignKey(
-        "oraw_app.Athlete",
+        Athlete,
         on_delete=models.CASCADE,
         related_name="identifiers",
     )
-
-    # FI: Tunnisteen tyyppi.
-    # EN: Identifier type.
-    KIND_CHOICES = [
-        ("EMIT", "EMIT"),
-        ("SI", "SI"),
-        ("NAT", "National ID"),
-        ("OTHER", "Other"),
-    ]
-    kind = models.CharField(max_length=16, choices=KIND_CHOICES)
-
-    # FI: Tunnisteen arvo (numero/merkkijono).
-    # EN: Identifier value (number/string).
-    value = models.CharField(max_length=64)
-
-    # FI: Onko tämä tunniste aktiivinen.
-    # EN: Whether this identifier is active.
-    is_active = models.BooleanField(default=True)
+    kind = models.CharField(max_length=30)  # e.g. "license", "fed_id"
+    value = models.CharField(max_length=120)
 
     class Meta:
-        # FI: Estä duplikaatit samalle urheilijalle.
-        # EN: Prevent duplicates for the same athlete.
         constraints = [
             models.UniqueConstraint(
                 fields=["athlete", "kind", "value"],
                 name="uniq_identifier_per_athlete",
-            )
+            ),
         ]
-        # FI: Nopea haku tyypin+arvon mukaan.
-        # EN: Fast lookups by type+value.
         indexes = [
-            models.Index(fields=["kind", "value"]),
+            models.Index(fields=["athlete", "kind"]),
+            models.Index(fields=["value"]),
         ]
 
     def __str__(self) -> str:
-        # FI/EN: Compact admin/list display.
         return f"{self.kind}:{self.value}"

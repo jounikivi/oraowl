@@ -7,19 +7,20 @@ from django.db import models
 
 class Competition(models.Model):
     """
-    FI: Kilpailun perustiedot. Lähdetieto (source) helpottaa osoitusvelvollisuutta.
-    EN: Core competition data. Source fields aid GDPR accountability.
+    FI: Kilpailu: perustiedot + viittaus alkuperäiseen tulostiedostoon.
+    EN: Competition: basic data + link to the original results file.
     """
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
-    name = models.CharField(max_length=160)
+    name = models.CharField(max_length=200)
     date = models.DateField(null=True, blank=True)
-    organizer = models.CharField(max_length=160, null=True, blank=True)
-    location = models.CharField(max_length=160, null=True, blank=True)
 
-    # FI: Alkuperäinen IOFXML-tiedosto, josta kilpailu luotu (valinnainen).
-    # EN: Original IOFXML file this competition was created from (optional).
+    organizer = models.CharField(max_length=200, null=True, blank=True)
+    location = models.CharField(max_length=200, null=True, blank=True)
+
+    # FI: Alkuperäinen IOFXML, josta kilpailu luotiin (jos tiedossa).
+    # EN: Original IOFXML used to create this competition (if known).
     source_file = models.ForeignKey(
         "oraw_app.UploadedFile",
         on_delete=models.SET_NULL,
@@ -29,27 +30,22 @@ class Competition(models.Model):
         help_text="Original IOFXML file this competition was created from.",
     )
 
-    # FI: (Valinnainen) IOF:n event-id, jos lähteessä on.
-    # EN: Optional IOF event id if present in source.
-    iof_event_id = models.CharField(max_length=64, null=True, blank=True, unique=True)
+    notes = models.TextField(null=True, blank=True)
 
-    # FI: Läpinäkyvyys/lähdeviite (esim. järjestäjän nimi/URL).
-    # EN: Transparency / provenance (e.g., organizer label/URL).
-    source_name = models.CharField(max_length=120, null=True, blank=True)
-    source_url = models.URLField(null=True, blank=True)
+    # FI: Audit-aikaleimat.
+    # EN: Audit timestamps.
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["-date", "name"]
-        constraints = [
-            models.UniqueConstraint(
-                fields=["name", "date"],
-                name="uniq_competition_name_date",
-            ),
-        ]
         indexes = [
             models.Index(fields=["date"]),
-            models.Index(fields=["name"]),
+            models.Index(fields=["organizer"]),
+            models.Index(fields=["location"]),
+            models.Index(fields=["source_file"]),
         ]
 
     def __str__(self) -> str:
-        return f"{self.name} ({self.date})" if self.date else self.name
+        when = f" ({self.date})" if self.date else ""
+        return f"{self.name}{when}"
