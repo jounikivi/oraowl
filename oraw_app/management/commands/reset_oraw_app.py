@@ -1,63 +1,46 @@
 from __future__ import annotations
 
-from typing import Iterable, List, Tuple
+from typing import List, Tuple
 
-from django.apps import apps
 from django.core.management.base import BaseCommand
 from django.db import connection, transaction
 
-# Importoi omat mallit – järjestys: ensin riippuvaiset, sitten "vanhemmat"
-from oraw_app.models import (
-    Split,
-    Result,
-    AthleteIdentifier,
-    ControlCard,
-    PrivacyPreference,
-    AuditLog,
-    Course,
-    Competition,
-    Athlete,
-    UploadedFile,
-)
+
+# Taulujen nimet suoraan – vältetään ORM:ää ja kenttämuunnoksia kokonaan.
+TABLES_IN_DELETE_ORDER = [
+    "oraw_app_split",
+    "oraw_app_result",
+    "oraw_app_athleteidentifier",
+    "oraw_app_controlcard",
+    "oraw_app_privacypreference",
+    "oraw_app_auditlog",
+    "oraw_app_course",
+    "oraw_app_competition",
+    "oraw_app_athlete",
+    "oraw_app_uploadedfile",
+]
+
+# Erilliset toimet FK-riippuvuuksien takia
+# Competition.source_file_id viittaa UploadedFileen -> NULL ennen UploadedFile-poistoa
+FK_NULLING_SQL = [
+    "UPDATE oraw_app_competition SET source_file_id = NULL WHERE source_file_id IS NOT NULL",
+]
 
 
-BATCH_SIZE = 500
-
-
-def iter_pks(model) -> Iterable[int]:
-    """
-    Palauttaa modelin pk:t ilman muiden kenttien lukemista, jotta
-    esim. DecimalFieldien mahdolliset huonot arvot eivät riko poistoa.
-    """
-    return (
-        model.objects.order_by("pk")
-        .values_list("pk", flat=True)
-        .iterator(chunk_size=BATCH_SIZE)
-    )
-
-
-def safe_bulk_delete(model) -> int:
-    """
-    Poistaa rivit erissä pk-listojen avulla. Vältetään all().delete():n
-    tarvetta materialisoida objekteja, mikä voisi kaatua kenttämuunnoksiin.
-    Palauttaa poistettujen rivien määrän (arvio, ei sisällä cascade-lapsia).
-    """
-    total = 0
-    batch: List[int] = []
-    for pk in iter_pks(model):
-        batch.append(pk)
-        if len(batch) >= BATCH_SIZE:
-            total += model.objects.filter(pk__in=batch).delete()[0]
-            batch.clear()
-    if batch:
-        total += model.objects.filter(pk__in=batch).delete()[0]
-    return total
+def _count_rows() -> List[Tuple[str, int]]:
+    out: List[Tuple[str, int]] = []
+    with connection.cursor() as cur:
+        for t in TABLES_IN_DELETE_ORDER:
+            cur.execute(f'SELECT COUNT(*) FROM "{t}"')
+            n = cur.fetchone()[0]
+            out.append((t, n))
+    return out
 
 
 class Command(BaseCommand):
     help = (
-        "Tyhjentää oraw_app-sovelluksen domain-datan turvallisesti. "
-        "Säilyttää admin-/auth-käyttäjät. Käytä varoen."
+        "Tyhjentää oraw_app-sovelluksen domain-datan raakana (SQL). "
+        "Säilyttää auth/admin-käyttäjät. Käytä varoen."
     )
 
     def add_arguments(self, parser):
@@ -65,7 +48,7 @@ class Command(BaseCommand):
             "--yes-i-really-mean-it",
             action="store_true",
             dest="yes_i_really_mean_it",
-            help="Ohita interaktiivinen varmistuskysymys.",
+            help="Ohita interaktiivinen varmistus.",
         )
         parser.add_argument(
             "--dry-run",
@@ -78,62 +61,49 @@ class Command(BaseCommand):
         skip_confirm: bool = options["yes_i_really_mean_it"]
         dry_run: bool = options["dry_run"]
 
-        models_in_delete_order = [
-            # Lapset -> vanhemmat
-            Split,
-            Result,
-            AthleteIdentifier,
-            ControlCard,
-            PrivacyPreference,
-            AuditLog,
-            Course,
-            Competition,
-            Athlete,
-            UploadedFile,
-        ]
-
-        def counts() -> List[Tuple[str, int]]:
-            # COUNT(*) ei materialisoi kenttiä -> turvallinen
-            return [(m.__name__, m.objects.count()) for m in models_in_delete_order]
-
-        pre = counts()
+        before = _count_rows()
 
         if dry_run:
             self.stdout.write(self.style.WARNING("DRY-RUN: ei poisteta mitään."))
-            for name, n in pre:
-                self.stdout.write(f"- {name}: {n}")
+            for t, n in before:
+                self.stdout.write(f"- {t}: {n}")
             self.stdout.write(self.style.SUCCESS("Valmis (dry-run)."))
             return
 
         if not skip_confirm:
-            self.stdout.write(self.style.WARNING("Tämä poistaa oraw_app-sovelluksen datan."))
+            self.stdout.write(self.style.WARNING("Tämä poistaa oraw_app-datan raakana SQL:llä."))
             self.stdout.write("Admin/auth-käyttäjiin ei kosketa.")
-            answer = input("Kirjoita 'DELETE' jatkaaksesi: ").strip()
-            if answer != "DELETE":
+            ans = input("Kirjoita 'DELETE' jatkaaksesi: ").strip()
+            if ans != "DELETE":
                 self.stdout.write(self.style.NOTICE("Peruutettu."))
                 return
 
         with transaction.atomic():
-            # Irrota mahdolliset FK-linkit (varotoimi, jos kenttä olisi NOT NULL)
-            try:
-                if apps.is_installed("oraw_app"):
-                    Competition.objects.exclude(source_file=None).update(source_file=None)
-            except Exception:
-                pass
+            with connection.cursor() as cur:
+                # Varmuuden vuoksi pidetään SQLite FK:t päällä
+                if connection.vendor == "sqlite":
+                    cur.execute("PRAGMA foreign_keys = ON")
 
-            # Poista erissä pk:iden kautta
-            for model in models_in_delete_order:
-                deleted = safe_bulk_delete(model)
-                self.stdout.write(f"Poistettu {model.__name__}: {deleted}")
+                # Nollaa FK:t, jotka estäisivät poiston
+                for sql in FK_NULLING_SQL:
+                    cur.execute(sql)
 
-        # SQLite-optimointi
+                # Poistot lapsista vanhempiin
+                for t in TABLES_IN_DELETE_ORDER:
+                    # Tulosta poistomäärä selkeästi
+                    cur.execute(f'SELECT COUNT(*) FROM "{t}"')
+                    n = cur.fetchone()[0]
+                    cur.execute(f'DELETE FROM "{t}"')
+                    self.stdout.write(f"Poistettu {t}: {n}")
+
+        # Siivoa SQLite
         if connection.vendor == "sqlite":
             with connection.cursor() as cur:
                 cur.execute("VACUUM")
             self.stdout.write("SQLite VACUUM suoritettu.")
 
-        post = counts()
+        after = _count_rows()
         self.stdout.write(self.style.SUCCESS("oraw_app data wiped.\nYhteenveto:"))
-        for (name_before, n_before), (_, n_after) in zip(pre, post):
-            self.stdout.write(f"- {name_before}: {n_before} -> {n_after}")
+        for (t_before, n_before), (_, n_after) in zip(before, after):
+            self.stdout.write(f"- {t_before}: {n_before} -> {n_after}")
         self.stdout.write(self.style.SUCCESS("(admin/auth käyttäjät säilytetty)"))
