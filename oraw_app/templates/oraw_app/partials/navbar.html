@@ -1,66 +1,61 @@
-<nav class="main-header navbar navbar-expand navbar-white navbar-light">
+{% load static %}
 
-  <!-- VASEN REUNA: toggle sivupalkille -->
+<!-- Top Navigation Bar -->
+<nav class="main-header navbar navbar-expand navbar-white navbar-light" style="background-color: #2E7D32;">
+
+  <!-- Left navbar links -->
   <ul class="navbar-nav">
+    <!-- Hamburger menu -->
     <li class="nav-item">
       <a class="nav-link" data-widget="pushmenu" href="#" role="button">
-        <i class="fas fa-bars"></i>
+        <i class="fas fa-bars text-white"></i>
       </a>
     </li>
+
+    <!-- FI: Kotilinkki. EN: Home link. -->
+    <li class="nav-item d-none d-sm-inline-block">
+      <a href="{% url 'oraw_app:home' %}" class="nav-link text-white">
+        <i class="fas fa-home"></i> Koti
+      </a>
+    </li>
+
+    <!-- FI: Pikalinkki IOFXML-lataukseen (vain staff). EN: Quick link to IOFXML upload (staff only). -->
+    {% if request.user.is_staff %}
+    <li class="nav-item d-none d-sm-inline-block">
+      <a href="{% url 'oraw_app:upload_iofxml' %}" class="nav-link text-white">
+        <i class="fas fa-file-upload"></i> Upload IOFXML
+      </a>
+    </li>
+    {% endif %}
   </ul>
 
-  <!-- KESKIOSA: linkit -->
-  <ul class="navbar-nav mr-auto">
-    <li class="nav-item">
-      <a href="#" class="nav-link">Koti</a>
-    </li>
-     <li class="nav-item">
-      <a href="#" class="nav-link">Yhteys</a>
-    </li> 
-    <li class="nav-item">
-      <a href="#" class="nav-link">Kirjaudu</a>
-    </li>
-  </ul>
-
-  <!-- OIKEA REUNA: ikonit -->
+  <!-- Right navbar links -->
   <ul class="navbar-nav ml-auto">
 
-    <!-- Search -->
-    <li class="nav-item">
-      <a class="nav-link" data-widget="navbar-search" href="#" role="button">
-        <i class="fas fa-search"></i>
-      </a>
-    </li>
-
-    <!-- Messages -->
-    <li class="nav-item dropdown">
-      <a class="nav-link" data-toggle="dropdown" href="#">
-        <i class="far fa-comments"></i>
-        <span class="badge badge-danger navbar-badge"></span>
-      </a>
-    </li>
-
-    <!-- Notifications -->
-    <li class="nav-item dropdown">
-      <a class="nav-link" data-toggle="dropdown" href="#">
-        <i class="far fa-bell"></i>
-        <span class="badge badge-warning navbar-badge"></span>
-      </a>
-    </li>
-
-    <!-- Fullscreen -->
-    <li class="nav-item">
-      <a class="nav-link" data-widget="fullscreen" href="#" role="button">
-        <i class="fas fa-expand-arrows-alt"></i>
-      </a>
-    </li>
-
-    <!-- Control sidebar toggle -->
-    <li class="nav-item">
-      <a class="nav-link" data-widget="control-sidebar" data-slide="true" href="#" role="button">
-        <i class="fas fa-th-large"></i>
-      </a>
-    </li>
+    <!-- FI: Profiili / kirjautuminen -kuvake. EN: Profile / login icon. -->
+    {% if request.user.is_authenticated %}
+      <li class="nav-item dropdown">
+        <a class="nav-link text-white" data-toggle="dropdown" href="#">
+          <i class="fas fa-user-circle"></i> {{ request.user.username }}
+        </a>
+        <div class="dropdown-menu dropdown-menu-right">
+          <a href="#" class="dropdown-item">
+            <i class="fas fa-user mr-2"></i> Profiili
+          </a>
+          <div class="dropdown-divider"></div>
+          <a href="#" class="dropdown-item">
+            <i class="fas fa-sign-out-alt mr-2"></i> Kirjaudu ulos
+          </a>
+        </div>
+      </li>
+    {% else %}
+      <li class="nav-item">
+        <a href="#" class="nav-link text-white">
+          <i class="fas fa-sign-in-alt"></i> Kirjaudu sisään
+        </a>
+      </li>
+    {% endif %}
 
   </ul>
 </nav>
+<!-- /.navbar -->
