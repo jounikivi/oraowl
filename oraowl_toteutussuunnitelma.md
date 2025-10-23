@@ -26,8 +26,8 @@ Tämä dokumentti toimii tiekarttana ORAOwl-projektin tekniselle toteutukselle j
 ---
 
 ## VAIHE 3: Tietokantamalli ja IOFXML-parseri (Kesäkuu)
-- [ ] Suunnittele tietomallit: `Runner`, `Competition`, `Result`, `UploadedFile`
-- [ ] Toteuta XML-parseri ElementTreellä (`utils/parser.py`)
+- [x] Suunnittele tietomallit: `Runner`, `Competition`, `Result`, `UploadedFile`
+- [x] Toteuta XML-parseri ElementTreellä (`utils/parser.py`)
 - [ ] Testaa parseri yhdellä tulostiedostolla
 - [ ] Raportoi tietomallin rakenne, parserin toiminta ja testisyötteet
 
