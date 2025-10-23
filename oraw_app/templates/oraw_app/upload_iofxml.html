@@ -1,0 +1,34 @@
+{% extends "oraw_app/base.html" %}
+
+{% block title %}Upload IOFXML{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1 class="mb-3">Upload IOFXML</h1>
+
+  {# FI: Viestialue. EN: Flash messages. #}
+  {% if messages %}
+    <div class="mb-3">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} mb-2" role="alert">
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label for="id_iofxml_file" class="form-label">IOFXML file</label>
+          <input id="id_iofxml_file" name="iofxml_file" type="file" class="form-control" required>
+          <div class="form-text">IOF XML 3.0/3.1 ResultList</div>
+        </div>
+        <button type="submit" class="btn btn-primary">Import IOFXML</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -16,9 +16,11 @@ Including another URLconf
 """
 
 from django.urls import path
-
 from . import views
+
+app_name = "oraw_app"
 
 urlpatterns = [
     path("", views.home, name="home"),
+    path("upload/iofxml/", views.UploadIOFXMLView.as_view(), name="upload_iofxml"),
 ]
