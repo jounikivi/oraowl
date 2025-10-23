@@ -61,7 +61,8 @@ class UploadIOFXMLView(LoginRequiredMixin, UserPassesTestMixin, View):
             call_command("import_iofxml", file=default_storage.path(tmp_path))
             messages.success(
                 request,
-                "IOFXML import finished successfully. New competitions and results are now available.",
+                "IOFXML import finished successfully. " 
+                "New competitions and results are now available.",
             )
             return redirect(reverse("oraw_app:upload_iofxml"))
         except Exception as exc:
