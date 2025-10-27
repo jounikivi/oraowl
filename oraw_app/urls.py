@@ -24,7 +24,12 @@ urlpatterns = [
     path("", views.home, name="home"),
     path("upload/iofxml/", views.UploadIOFXMLView.as_view(), name="upload_iofxml"),
     path("competitions/", views.CompetitionListView.as_view(), name="competitions_index"),
-    path("competitions/<int:pk>/", views.CompetitionDetailView.as_view(),
-         name="competitions_detail"),
+    # FI: pk on UUID → käytä <uuid:pk>
+    # EN: pk is UUID → use <uuid:pk>
+    path(
+        "competitions/<uuid:pk>/",
+        views.CompetitionDetailView.as_view(),
+        name="competitions_detail",
+    ),
 ]
 
