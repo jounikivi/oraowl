@@ -9,7 +9,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h1 class="h3 mb-0">Competitions</h1>
 
-      {# FI: Pikalinkki tuontiin (vain staff). EN: Quick link to upload (staff only). #}
+      {# FI: Pikalinkki tuontiin (vain staff). EN: Quick upload link (staff only). #}
       {% if request.user.is_staff %}
       <a href="{% url 'oraw_app:upload_iofxml' %}" class="btn btn-outline-primary">
         Upload IOFXML
@@ -41,9 +41,7 @@
             <tr>
               <td>{{ c.date }}</td>
               <td>
-                <a href="{% url 'oraw_app:competitions_detail' c.pk %}">
-                  {{ c.name }}
-                </a>
+                <a href="{% url 'oraw_app:competitions_detail' c.pk %}">{{ c.name }}</a>
               </td>
               <td>{{ c.organizer|default:"-" }}</td>
             </tr>
