@@ -19,6 +19,13 @@
       </a>
     </li>
 
+    <li class="nav-item d-none d-sm-inline-block">
+      <a href="{% url 'oraw_app:competitions_index' %}" class="nav-link text-white">
+        <i class="fas fa-flag-checkered"></i> Competitions
+      </a>
+    </li>
+
+
     <!-- FI: Pikalinkki IOFXML-lataukseen (vain staff). EN: Quick link to IOFXML upload (staff only). -->
     {% if request.user.is_staff %}
     <li class="nav-item d-none d-sm-inline-block">

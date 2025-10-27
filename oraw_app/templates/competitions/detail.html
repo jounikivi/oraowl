@@ -1,0 +1,71 @@
+{% extends "oraw_app/base.html" %}
+
+{% block title %}{{ competition.name }}{% endblock %}
+
+{% block content %}
+<div class="content p-3">
+  <div class="container-fluid">
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h1 class="h3 mb-0">{{ competition.name }}</h1>
+      <a href="{% url 'oraw_app:competitions_index' %}" class="btn btn-outline-secondary">
+        Back to list
+      </a>
+    </div>
+
+    <div class="mb-3">
+      <span class="badge bg-secondary">{{ competition.date }}</span>
+      {% if competition.organizer %}
+        <span class="badge bg-info text-dark">{{ competition.organizer }}</span>
+      {% endif %}
+      {% if competition.location %}
+        <span class="badge bg-light text-dark">{{ competition.location }}</span>
+      {% endif %}
+    </div>
+
+    {% if courses %}
+      {% for course in courses %}
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <h5 class="card-title mb-3">
+              {{ course.name }}{% if course.length_km %} — {{ course.length_km }} km{% endif %}
+            </h5>
+
+            {% if course.result_set.all %}
+              <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle">
+                  <thead>
+                    <tr>
+                      <th style="width:10%;">Place</th>
+                      <th style="width:36%;">Athlete</th>
+                      <th style="width:18%;">Time (s)</th>
+                      <th style="width:18%;">Pace (s/km)</th>
+                      <th style="width:18%;">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for r in course.result_set.all %}
+                      <tr>
+                        <td>{{ r.place|default:"-" }}</td>
+                        <td>{{ r.athlete.display_name }}</td>
+                        <td>{{ r.total_time_s|default:"-" }}</td>
+                        <td>{{ r.pace_s_per_km|default:"-" }}</td>
+                        <td>{{ r.status }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <div class="text-muted">No results for this course.</div>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    {% else %}
+      <div class="alert alert-info">No courses found for this competition.</div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

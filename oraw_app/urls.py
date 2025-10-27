@@ -23,4 +23,8 @@ app_name = "oraw_app"
 urlpatterns = [
     path("", views.home, name="home"),
     path("upload/iofxml/", views.UploadIOFXMLView.as_view(), name="upload_iofxml"),
+    path("competitions/", views.CompetitionListView.as_view(), name="competitions_index"),
+    path("competitions/<int:pk>/", views.CompetitionDetailView.as_view(),
+         name="competitions_detail"),
 ]
+
