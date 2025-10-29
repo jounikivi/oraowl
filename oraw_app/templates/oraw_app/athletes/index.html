@@ -1,0 +1,57 @@
+{% extends "oraw_app/base.html" %}
+{% block title %}Athletes{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1 class="mb-3">Athletes</h1>
+
+  <form method="get" class="row g-2 mb-4">
+    <div class="col-sm-6">
+      <input type="text" name="q" value="{{ request.GET.q }}" class="form-control"
+             placeholder="Search by name or alias">
+    </div>
+    <div class="col-sm-3">
+      <input type="text" name="club" value="{{ request.GET.club }}" class="form-control"
+             placeholder="Club">
+    </div>
+    <div class="col-sm-2">
+      <select name="gender" class="form-select">
+        <option value="">Gender</option>
+        <option value="M" {% if request.GET.gender == "M" %}selected{% endif %}>Male</option>
+        <option value="F" {% if request.GET.gender == "F" %}selected{% endif %}>Female</option>
+      </select>
+    </div>
+    <div class="col-sm-1">
+      <button class="btn btn-primary w-100" type="submit">Go</button>
+    </div>
+  </form>
+
+  {% if athletes %}
+  <div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+      <thead>
+        <tr>
+          <th>Name</th><th>Club</th><th>Gender</th><th>YOB</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in athletes %}
+          <tr>
+            <td>{{ a.display_name }}</td>
+            <td>{{ a.club|default:"-" }}</td>
+            <td>{{ a.get_gender_display }}</td>
+            <td>{{ a.year_of_birth|default:"-" }}</td>
+            <td class="text-end">
+              <a href="{% url 'oraw_app:athletes_detail' a.pk %}"
+                 class="btn btn-sm btn-outline-primary">Open</a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="alert alert-info">No athletes found.</div>
+  {% endif %}
+</div>
+{% endblock %}

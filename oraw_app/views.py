@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from django.contrib import messages
+from django.db.models import Q
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.files.storage import default_storage
 from django.core.management import call_command
@@ -119,42 +120,49 @@ class CompetitionDetailView(DetailView):
 
 class AthleteListView(ListView):
     """
-    FI: Urheilijoiden listaus sivutuksella ja pikasuodatuksilla.
-    EN: Athletes list with pagination and quick filters.
+    FI: Näyttää kaikki urheilijat taulukkona ja tukee hakuparametreja (?q, ?club, ?gender).
+    EN: Displays all athletes in a table, supports query parameters (?q, ?club, ?gender).
     """
-    model = Athlete
+    model = Athlete  # malli, jota tämä näkymä käyttää
     template_name = "oraw_app/athletes/index.html"
     context_object_name = "athletes"
-    paginate_by = 25
+    paginate_by = 25  # näyttää 25 urheilijaa per sivu
 
     def get_queryset(self):
         """
-        FI: Suodata nimen/aliasin (q), seuran (club) ja sukupuolen (gender) perusteella.
-        EN: Filter by name/alias (q), club, and gender.
+        FI: Rakentaa tietokantakyselyn hakuehtojen perusteella.
+        EN: Builds a database query based on search parameters.
         """
-        qs = super().get_queryset()
+        qs = super().get_queryset()  # perusjoukko = kaikki urheilijat
+
+        # Haetaan GET-parametrit (jos niitä ei ole, palautetaan tyhjä merkkijono)
         q = (self.request.GET.get("q") or "").strip()
         club = (self.request.GET.get("club") or "").strip()
         gender = (self.request.GET.get("gender") or "").strip()
 
+        # Jos käyttäjä kirjoittaa nimen, suodata nimen ja aliaksen perusteella
         if q:
             qs = qs.filter(
                 Q(first_name__icontains=q)
                 | Q(last_name__icontains=q)
                 | Q(public_alias__icontains=q)
             )
+
+        # Jos käyttäjä valitsee seuran
         if club:
             qs = qs.filter(club__icontains=club)
+
+        # Jos käyttäjä valitsee sukupuolen
         if gender:
             qs = qs.filter(gender=gender)
 
+        # Järjestetään tulokset
         return qs.order_by("last_name", "first_name")
-
 
 class AthleteDetailView(DetailView):
     """
-    FI: Urheilijan sivu: perustiedot ja kilpailuhistoria.
-    EN: Athlete page: basic info and competition history.
+    FI: Näyttää yksittäisen urheilijan perustiedot ja kilpailuhistorian.
+    EN: Displays a single athlete with basic info and competition history.
     """
     model = Athlete
     template_name = "oraw_app/athletes/detail.html"
@@ -162,11 +170,11 @@ class AthleteDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         """
-        FI: Hae tulokset ja esilataa course+competition (vähemmän kyselyitä).
-        EN: Prefetch course+competition for fewer queries.
+        FI: Lisää urheilijan kilpailutulokset kontekstiin (HTML:lle).
+        EN: Adds athlete's competition results to the template context.
         """
         ctx = super().get_context_data(**kwargs)
-        athlete = self.object
+        athlete = self.object  # haettu Athlete-olio
         results = (
             Result.objects.filter(athlete=athlete)
             .select_related("course__competition")
