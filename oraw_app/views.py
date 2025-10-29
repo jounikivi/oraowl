@@ -9,7 +9,7 @@ from django.urls import reverse
 from django.views import View
 from django.views.generic import ListView, DetailView
 
-from oraw_app.models import Competition
+from oraw_app.models import Competition, Athlete, Result
 
 
 def home(request):
@@ -114,4 +114,63 @@ class CompetitionDetailView(DetailView):
         competition = self.object
         courses = competition.course_set.all().order_by("name")
         ctx["courses"] = courses.prefetch_related("result_set__athlete")
+        return ctx
+
+
+class AthleteListView(ListView):
+    """
+    FI: Urheilijoiden listaus sivutuksella ja pikasuodatuksilla.
+    EN: Athletes list with pagination and quick filters.
+    """
+    model = Athlete
+    template_name = "oraw_app/athletes/index.html"
+    context_object_name = "athletes"
+    paginate_by = 25
+
+    def get_queryset(self):
+        """
+        FI: Suodata nimen/aliasin (q), seuran (club) ja sukupuolen (gender) perusteella.
+        EN: Filter by name/alias (q), club, and gender.
+        """
+        qs = super().get_queryset()
+        q = (self.request.GET.get("q") or "").strip()
+        club = (self.request.GET.get("club") or "").strip()
+        gender = (self.request.GET.get("gender") or "").strip()
+
+        if q:
+            qs = qs.filter(
+                Q(first_name__icontains=q)
+                | Q(last_name__icontains=q)
+                | Q(public_alias__icontains=q)
+            )
+        if club:
+            qs = qs.filter(club__icontains=club)
+        if gender:
+            qs = qs.filter(gender=gender)
+
+        return qs.order_by("last_name", "first_name")
+
+
+class AthleteDetailView(DetailView):
+    """
+    FI: Urheilijan sivu: perustiedot ja kilpailuhistoria.
+    EN: Athlete page: basic info and competition history.
+    """
+    model = Athlete
+    template_name = "oraw_app/athletes/detail.html"
+    context_object_name = "athlete"
+
+    def get_context_data(self, **kwargs):
+        """
+        FI: Hae tulokset ja esilataa course+competition (vähemmän kyselyitä).
+        EN: Prefetch course+competition for fewer queries.
+        """
+        ctx = super().get_context_data(**kwargs)
+        athlete = self.object
+        results = (
+            Result.objects.filter(athlete=athlete)
+            .select_related("course__competition")
+            .order_by("-course__competition__date", "course__name")
+        )
+        ctx["results"] = results
         return ctx
