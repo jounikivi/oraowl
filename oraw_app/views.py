@@ -9,6 +9,11 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.views import View
 from django.views.generic import ListView, DetailView
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import login
+from django.views.generic import FormView
+from django.urls import reverse_lazy
+
 
 from oraw_app.models import Competition, Athlete, Result
 
@@ -182,3 +187,22 @@ class AthleteDetailView(DetailView):
         )
         ctx["results"] = results
         return ctx
+
+class SignUpView(FormView):
+    """
+    FI: Yksinkertainen rekisteröinti UserCreationFormilla.
+    EN: Simple signup using Django's UserCreationForm.
+    """
+    template_name = "oraw_app/accounts/signup.html"
+    form_class = UserCreationForm
+    success_url = reverse_lazy("oraw_app:home")
+
+    def form_valid(self, form):
+        """
+        FI: Tallenna käyttäjä ja kirjaa sisään heti rekisteröinnin jälkeen.
+        EN: Save user and log them in right after signup.
+        """
+        user = form.save()
+        login(self.request, user)
+        return super().form_valid(form)
+

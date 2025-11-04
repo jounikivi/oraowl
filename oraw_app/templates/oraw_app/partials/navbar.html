@@ -21,7 +21,7 @@
 
     <li class="nav-item d-none d-sm-inline-block">
       <a href="{% url 'oraw_app:competitions_index' %}" class="nav-link text-white">
-        <i class="fas fa-flag-checkered"></i> Competitions
+        <i class="fas fa-flag-checkered"></i> Kilpailut
       </a>
     </li>
 
@@ -30,7 +30,7 @@
     {% if request.user.is_staff %}
     <li class="nav-item d-none d-sm-inline-block">
       <a href="{% url 'oraw_app:upload_iofxml' %}" class="nav-link text-white">
-        <i class="fas fa-file-upload"></i> Upload IOFXML
+        <i class="fas fa-file-upload"></i> Lataa IOFXML
       </a>
     </li>
     {% endif %}
