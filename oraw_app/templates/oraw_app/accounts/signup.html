@@ -2,70 +2,80 @@
 {% block title %}Luo käyttäjätili{% endblock %}
 
 {% block content %}
-<div class="container mt-4" style="max-width: 480px;">
-  <h1 class="h4 mb-3">Luo uusi käyttäjätili</h1>
-  <p class="text-muted small mb-4">
-    Täytä alla oleva lomake luodaksesi käyttäjätilin palveluun ORAOwl.
-  </p>
-
-  <form method="post" novalidate>
-    {% csrf_token %}
-    {{ form.non_field_errors }}
-
-    <div class="mb-3">
-      <label class="form-label">Käyttäjätunnus</label>
-      {{ form.username }}
-      {% if form.username.errors %}
-        <div class="text-danger small">{{ form.username.errors }}</div>
-      {% endif %}
-    </div>
-
-    <div class="mb-3">
-      <label class="form-label">Salasana</label>
-      {{ form.password1 }}
-      {% if form.password1.errors %}
-        <div class="text-danger small">{{ form.password1.errors }}</div>
-      {% endif %}
-      {% if form.password1.help_text %}
-        <div class="form-text small mt-1">
-          {{ form.password1.help_text|safe }}
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+      <div class="card card-outline card-success shadow-sm">
+        <div class="card-header">
+          <h1 class="card-title h5 mb-0">Luo uusi käyttäjätili</h1>
         </div>
-      {% endif %}
+
+        <div class="card-body">
+          <p class="text-muted small mb-4">
+            Täytä alla oleva lomake luodaksesi käyttäjätilin palveluun ORAOwl.
+          </p>
+
+          <form method="post" novalidate>
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+
+            <div class="form-group mb-3">
+              <label class="form-label">Käyttäjätunnus</label>
+              {{ form.username }}
+              {% if form.username.errors %}
+                <div class="text-danger small">{{ form.username.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="form-group mb-3">
+              <label class="form-label">Salasana</label>
+              {{ form.password1 }}
+              {% if form.password1.errors %}
+                <div class="text-danger small">{{ form.password1.errors }}</div>
+              {% endif %}
+              {% if form.password1.help_text %}
+                <div class="form-text small mt-1">
+                  {{ form.password1.help_text|safe }}
+                </div>
+              {% endif %}
+            </div>
+
+            <div class="form-group mb-2">
+              <label class="form-label">Vahvista salasana</label>
+              {{ form.password2 }}
+              {% if form.password2.errors %}
+                <div class="text-danger small">{{ form.password2.errors }}</div>
+              {% endif %}
+            </div>
+
+            <div class="d-flex justify-content-end mb-3">
+              <button type="button" class="btn btn-sm btn-outline-secondary"
+                      onclick="togglePasswords()">
+                Näytä / piilota salasanat
+              </button>
+            </div>
+
+            <button class="btn btn-success btn-block w-100" type="submit">
+              Luo käyttäjätili
+            </button>
+          </form>
+
+          <p class="mt-3 mb-0">
+            Onko sinulla jo tili?
+            <a href="{% url 'oraw_app:login' %}">Kirjaudu sisään</a>
+          </p>
+        </div>
+      </div>
     </div>
-
-    <div class="mb-3">
-      <label class="form-label">Vahvista salasana</label>
-      {{ form.password2 }}
-      {% if form.password2.errors %}
-        <div class="text-danger small">{{ form.password2.errors }}</div>
-      {% endif %}
-    </div>
-
-    <div class="text-end mt-1">
-      <button type="button" class="btn btn-sm btn-outline-secondary"
-              onclick="togglePasswords()">
-        Näytä / piilota salasanat
-      </button>
-    </div>
-
-    <button class="btn btn-success w-100 mt-3" type="submit">
-      Luo käyttäjätili
-    </button>
-  </form>
-
-  <p class="mt-3">
-    Onko sinulla jo tili?
-    <a href="{% url 'oraw_app:login' %}">Kirjaudu sisään</a>
-  </p>
+  </div>
 </div>
 
 <script>
 function togglePasswords() {
-  const pass1 = document.getElementById("id_password1");
-  const pass2 = document.getElementById("id_password2");
-  const type = pass1.type === "password" ? "text" : "password";
-  pass1.type = type;
-  pass2.type = type;
+  const p1 = document.getElementById("id_password1");
+  const p2 = document.getElementById("id_password2");
+  const t = p1.type === "password" ? "text" : "password";
+  p1.type = t; p2.type = t;
 }
 </script>
 {% endblock %}
