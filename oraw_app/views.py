@@ -188,20 +188,27 @@ class AthleteDetailView(DetailView):
         ctx["results"] = results
         return ctx
 
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import login
+from django.views.generic import FormView
+from django.urls import reverse_lazy
+
+
 class SignUpView(FormView):
     """
-    FI: Yksinkertainen rekisteröinti UserCreationFormilla.
-    EN: Simple signup using Django's UserCreationForm.
+    FI: Käyttäjän rekisteröinti.
+    Käyttää Djangon valmista UserCreationForm-lomaketta,
+    joka tarkistaa salasanat ja tallentaa uuden käyttäjän.
+    Kun lomake lähetetään onnistuneesti, käyttäjä kirjataan
+    automaattisesti sisään ja ohjataan etusivulle.
     """
+
     template_name = "oraw_app/accounts/signup.html"
     form_class = UserCreationForm
     success_url = reverse_lazy("oraw_app:home")
 
     def form_valid(self, form):
-        """
-        FI: Tallenna käyttäjä ja kirjaa sisään heti rekisteröinnin jälkeen.
-        EN: Save user and log them in right after signup.
-        """
+        """FI: Luo uusi käyttäjä ja kirjaa hänet sisään heti."""
         user = form.save()
         login(self.request, user)
         return super().form_valid(form)
