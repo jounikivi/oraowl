@@ -106,13 +106,27 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = "en-us"
+# Internationalization (Suomen kieli ja aikavyöhyke)
+# FI: Käytetään suomen kieltä ja Suomen aikavyöhykettä.
+# EN: Use Finnish language and time zone for localization.
 
-TIME_ZONE = "UTC"
+# FI: Oletuskieli suomi
+# EN: Default language Finnish
+LANGUAGE_CODE = "fi"
+
+# FI: Käytetään Suomen aikavyöhykettä
+# EN: Use Finnish time zone
+TIME_ZONE = "Europe/Helsinki"
 
 USE_I18N = True
-
 USE_TZ = True
+
+# Default settings (englanti ja UTC)
+
+# LANGUAGE_CODE = "en-us"
+# TIME_ZONE = "UTC"
+# USE_I18N = True
+# USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
