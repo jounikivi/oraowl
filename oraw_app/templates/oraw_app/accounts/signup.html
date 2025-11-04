@@ -4,6 +4,9 @@
 {% block content %}
 <div class="container mt-4" style="max-width: 480px;">
   <h1 class="h4 mb-3">Luo uusi käyttäjätili</h1>
+  <p class="text-muted small mb-4">
+    Täytä alla oleva lomake luodaksesi käyttäjätilin palveluun ORAOwl.
+  </p>
 
   <form method="post" novalidate>
     {% csrf_token %}
@@ -23,6 +26,11 @@
       {% if form.password1.errors %}
         <div class="text-danger small">{{ form.password1.errors }}</div>
       {% endif %}
+      {% if form.password1.help_text %}
+        <div class="form-text small mt-1">
+          {{ form.password1.help_text|safe }}
+        </div>
+      {% endif %}
     </div>
 
     <div class="mb-3">
@@ -33,7 +41,14 @@
       {% endif %}
     </div>
 
-    <button class="btn btn-success w-100" type="submit">
+    <div class="text-end mt-1">
+      <button type="button" class="btn btn-sm btn-outline-secondary"
+              onclick="togglePasswords()">
+        Näytä / piilota salasanat
+      </button>
+    </div>
+
+    <button class="btn btn-success w-100 mt-3" type="submit">
       Luo käyttäjätili
     </button>
   </form>
@@ -43,4 +58,14 @@
     <a href="{% url 'oraw_app:login' %}">Kirjaudu sisään</a>
   </p>
 </div>
+
+<script>
+function togglePasswords() {
+  const pass1 = document.getElementById("id_password1");
+  const pass2 = document.getElementById("id_password2");
+  const type = pass1.type === "password" ? "text" : "password";
+  pass1.type = type;
+  pass2.type = type;
+}
+</script>
 {% endblock %}
