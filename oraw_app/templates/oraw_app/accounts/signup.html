@@ -2,65 +2,99 @@
 {% block title %}Luo käyttäjätili{% endblock %}
 
 {% block content %}
-<div class="card card-outline card-success shadow-sm">
-  <div class="card-header">
-    <h1 class="card-title h5 mb-0">Luo uusi käyttäjätili</h1>
-  </div>
+<style>
+  /* FI: Yhtenäinen, kapea kenttäalue → siisti “harva” layout */
+  /* EN: Uniform narrow field width for clean, aligned look */
+  .field-width { max-width: 420px; width: 100%; }
 
-  <div class="card-body">
-    <p class="text-muted small mb-4">
-      Täytä alla oleva lomake luodaksesi käyttäjätilin palveluun ORAOwl.
-    </p>
+  .form-label { display:inline-block; margin-bottom:.4rem; font-weight:600; }
+  input.form-control { height:2.4rem; padding:.35rem .6rem; }
 
-    <form method="post" novalidate>
-      {% csrf_token %}
-      {{ form.non_field_errors }}
+  /* FI: Ohjetekstin ja virheiden sisennys & leveys samaksi kuin syötteissä */
+  .field-help, .field-errors { max-width:420px; }
+  .field-help { margin-top:.35rem; margin-left:.15rem; }
+  .field-errors { margin-top:.35rem; }
 
-      <div class="mb-3">
-        <label class="form-label fw-semibold">Käyttäjätunnus</label>
-        {{ form.username }}
-        {% if form.username.errors %}
-          <div class="text-danger small mt-1">{{ form.username.errors }}</div>
-        {% endif %}
+  .card { border-radius:10px; }
+</style>
+
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+      <div class="card card-outline card-success shadow-sm">
+        <div class="card-header">
+          <h1 class="card-title h5 mb-0">Luo uusi käyttäjätili</h1>
+        </div>
+
+        <div class="card-body">
+          <p class="text-muted small mb-4 field-width">
+            Täytä alla oleva lomake luodaksesi käyttäjätilin palveluun ORAOwl.
+          </p>
+
+          <form method="post" novalidate>
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+
+            <!-- Username -->
+            <div class="mb-3">
+              <label class="form-label">Käyttäjätunnus</label>
+              <div class="field-width">
+                {{ form.username }}
+              </div>
+              {% if form.username.errors %}
+                <div class="text-danger small field-errors">{{ form.username.errors }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Password -->
+            <div class="mb-3">
+              <label class="form-label">Salasana</label>
+              <div class="field-width">
+                {{ form.password1 }}
+              </div>
+              {% if form.password1.errors %}
+                <div class="text-danger small field-errors">{{ form.password1.errors }}</div>
+              {% endif %}
+              {% if form.password1.help_text %}
+                <div class="form-text small field-help">
+                  {{ form.password1.help_text|safe }}
+                </div>
+              {% endif %}
+            </div>
+
+            <!-- Password confirm -->
+            <div class="mb-2">
+              <label class="form-label">Vahvista salasana</label>
+              <div class="field-width">
+                {{ form.password2 }}
+              </div>
+              {% if form.password2.errors %}
+                <div class="text-danger small field-errors">{{ form.password2.errors }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Show/Hide + Submit aligned to the same narrow column -->
+            <div class="field-width d-flex justify-content-end mb-3">
+              <button type="button" class="btn btn-sm btn-outline-secondary"
+                      onclick="togglePasswords()">
+                Näytä / piilota salasanat
+              </button>
+            </div>
+
+            <div class="field-width">
+              <button class="btn btn-success w-100" type="submit">
+                Luo käyttäjätili
+              </button>
+            </div>
+          </form>
+
+          <p class="mt-3 mb-0 field-width">
+            Onko sinulla jo tili?
+            <a href="{% url 'oraw_app:login' %}">Kirjaudu sisään</a>
+          </p>
+        </div>
       </div>
-
-      <div class="mb-3">
-        <label class="form-label fw-semibold">Salasana</label>
-        {{ form.password1 }}
-        {% if form.password1.errors %}
-          <div class="text-danger small mt-1">{{ form.password1.errors }}</div>
-        {% endif %}
-        {% if form.password1.help_text %}
-          <div class="form-text small mt-2 ms-1">
-            {{ form.password1.help_text|safe }}
-          </div>
-        {% endif %}
-      </div>
-
-      <div class="mb-2">
-        <label class="form-label fw-semibold">Vahvista salasana</label>
-        {{ form.password2 }}
-        {% if form.password2.errors %}
-          <div class="text-danger small mt-1">{{ form.password2.errors }}</div>
-        {% endif %}
-      </div>
-
-      <div class="d-flex justify-content-end mb-3">
-        <button type="button" class="btn btn-sm btn-outline-secondary"
-                onclick="togglePasswords()">
-          Näytä / piilota salasanat
-        </button>
-      </div>
-
-      <button class="btn btn-success w-100" type="submit">
-        Luo käyttäjätili
-      </button>
-    </form>
-
-    <p class="mt-3 mb-0">
-      Onko sinulla jo tili?
-      <a href="{% url 'oraw_app:login' %}">Kirjaudu sisään</a>
-    </p>
+    </div>
   </div>
 </div>
 
@@ -72,5 +106,4 @@ function togglePasswords() {
   p1.type = t; p2.type = t;
 }
 </script>
-
 {% endblock %}

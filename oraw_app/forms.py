@@ -38,31 +38,28 @@ class SignupForm(UserCreationForm):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        # ----------------------------------------------------------
-        # FI: Labelit suomeksi
-        # EN: Finnish field labels
-        # ----------------------------------------------------------
+        # Labelit suomeksi
         self.fields["username"].label = "Käyttäjätunnus"
         self.fields["password1"].label = "Salasana"
         self.fields["password2"].label = "Vahvista salasana"
 
-        # ----------------------------------------------------------
-        # FI: Yhtenäiset Bootstrap-luokat ja placeholderit
-        # EN: Consistent Bootstrap classes and placeholders
-        # ----------------------------------------------------------
+        # Täysleveät ja yhdenmukaiset kentät
         self.fields["username"].widget.attrs.update({
             "class": "form-control w-100",
+            "style": "width:100%",
             "placeholder": "esim. etunimi.sukunimi",
             "autocomplete": "username",
             "autofocus": "autofocus",
         })
         self.fields["password1"].widget.attrs.update({
             "class": "form-control w-100",
+            "style": "width:100%",
             "placeholder": "Vähintään 8 merkkiä",
             "autocomplete": "new-password",
         })
         self.fields["password2"].widget.attrs.update({
             "class": "form-control w-100",
+            "style": "width:100%",
             "placeholder": "Syötä salasana uudelleen",
             "autocomplete": "new-password",
         })
