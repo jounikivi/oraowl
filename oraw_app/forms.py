@@ -5,9 +5,9 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 
 
-# ---------------------------------------------------------------------------
-# IOFXML Upload Form
-# ---------------------------------------------------------------------------
+# ============================================================================
+# IOFXML upload form
+# ============================================================================
 
 class UploadIOFXMLForm(forms.Form):
     """
@@ -16,16 +16,14 @@ class UploadIOFXMLForm(forms.Form):
 
     EN: Simple form for uploading a single IOF XML 3.0/3.1 ResultList file.
     """
-
     iofxml_file = forms.FileField(
-        label="IOFXML-tiedosto",
-        help_text="Valitse voimassa oleva IOF XML 3.0/3.1 ResultList -tiedosto.",
+        label="IOFXML tiedosto",
+        help_text="Valitse IOF XML 3.0/3.1 ResultList -muotoinen tiedosto.",
     )
 
-
-# ---------------------------------------------------------------------------
-# Rekisteröintilomake (Signup Form)
-# ---------------------------------------------------------------------------
+# ============================================================================
+# Rekisteröintilomake (SignupForm)
+# ============================================================================
 
 class SignupForm(UserCreationForm):
     """
@@ -40,16 +38,18 @@ class SignupForm(UserCreationForm):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-        # -------------------------------------------------------------------
-        # Kenttien otsikot suomeksi
-        # -------------------------------------------------------------------
+        # ----------------------------------------------------------
+        # FI: Labelit suomeksi
+        # EN: Finnish field labels
+        # ----------------------------------------------------------
         self.fields["username"].label = "Käyttäjätunnus"
         self.fields["password1"].label = "Salasana"
         self.fields["password2"].label = "Vahvista salasana"
 
-        # -------------------------------------------------------------------
-        # Kenttien tyyli ja placeholderit
-        # -------------------------------------------------------------------
+        # ----------------------------------------------------------
+        # FI: Yhtenäiset Bootstrap-luokat ja placeholderit
+        # EN: Consistent Bootstrap classes and placeholders
+        # ----------------------------------------------------------
         self.fields["username"].widget.attrs.update({
             "class": "form-control w-100",
             "placeholder": "esim. etunimi.sukunimi",
@@ -66,3 +66,7 @@ class SignupForm(UserCreationForm):
             "placeholder": "Syötä salasana uudelleen",
             "autocomplete": "new-password",
         })
+
+# ============================================================================
+# END OF FILE
+# ============================================================================
