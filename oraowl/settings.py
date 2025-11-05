@@ -164,3 +164,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 LOGIN_URL = "oraw_app:login"             # mihin @login_required ohjaa
 LOGIN_REDIRECT_URL = "oraw_app:home"     # minne loginin jälkeen
 
+# FI: Kehityksessä lähetä "sähköposti" konsoliin
+EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+DEFAULT_FROM_EMAIL = "ORAOwl <no-reply@oraowl.local>"
