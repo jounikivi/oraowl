@@ -159,3 +159,8 @@ MEDIA_URL = "/media/"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Auth redirects
+LOGIN_URL = "oraw_app:login"             # mihin @login_required ohjaa
+LOGIN_REDIRECT_URL = "oraw_app:home"     # minne loginin jälkeen
+
