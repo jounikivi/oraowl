@@ -1,4 +1,3 @@
-# oraw_app/urls.py
 """
 FI: ORAOwl-sovelluksen URL-reitit.
     Tämä tiedosto määrittelee sovelluksen pääreitit:
@@ -7,25 +6,18 @@ FI: ORAOwl-sovelluksen URL-reitit.
 
 EN: URL configuration for the ORAOwl application.
     Defines all main routes:
-    - Home, IOFXML import, competitions, and athletes
+    - Home, IOFXML import, competitions and athletes
     - Authentication (login, signup, password reset)
 """
 
 from django.urls import path, reverse_lazy
 from django.contrib.auth import views as auth_views
-from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.auth.views import LoginView
 from . import views
 
-
-# ============================================================================
-# Namespace for templates / Namespace templatelle
-# ============================================================================
+# Namespace for template references
 app_name = "oraw_app"
 
-
-# ============================================================================
-# Main URL patterns / Sovelluksen reitit
-# ============================================================================
 urlpatterns = [
     # ------------------------------------------------------------------------
     # Home / Etusivu
@@ -62,18 +54,23 @@ urlpatterns = [
     ),
 
     # ------------------------------------------------------------------------
-    # Authentication: login / logout / signup
+    # Authentication / Käyttäjähallinta
     # ------------------------------------------------------------------------
+    # Login / Kirjautuminen
     path(
         "accounts/login/",
         LoginView.as_view(template_name="oraw_app/accounts/login.html"),
         name="login",
     ),
+
+    # Logout / Uloskirjautuminen (POST)
     path(
         "accounts/logout/",
-        LogoutView.as_view(next_page="oraw_app:home"),
+        views.CustomLogoutView.as_view(),  # oma view views.py:ssä
         name="logout",
     ),
+
+    # Signup / Rekisteröityminen
     path(
         "accounts/signup/",
         views.SignUpView.as_view(),
@@ -81,7 +78,7 @@ urlpatterns = [
     ),
 
     # ------------------------------------------------------------------------
-    # Password reset (4 secure steps) / Salasanan palautus (4 vaihetta)
+    # Password reset (4 steps) / Salasanan palautus (4 vaihetta)
     # ------------------------------------------------------------------------
     path(
         "accounts/password-reset/",
@@ -115,11 +112,23 @@ urlpatterns = [
         ),
         name="password_reset_complete",
     ),
-    
+
+    # ------------------------------------------------------------------------
+    # Password change (logged-in users) / Salasanan vaihto (kirjautuneet)
+    # ------------------------------------------------------------------------
     path(
-    "accounts/logout/",
-    LogoutView.as_view(next_page="oraw_app:home"),
-    name="logout",
+        "accounts/password-change/",
+        auth_views.PasswordChangeView.as_view(
+            template_name="oraw_app/accounts/password_change_form.html",
+            success_url=reverse_lazy("oraw_app:password_change_done"),
+        ),
+        name="password_change",
+    ),
+    path(
+        "accounts/password-change/done/",
+        auth_views.PasswordChangeDoneView.as_view(
+            template_name="oraw_app/accounts/password_change_done.html"
+        ),
+        name="password_change_done",
     ),
 ]
-# ============================================================================#

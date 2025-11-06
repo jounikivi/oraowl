@@ -14,7 +14,7 @@ from django.urls import reverse, reverse_lazy
 from django.views import View
 from django.views.generic import ListView, DetailView, FormView
 from django.contrib.auth import login
-
+from django.contrib.auth.views import LogoutView
 from oraw_app.models import Competition, Athlete, Result
 from oraw_app.forms import SignupForm
 
@@ -218,3 +218,24 @@ class SignUpView(FormView):
         user = form.save()
         login(self.request, user)
         return super().form_valid(form)
+    
+
+# ============================================================================
+# Logout view / Uloskirjautuminen
+# ============================================================================
+from django.contrib.auth.views import LogoutView
+
+class CustomLogoutView(LogoutView):
+    """
+    FI: Uloskirjautuminen POST-metodilla. Lisää myös onnistumisviestin.
+    EN: Logout via POST method. Adds a success message.
+    """
+    next_page = "oraw_app:home"
+
+    def dispatch(self, request, *args, **kwargs):
+        from django.contrib import messages
+        response = super().dispatch(request, *args, **kwargs)
+        # Show success message only if user was authenticated before logout
+        messages.success(request, "Olet kirjautunut ulos onnistuneesti.")
+        return response
+

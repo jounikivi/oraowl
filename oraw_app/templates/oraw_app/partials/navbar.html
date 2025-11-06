@@ -62,10 +62,16 @@ EN: Top navigation bar displayed on all pages.
             <i class="fas fa-user mr-2"></i> Profiili
           </a>
           <div class="dropdown-divider"></div>
-          <!-- Logout -->
-          <a href="{% url 'oraw_app:logout' %}" class="dropdown-item">
-            <i class="fas fa-sign-out-alt mr-2"></i> Kirjaudu ulos
-          </a>
+
+          <!-- Logout (POST) -->
+           <form method="post" action="{% url 'oraw_app:logout' %}" class="dropdown-item p-0 m-0">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-link dropdown-item w-100 text-left">
+              <i class="fas fa-sign-out-alt mr-2"></i> Kirjaudu ulos
+            </button>
+          </form>
+
+           
         </div>
       </li>
     {% else %}
