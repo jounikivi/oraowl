@@ -41,18 +41,40 @@ class UploadIOFXMLForm(forms.Form):
 
 # ============================================================================
 # Signup form / Rekisteröintilomake
+# ============================================================================# ============================================================================
+# Signup form / Rekisteröintilomake
 # ============================================================================
+from django.core.validators import validate_email  # add this import near others
+
 class SignupForm(UserCreationForm):
     """
-    FI: Rekisteröintilomake, joka perustuu Djangon UserCreationForm-luokkaan.
-        Kaikki kenttien nimet ja ohjetekstit ovat suomeksi.
-    EN: User signup form based on Django’s built-in UserCreationForm.
-        All field labels and help texts are localized in Finnish.
+    FI: Rekisteröintilomake, jossa sähköposti on pakollinen ja
+        lomaketason tarkistus estää duplikaattisähköpostit.
+    EN: Signup form with required email and form-level uniqueness check.
     """
+
+    email = forms.EmailField(
+        label="Sähköpostiosoite",
+        required=True,
+        help_text=(
+            "Käytä toimivaa sähköpostiosoitetta (salasanan palautusta varten)."
+        ),
+        widget=forms.EmailInput(
+            attrs={
+                "class": "form-control w-100",
+                "style": "width:100%",
+                "placeholder": "esim. etunimi.sukunimi@esimerkki.fi",
+                "autocomplete": "email",
+            }
+        ),
+        validators=[validate_email],
+    )
 
     class Meta:
         model = User
-        fields = ("username",)
+        # FI: Näytettävien kenttien järjestys lomakkeella.
+        # EN: Field order on the form.
+        fields = ("username", "email")
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -66,8 +88,8 @@ class SignupForm(UserCreationForm):
         self.fields["password2"].label = "Vahvista salasana"
 
         # --------------------------------------------------------------------
-        # FI: Kenttien ulkoasu ja placeholderit yhtenäisiksi
-        # EN: Apply consistent styles and placeholders for all fields
+        # FI: Yhtenäinen ulkoasu ja placeholderit
+        # EN: Consistent styles and placeholders
         # --------------------------------------------------------------------
         self.fields["username"].widget.attrs.update(
             {
@@ -94,3 +116,14 @@ class SignupForm(UserCreationForm):
                 "autocomplete": "new-password",
             }
         )
+
+    def clean_email(self):
+        """
+        FI: Varmistaa, ettei samaa sähköpostia ole jo käytössä.
+        EN: Ensures email address is not already in use.
+        """
+        email = (self.cleaned_data.get("email") or "").strip().lower()
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError("Tällä sähköpostilla on jo tili.")
+        return email
+

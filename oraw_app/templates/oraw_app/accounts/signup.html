@@ -1,7 +1,7 @@
 {% extends "oraw_app/accounts/_auth_base.html" %}
 {% comment %}
-FI: Rekisteröintisivu (oma SignupForm-luokka).
-EN: Signup page using the custom SignupForm.
+FI: Rekisteröintisivu (oma SignupForm-luokka). Sisältää pakollisen sähköpostikentän.
+EN: Signup page using the custom SignupForm. Includes required email field.
 {% endcomment %}
 
 {% block title %}Luo käyttäjätili{% endblock %}
@@ -18,16 +18,27 @@ EN: Signup page using the custom SignupForm.
   {% csrf_token %}
   {{ form.non_field_errors }}
 
+  <!-- Username / Käyttäjätunnus -->
   <div class="mb-3">
-    <label class="form-label">Käyttäjätunnus</label>
+    <label class="form-label" for="id_username">Käyttäjätunnus</label>
     <div class="field-width">{{ form.username }}</div>
     {% if form.username.errors %}
       <div class="text-danger small field-errors">{{ form.username.errors }}</div>
     {% endif %}
   </div>
 
+  <!-- Email / Sähköpostiosoite -->
   <div class="mb-3">
-    <label class="form-label">Salasana</label>
+    <label class="form-label" for="id_email">Sähköpostiosoite</label>
+    <div class="field-width">{{ form.email }}</div>
+    {% if form.email.errors %}
+      <div class="text-danger small field-errors">{{ form.email.errors }}</div>
+    {% endif %}
+  </div>
+
+  <!-- Password / Salasana -->
+  <div class="mb-3">
+    <label class="form-label" for="id_password1">Salasana</label>
     <div class="field-width">{{ form.password1 }}</div>
     {% if form.password1.errors %}
       <div class="text-danger small field-errors">{{ form.password1.errors }}</div>
@@ -37,18 +48,23 @@ EN: Signup page using the custom SignupForm.
     {% endif %}
   </div>
 
+  <!-- Password confirm / Vahvista salasana -->
   <div class="mb-2">
-    <label class="form-label">Vahvista salasana</label>
+    <label class="form-label" for="id_password2">Vahvista salasana</label>
     <div class="field-width">{{ form.password2 }}</div>
     {% if form.password2.errors %}
       <div class="text-danger small field-errors">{{ form.password2.errors }}</div>
     {% endif %}
   </div>
 
+  <!-- Toggle passwords / Näytä/piilota salasanat -->
   <div class="field-width d-flex justify-content-end mb-3">
-    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="togglePasswords()">Näytä / piilota salasanat</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="togglePasswords()">
+      Näytä / piilota salasanat
+    </button>
   </div>
 
+  <!-- Submit -->
   <div class="field-width">
     <button class="btn btn-success w-100" type="submit">Luo käyttäjätili</button>
   </div>
@@ -65,6 +81,7 @@ EN: Signup page using the custom SignupForm.
 function togglePasswords() {
   const a = document.getElementById("id_password1");
   const b = document.getElementById("id_password2");
+  if (!a || !b) return;
   const t = a.type === "password" ? "text" : "password";
   a.type = t; b.type = t;
 }
