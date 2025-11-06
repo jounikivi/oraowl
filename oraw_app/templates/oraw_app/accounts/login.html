@@ -1,7 +1,11 @@
 {% extends "oraw_app/accounts/_auth_base.html" %}
 {% comment %}
 FI: Kirjautumissivu (Djangon LoginView käyttää AuthenticationFormia).
-EN: Login page (Django LoginView with AuthenticationForm).
+    Käyttäjä syöttää tunnuksen ja salasanan, ja tarvittaessa
+    voi siirtyä salasanan palautukseen tai rekisteröitymiseen.
+EN: Login page (Django LoginView using AuthenticationForm).
+    The user enters their username and password, and can
+    navigate to password reset or signup if needed.
 {% endcomment %}
 
 {% block title %}Kirjaudu sisään{% endblock %}
@@ -18,28 +22,36 @@ EN: Login page (Django LoginView with AuthenticationForm).
   {% csrf_token %}
   {{ form.non_field_errors }}
 
+  <!-- Username field / Käyttäjätunnus -->
   <div class="mb-3">
-    <label class="form-label">Käyttäjätunnus</label>
+    <label class="form-label" for="id_username">Käyttäjätunnus</label>
     <div class="field-width">{{ form.username }}</div>
     {% if form.username.errors %}
       <div class="text-danger small field-errors">{{ form.username.errors }}</div>
     {% endif %}
   </div>
 
-  <div class="mb-2">
-    <label class="form-label">Salasana</label>
+  <!-- Password field / Salasana -->
+  <div class="mb-3">
+    <label class="form-label" for="id_password">Salasana</label>
     <div class="field-width">{{ form.password }}</div>
     {% if form.password.errors %}
       <div class="text-danger small field-errors">{{ form.password.errors }}</div>
     {% endif %}
   </div>
 
+  <!-- Forgot password / Unohtuiko salasana -->
   <div class="field-width d-flex justify-content-between align-items-center mb-3">
-    <a class="small" href="{% url 'oraw_app:password_reset' %}">Unohtuiko salasana?</a>
+    <a class="small" href="{% url 'oraw_app:password_reset' %}">
+      Unohtuiko salasana?
+    </a>
   </div>
 
+  <!-- Submit button / Lähetä -->
   <div class="field-width">
-    <button class="btn btn-success w-100" type="submit">Kirjaudu sisään</button>
+    <button class="btn btn-success w-100" type="submit">
+      Kirjaudu sisään
+    </button>
   </div>
 </form>
 {% endblock %}
