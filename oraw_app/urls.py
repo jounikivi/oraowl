@@ -115,5 +115,11 @@ urlpatterns = [
         ),
         name="password_reset_complete",
     ),
+    
+    path(
+    "accounts/logout/",
+    LogoutView.as_view(next_page="oraw_app:home"),
+    name="logout",
+    ),
 ]
 # ============================================================================#
