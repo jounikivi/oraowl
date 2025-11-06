@@ -1,47 +1,76 @@
 {% load static %}
+{% load sass_tags %}
 <!DOCTYPE html>
 <html lang="fi">
 <head>
     <meta charset="UTF-8">
-    
-    <!-- Icon library (FontAwesome) -->
-    <link rel="stylesheet" href="{% static 'adminlte/plugins/fontawesome-free/css/all.min.css' %}">
 
-    <!-- AdminLTE theme stylesheet -->
-    <link rel="stylesheet" href="{% static 'adminlte/css/adminlte.min.css' %}">
+    {% comment %}
+    FI: Sivupohjan yhteiset tyylit ja kirjastot
+    EN: Common stylesheets and libraries for all pages
+    {% endcomment %}
+
+    <!-- FontAwesome icon library -->
+    <link rel="stylesheet" href="{% static 'adminlte/plugins/fontawesome-free/css/all.min.css' %}">
 
     <!-- Bootstrap framework -->
     <link rel="stylesheet" href="{% static 'adminlte/plugins/bootstrap/css/bootstrap.min.css' %}">
 
-    {% load sass_tags %}
+    <!-- AdminLTE main theme -->
+    <link rel="stylesheet" href="{% static 'adminlte/css/adminlte.min.css' %}">
+
+    <!-- SCSS compilation (custom styles) -->
     <link rel="stylesheet" href="{% sass_src 'adminlte/scss/main.scss' %}">
 
-
+    {% comment %}
+    FI: Mahdollisuus lisätä sivukohtaista CSS:ää lapsipohjista käsin.
+    EN: Placeholder for page-specific CSS defined in child templates.
+    {% endcomment %}
     {% block extra_css %}{% endblock %}
 </head>
+
 <body class="hold-transition sidebar-mini">
 <div class="wrapper">
 
-    <!-- Top navigation bar -->
+    {% comment %}
+    FI: Yläpalkki (navigaatio) – sisällytetään erillisestä osatiedostosta.
+    EN: Top navigation bar – included from partial template.
+    {% endcomment %}
     {% include 'oraw_app/partials/navbar.html' %}
 
-    <!-- Sidebar menu -->
+    {% comment %}
+    FI: Sivupaneeli (valikko) – sisällytetään erillisestä osatiedostosta.
+    EN: Sidebar menu – included from partial template.
+    {% endcomment %}
     {% include 'oraw_app/partials/sidebar.html' %}
 
-    <!-- Main content area -->
+    {% comment %}
+    FI: Sivun varsinainen sisältöalue, jonka lapsitemplatet täyttävät.
+    EN: Main content area populated by child templates.
+    {% endcomment %}
     <div class="content-wrapper">
         {% block content %}{% endblock %}
     </div>
 
-    <!-- Footer -->
+    {% comment %}
+    FI: Alatunniste (footer) – sisällytetään erillisestä osatiedostosta.
+    EN: Footer section – included from partial template.
+    {% endcomment %}
     {% include 'oraw_app/partials/footer.html' %}
 </div>
 
-<!-- Required JavaScript libraries -->
+{% comment %}
+FI: Sivun tarvitsemat JavaScript-kirjastot ja lisäosat.
+EN: Required JavaScript libraries and plugins.
+{% endcomment %}
 <script src="{% static 'adminlte/plugins/jquery/jquery.min.js' %}"></script>
 <script src="{% static 'adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 <script src="{% static 'adminlte/js/adminlte.min.js' %}"></script>
 
+{% comment %}
+FI: Mahdollisuus lisätä sivukohtaista JavaScriptiä lapsipohjista käsin.
+EN: Placeholder for page-specific JavaScript from child templates.
+{% endcomment %}
 {% block extra_js %}{% endblock %}
 </body>
 </html>
