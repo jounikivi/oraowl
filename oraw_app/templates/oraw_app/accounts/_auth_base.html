@@ -1,0 +1,33 @@
+{% extends "oraw_app/base.html" %}
+{% comment %}
+FI: Yhteinen pohja kaikille kirjautumisen/rekisteröinnin sivuille.
+EN: Shared base for all authentication pages.
+{% endcomment %}
+
+{% block content %}
+<style>
+  .field-width { max-width: 420px; width: 100%; }
+  .form-label { display:inline-block; margin-bottom:.4rem; font-weight:600; }
+  input.form-control { height:2.4rem; padding:.35rem .6rem; }
+  .field-errors { margin-top:.35rem; }
+  .field-help { margin-top:.35rem; margin-left:.15rem; }
+  .card { border-radius:10px; }
+</style>
+
+<div class="container mt-4">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+      <div class="card card-outline card-success shadow-sm">
+        <div class="card-header">
+          <h1 class="card-title h5 mb-0">{% block auth_title %}{% endblock %}</h1>
+        </div>
+        <div class="card-body">
+          {% block auth_intro %}{% endblock %}
+          {% block auth_body %}{% endblock %}
+          {% block auth_footer %}{% endblock %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
