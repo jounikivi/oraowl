@@ -1,23 +1,27 @@
+# oraw_app/views.py
 from __future__ import annotations
 
+# ============================================================================
+# Imports / Tuonnit
+# ============================================================================
 from django.contrib import messages
 from django.db.models import Q
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.files.storage import default_storage
 from django.core.management import call_command
 from django.shortcuts import render, redirect
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.views import View
-from django.views.generic import ListView, DetailView
-from django.contrib.auth.forms import UserCreationForm
+from django.views.generic import ListView, DetailView, FormView
 from django.contrib.auth import login
-from django.views.generic import FormView
-from django.urls import reverse_lazy
-
 
 from oraw_app.models import Competition, Athlete, Result
+from oraw_app.forms import SignupForm
 
 
+# ============================================================================
+# Home view / Etusivu
+# ============================================================================
 def home(request):
     """
     FI: Etusivu (staattinen placeholder).
@@ -26,64 +30,68 @@ def home(request):
     return render(request, "oraw_app/home.html")
 
 
+# ============================================================================
+# IOFXML upload view / IOFXML-latausnäkymä
+# ============================================================================
 class UploadIOFXMLView(LoginRequiredMixin, UserPassesTestMixin, View):
     """
-    FI: Staff-käyttäjien UI IOFXML-tuonnille. Kutsuu olemassa olevaa
-        'import_iofxml' -management-komentoa, jotta UI ja CLI toimivat identtisesti.
+    FI: Staff-käyttäjien käyttöliittymä IOFXML-tiedoston tuontiin.
+        Kutsuu olemassa olevaa 'import_iofxml'-komentoa, jotta UI ja CLI toimivat
+        identtisesti (yksi totuuden lähde).
 
-    EN: Staff-only UI for IOFXML import. Calls the existing 'import_iofxml'
-        management command to keep behavior identical with CLI imports.
+    EN: Staff-only UI for IOFXML import.
+        Calls the 'import_iofxml' management command to ensure identical behavior
+        with the CLI importer.
     """
     template_name = "oraw_app/upload_iofxml.html"
 
     def test_func(self) -> bool:
         """
-        FI: Vain staff-käyttäjät saavat käyttää tätä näkymää.
-        EN: Only staff users are allowed to access this view.
+        FI: Sallitaan käyttö vain staff-käyttäjille.
+        EN: Allow access only for staff users.
         """
         return self.request.user.is_staff
 
     def get(self, request):
         """
-        FI: Palauta lomakenäkymä.
-        EN: Render the form view.
+        FI: Palauttaa tyhjän lomakenäkymän.
+        EN: Render the empty upload form.
         """
         return render(request, self.template_name)
 
     def post(self, request):
         """
-        FI: Käsittele IOFXML-lähetys: talleta väliaikaisesti ja aja import-komento.
-        EN: Handle IOFXML upload: save temporarily and run the import command.
+        FI: Käsittelee tiedoston latauksen ja suorittaa tuonnin komentona.
+        EN: Handles file upload and executes the import as a management command.
         """
         f = request.FILES.get("iofxml_file")
         if not f:
-            messages.error(request, "Upload failed: missing file.")
+            messages.error(request, "Lataus epäonnistui: tiedosto puuttuu.")
             return render(request, self.template_name)
 
-        # FI: Tallenna väliaikaiseen polkuun, jotta management-komento voi lukea tiedoston.
-        # EN: Save to a temporary path so the management command can read the file.
+        # Save file temporarily for import
         tmp_path = default_storage.save(f"tmp/iofxml/{f.name}", f)
 
         try:
-            # FI: Kutsu samaa komentoa kuin CLI:ssä (yhden totuuden lähde).
-            # EN: Call the same command as in CLI (single source of truth).
             call_command("import_iofxml", file=default_storage.path(tmp_path))
             messages.success(
                 request,
-                "IOFXML import finished successfully. " 
-                "New competitions and results are now available.",
+                "IOFXML-tuonti suoritettu onnistuneesti. "
+                "Uudet kilpailut ja tulokset ovat nyt saatavilla.",
             )
             return redirect(reverse("oraw_app:upload_iofxml"))
         except Exception as exc:
-            # FI: Näytä käyttäjäystävällinen virheviesti.
-            # EN: Show a user-friendly error message.
-            messages.error(request, f"Import failed: {exc}")
+            messages.error(request, f"Tuonti epäonnistui: {exc}")
             return render(request, self.template_name)
 
+
+# ============================================================================
+# Competitions list & detail views / Kilpailunäkymät
+# ============================================================================
 class CompetitionListView(ListView):
     """
     FI: Kilpailujen listaus sivutuksella ja pikahaulla (?q=).
-    EN: Competitions list with pagination and quick search (?q=).
+    EN: Competition list with pagination and quick search (?q=).
     """
     model = Competition
     template_name = "oraw_app/competitions/index.html"
@@ -92,20 +100,20 @@ class CompetitionListView(ListView):
 
     def get_queryset(self):
         """
-        FI: Suodata nimen ja järjestäjän perusteella.
-        EN: Filter by name and organizer.
+        FI: Suodattaa kilpailut nimen ja järjestäjän perusteella.
+        EN: Filters competitions by name and organizer.
         """
         qs = super().get_queryset().order_by("-date", "name")
         q = self.request.GET.get("q")
         if q:
-            qs = qs.filter(name__icontains=q) | qs.filter(organizer__icontains=q)
+            qs = qs.filter(Q(name__icontains=q) | Q(organizer__icontains=q))
         return qs
 
 
 class CompetitionDetailView(DetailView):
     """
-    FI: Kilpailun sivu: radat ja kevyt tulostaulukko.
-    EN: Competition page: courses and a lightweight results table.
+    FI: Näyttää kilpailun tiedot, radat ja tulokset.
+    EN: Displays competition details, courses and results.
     """
     model = Competition
     template_name = "oraw_app/competitions/detail.html"
@@ -113,8 +121,8 @@ class CompetitionDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         """
-        FI: Lataa radat ja esilataa tulosten urheilijat (GDPR-näyttö).
-        EN: Load courses and prefetch results with athletes (GDPR display).
+        FI: Lisää radat ja urheilijoiden tulokset kontekstiin.
+        EN: Adds courses and athletes’ results to the context.
         """
         ctx = super().get_context_data(**kwargs)
         competition = self.object
@@ -123,51 +131,47 @@ class CompetitionDetailView(DetailView):
         return ctx
 
 
+# ============================================================================
+# Athlete list & detail views / Urheilijanäkymät
+# ============================================================================
 class AthleteListView(ListView):
     """
-    FI: Näyttää kaikki urheilijat taulukkona ja tukee hakuparametreja (?q, ?club, ?gender).
-    EN: Displays all athletes in a table, supports query parameters (?q, ?club, ?gender).
+    FI: Urheilijalista taulukkona, tukee hakua ja suodatuksia (?q, ?club, ?gender).
+    EN: Athlete list with filters (?q, ?club, ?gender).
     """
-    model = Athlete  # malli, jota tämä näkymä käyttää
+    model = Athlete
     template_name = "oraw_app/athletes/index.html"
     context_object_name = "athletes"
-    paginate_by = 25  # näyttää 25 urheilijaa per sivu
+    paginate_by = 25
 
     def get_queryset(self):
         """
-        FI: Rakentaa tietokantakyselyn hakuehtojen perusteella.
-        EN: Builds a database query based on search parameters.
+        FI: Rakentaa hakuehdot ja palauttaa järjestetyn tuloksen.
+        EN: Builds search filters and returns an ordered queryset.
         """
-        qs = super().get_queryset()  # perusjoukko = kaikki urheilijat
-
-        # Haetaan GET-parametrit (jos niitä ei ole, palautetaan tyhjä merkkijono)
+        qs = super().get_queryset()
         q = (self.request.GET.get("q") or "").strip()
         club = (self.request.GET.get("club") or "").strip()
         gender = (self.request.GET.get("gender") or "").strip()
 
-        # Jos käyttäjä kirjoittaa nimen, suodata nimen ja aliaksen perusteella
         if q:
             qs = qs.filter(
                 Q(first_name__icontains=q)
                 | Q(last_name__icontains=q)
                 | Q(public_alias__icontains=q)
             )
-
-        # Jos käyttäjä valitsee seuran
         if club:
             qs = qs.filter(club__icontains=club)
-
-        # Jos käyttäjä valitsee sukupuolen
         if gender:
             qs = qs.filter(gender=gender)
 
-        # Järjestetään tulokset
         return qs.order_by("last_name", "first_name")
+
 
 class AthleteDetailView(DetailView):
     """
-    FI: Näyttää yksittäisen urheilijan perustiedot ja kilpailuhistorian.
-    EN: Displays a single athlete with basic info and competition history.
+    FI: Näyttää yksittäisen urheilijan ja hänen kilpailuhistoriansa.
+    EN: Displays an athlete with competition history.
     """
     model = Athlete
     template_name = "oraw_app/athletes/detail.html"
@@ -175,11 +179,11 @@ class AthleteDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         """
-        FI: Lisää urheilijan kilpailutulokset kontekstiin (HTML:lle).
-        EN: Adds athlete's competition results to the template context.
+        FI: Lisää kilpailutulokset kontekstiin, jotta ne voidaan näyttää HTML-sivulla.
+        EN: Adds competition results to context for template rendering.
         """
         ctx = super().get_context_data(**kwargs)
-        athlete = self.object  # haettu Athlete-olio
+        athlete = self.object
         results = (
             Result.objects.filter(athlete=athlete)
             .select_related("course__competition")
@@ -188,28 +192,29 @@ class AthleteDetailView(DetailView):
         ctx["results"] = results
         return ctx
 
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth import login
-from django.views.generic import FormView
-from django.urls import reverse_lazy
 
-
+# ============================================================================
+# Signup view / Rekisteröintinäkymä
+# ============================================================================
 class SignUpView(FormView):
     """
-    FI: Käyttäjän rekisteröinti.
-    Käyttää Djangon valmista UserCreationForm-lomaketta,
-    joka tarkistaa salasanat ja tallentaa uuden käyttäjän.
-    Kun lomake lähetetään onnistuneesti, käyttäjä kirjataan
-    automaattisesti sisään ja ohjataan etusivulle.
-    """
+    FI: Käyttäjän rekisteröinti. Käyttää omaa SignupForm-luokkaa (forms.py),
+        joka sisältää suomenkieliset kenttien nimet ja yhtenäisen ulkoasun.
+        Onnistuneen rekisteröinnin jälkeen käyttäjä kirjataan sisään.
 
+    EN: User registration using the custom SignupForm (forms.py)
+        with localized Finnish labels and consistent layout.
+        Logs the user in automatically after successful registration.
+    """
     template_name = "oraw_app/accounts/signup.html"
-    form_class = UserCreationForm
+    form_class = SignupForm
     success_url = reverse_lazy("oraw_app:home")
 
     def form_valid(self, form):
-        """FI: Luo uusi käyttäjä ja kirjaa hänet sisään heti."""
+        """
+        FI: Luo käyttäjän ja kirjaa hänet sisään automaattisesti.
+        EN: Creates the user and logs them in automatically.
+        """
         user = form.save()
         login(self.request, user)
         return super().form_valid(form)
-
