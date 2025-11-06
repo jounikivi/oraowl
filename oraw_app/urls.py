@@ -1,53 +1,88 @@
+# oraw_app/urls.py
 """
-URL configuration for oraowl project.
+FI: ORAOwl-sovelluksen URL-reitit.
+    Tämä tiedosto määrittelee sovelluksen pääreitit:
+    - Etusivu, IOFXML-tuonti, kilpailut ja urheilijat
+    - Käyttäjäautentikointi (kirjautuminen, rekisteröinti, salasanan palautus)
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
+EN: URL configuration for the ORAOwl application.
+    Defines all main routes:
+    - Home, IOFXML import, competitions, and athletes
+    - Authentication (login, signup, password reset)
 """
 
-from django.urls import path
 from django.urls import path, reverse_lazy
 from django.contrib.auth import views as auth_views
-from django.contrib.auth.views import LogoutView, LoginView
+from django.contrib.auth.views import LoginView, LogoutView
 from . import views
 
-# FI: Namespace templatelle. 
-# EN: URL namespace.
+
+# ============================================================================
+# Namespace for templates / Namespace templatelle
+# ============================================================================
 app_name = "oraw_app"
 
+
+# ============================================================================
+# Main URL patterns / Sovelluksen reitit
+# ============================================================================
 urlpatterns = [
+    # ------------------------------------------------------------------------
+    # Home / Etusivu
+    # ------------------------------------------------------------------------
     path("", views.home, name="home"),
+
+    # ------------------------------------------------------------------------
+    # IOFXML upload / IOFXML-tiedoston lataus
+    # ------------------------------------------------------------------------
     path("upload/iofxml/", views.UploadIOFXMLView.as_view(), name="upload_iofxml"),
-    path("competitions/", views.CompetitionListView.as_view(), name="competitions_index"),
-    path("competitions/<uuid:pk>/",views.CompetitionDetailView.as_view(),name="competitions_detail",
-    ),
-    path("athletes/", views.AthleteListView.as_view(), name="athletes_index"),
-    path("athletes/<uuid:pk>/", views.AthleteDetailView.as_view(), name="athletes_detail"),
-    
-       # Login & Logout
+
+    # ------------------------------------------------------------------------
+    # Competitions / Kilpailut
+    # ------------------------------------------------------------------------
     path(
-        "accounts/login/",LoginView.as_view(template_name="oraw_app/accounts/login.html"),
+        "competitions/",
+        views.CompetitionListView.as_view(),
+        name="competitions_index",
+    ),
+    path(
+        "competitions/<uuid:pk>/",
+        views.CompetitionDetailView.as_view(),
+        name="competitions_detail",
+    ),
+
+    # ------------------------------------------------------------------------
+    # Athletes / Urheilijat
+    # ------------------------------------------------------------------------
+    path("athletes/", views.AthleteListView.as_view(), name="athletes_index"),
+    path(
+        "athletes/<uuid:pk>/",
+        views.AthleteDetailView.as_view(),
+        name="athletes_detail",
+    ),
+
+    # ------------------------------------------------------------------------
+    # Authentication: login / logout / signup
+    # ------------------------------------------------------------------------
+    path(
+        "accounts/login/",
+        LoginView.as_view(template_name="oraw_app/accounts/login.html"),
         name="login",
     ),
     path(
-        "accounts/logout/",LogoutView.as_view(next_page="oraw_app:home"),
+        "accounts/logout/",
+        LogoutView.as_view(next_page="oraw_app:home"),
         name="logout",
     ),
+    path(
+        "accounts/signup/",
+        views.SignUpView.as_view(),
+        name="signup",
+    ),
 
-    # Signup (rekisteröinti) – toteutamme seuraavassa kohdassa SignUpView:n
-    path("accounts/signup/", views.SignUpView.as_view(), name="signup"),
-    
-    # Password reset (4 vaihetta)
+    # ------------------------------------------------------------------------
+    # Password reset (4 secure steps) / Salasanan palautus (4 vaihetta)
+    # ------------------------------------------------------------------------
     path(
         "accounts/password-reset/",
         auth_views.PasswordResetView.as_view(
@@ -81,4 +116,4 @@ urlpatterns = [
         name="password_reset_complete",
     ),
 ]
-
+# ============================================================================#
