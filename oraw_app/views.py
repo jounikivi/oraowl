@@ -126,9 +126,24 @@ class CompetitionDetailView(DetailView):
         """
         ctx = super().get_context_data(**kwargs)
         competition = self.object
-        courses = competition.course_set.all().order_by("name")
-        ctx["courses"] = courses.prefetch_related("result_set__athlete")
+
+        # FI: Käytä related_name="courses" eikä oletusta course_set
+        # EN: Use related_name="courses" instead of the default course_set
+        courses = competition.courses.all().order_by("name")
+
+        # FI: Tulokset kilpailun ratojen kautta
+        # EN: Results via course -> competition relation
+        results = (
+            Result.objects
+            .filter(course__competition=competition)
+            .select_related("athlete", "course")
+            .order_by("course__name", "rank", "time_s")
+        )
+
+        ctx["courses"] = courses
+        ctx["results"] = results
         return ctx
+
 
 
 # ============================================================================
