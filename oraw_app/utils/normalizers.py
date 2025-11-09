@@ -1,19 +1,27 @@
 from __future__ import annotations
+
+"""
+FI: Normalisointiapurit IOFXML-datalle. Kaikki "oikeasta kisadatasta" tulevien
+    arvojen turvalliset parsinnat keskitetty tänne (Decimal, ajat, statukset).
+EN: Normalization helpers for IOFXML data. Safe parsing for real-world race data
+    (decimals, times, statuses) are centralized here.
+"""
+
 from decimal import Decimal, InvalidOperation
 from typing import Optional
 
-# ============================================================================
-# FI: Tähän kerätään kaikki arvojen turvalliset parsimiset IOFXML:ää varten.
-# EN: Safe parsers for IOFXML values live here.
-# ============================================================================
 
-DASH_VALUES = {"", "-", "–", "—", "—", "—".replace("\u2014", "-")}  # normalize dashes
+# -----------------------------------------------------------------------------
+# FI: Tyhjiä/viivamaisia arvoja, jotka tulkitaan 'puuttuviksi'.
+# EN: Empty/dashy values that are treated as "missing".
+# -----------------------------------------------------------------------------
+DASH_VALUES = {"", "-", "–", "—"}
 
 
 def _is_dashy(value: str) -> bool:
     """
-    FI: Palauttaa True jos arvo on tyhjä tai sisältää viivan tms.
-    EN: Returns True if the value is empty/dashy.
+    FI: Palauttaa True jos arvo on tyhjä tai jokin viivamerkki.
+    EN: Returns True if the value is empty or a dash variant.
     """
     s = (value or "").strip()
     return s in DASH_VALUES
@@ -21,8 +29,8 @@ def _is_dashy(value: str) -> bool:
 
 def parse_decimal(value: object) -> Optional[Decimal]:
     """
-    FI: Yleinen turvallinen Decimal-parseri. Hyväksyy myös desimaalipilkun.
-    EN: Safe Decimal parser; accepts comma as decimal separator as well.
+    FI: Turvallinen Decimal-parsinta. Ymmärtää myös desimaalipilkun.
+    EN: Safe Decimal parser. Accepts comma as decimal separator too.
     """
     if value is None:
         return None
@@ -38,8 +46,8 @@ def parse_decimal(value: object) -> Optional[Decimal]:
 
 def parse_int(value: object) -> Optional[int]:
     """
-    FI: Turvallinen kokonaisluvun parsinta (dashy -> None).
-    EN: Safe integer parsing (dashy -> None).
+    FI: Turvallinen kokonaisluvun parsinta (myös "5600.0" -> 5600).
+    EN: Safe integer parsing (also handles "5600.0" -> 5600).
     """
     if value is None:
         return None
@@ -49,40 +57,40 @@ def parse_int(value: object) -> Optional[int]:
     try:
         return int(s)
     except ValueError:
-        # joskus tulee "5600.0" -> yritetään Decimalin kautta
         d = parse_decimal(s)
         return int(d) if d is not None else None
 
 
 def parse_length_km_from_meters(value: object) -> Optional[Decimal]:
     """
-    FI: IOFXML:n Course.Length on metreinä. Muunna kilometreiksi (3 desimaalia).
+    FI: IOFXML Course.Length on metreinä. Muunna kilometreiksi (3 desimaalia).
         Palauta None jos arvo on kelvoton.
-    EN: IOFXML Course.Length is meters. Convert to kilometers (3 decimals).
+    EN: IOFXML Course.Length is in meters. Convert to kilometers (3 decimals).
         Return None if invalid.
     """
     meters = parse_decimal(value)
     if meters is None:
         return None
     km = meters / Decimal(1000)
-    # 0.001 precision is enough (e.g., 5600m -> 5.600 km)
     return km.quantize(Decimal("0.001"))
 
 
 def parse_climb_m(value: object) -> Optional[int]:
     """
-    FI: Noustut metrit (Climb) kokonaislukuna. Kelvoton -> None.
-    EN: Climb in meters as integer. Invalid -> None.
+    FI: Nousu metreinä (Climb). Kelvoton -> None.
+    EN: Climb in meters (integer). Invalid -> None.
     """
     return parse_int(value)
 
 
 def parse_time_to_seconds(value: object) -> Optional[int]:
     """
-    FI: Muuntaa ajan sekunneiksi. Tukee "HH:MM:SS", "MM:SS", pelkät sekunnit (int/str).
+    FI: Muuntaa ajan sekunneiksi. Tukee "HH:MM:SS", "MM:SS", pelkät sekunnit
+        (int/str) sekä desimaalit sekunteina ("75.3" -> 75).
         Kelvoton tai tyhjä -> None.
     EN: Converts time into seconds. Supports "HH:MM:SS", "MM:SS",
-        and integer seconds. Invalid/empty -> None.
+        integer seconds (int/str) and decimal seconds ("75.3" -> 75).
+        Invalid/empty -> None.
     """
     if value is None:
         return None
@@ -94,7 +102,6 @@ def parse_time_to_seconds(value: object) -> Optional[int]:
     if s.isdigit():
         return int(s)
 
-    # split by colon
     parts = s.split(":")
     try:
         if len(parts) == 2:  # MM:SS
@@ -106,35 +113,34 @@ def parse_time_to_seconds(value: object) -> Optional[int]:
     except ValueError:
         return None
 
-    # fallback: decimal seconds (e.g., "75.2")
     dec = parse_decimal(s)
     if dec is not None:
-        return int(dec)  # truncate fractional part
-
+        return int(dec)
     return None
 
 
 def normalize_status(iof_status: str) -> str:
     """
-    FI: Normalisoi IOF-statuksen. Yhtenäistetään Result.status-kenttää varten.
-    EN: Normalize IOF status for consistent Result.status storage.
+    FI: Normalisoi IOF-statuksen. Palauttaa yhdenmukaiset arvot (OK, DNS, DNF,
+        MP, DSQ). Tuntemattomat mapataan OK:ksi ellei haluta DSQ/DNF oletusta.
+    EN: Normalize IOF status to a consistent set (OK, DNS, DNF, MP, DSQ).
+        Unknown maps to OK (change if you prefer DSQ/DNF as default).
     """
     s = (iof_status or "").strip().lower()
     mapping = {
         "ok": "OK",
         "ok result": "OK",
+        "dns": "DNS",
         "didnotstart": "DNS",
         "did not start": "DNS",
-        "dns": "DNS",
+        "dnf": "DNF",
         "didnotfinish": "DNF",
         "did not finish": "DNF",
-        "dnf": "DNF",
         "missingpunch": "MP",
         "missing punch": "MP",
         "mp": "MP",
         "disqualified": "DSQ",
         "dsq": "DSQ",
         "retired": "DNF",
-        "overmaximumbogus": "DSQ",  # esimerkki: tuntemattomat voidaan mapata DSQ:ksi
     }
     return mapping.get(s, "OK")
