@@ -26,6 +26,14 @@ from oraw_app.models import (
 )
 from .iofxml import parse_time_to_seconds, clean_text
 
+from .normalizers import (
+    parse_length_km_from_meters,
+    parse_climb_m,
+    parse_time_to_seconds,
+    normalize_status,
+)
+
+
 
 # ============================================================
 # 🔧 Namespace helpers
