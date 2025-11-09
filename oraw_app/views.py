@@ -137,9 +137,9 @@ class CompetitionDetailView(DetailView):
             Result.objects
             .filter(course__competition=competition)
             .select_related("athlete", "course")
-            .order_by("course__name", "rank", "time_s")
+            .order_by("course__name", "position", "finish_time_s")
         )
-
+            
         ctx["courses"] = courses
         ctx["results"] = results
         return ctx
