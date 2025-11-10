@@ -3,12 +3,12 @@
 FI: IOFXML ResultList -tuonnin apukirjasto ORAOwl-projektille.
     - Parsii kilpailun, radat, urheilijat, tulokset ja väliajat.
     - Tallentaa alkuperäisen XML:n UploadedFile-malliin (deduplikointi sha256).
-    - HUOM: Ratojen pituus käsitellään turvallisesti Decimal-kilometreinä.
+    - HUOM: Nimiavaruus (xmlns) tuettu ja ratojen pituus käsitellään Decimal-arvoina.
 
 EN: Helper module for importing IOFXML ResultList into ORAOwl.
     - Parses competition, courses, athletes, results and splits.
     - Stores the original XML into UploadedFile (sha256 dedupe).
-    - NOTE: Course length is handled safely as Decimal kilometres.
+    - NOTE: XML namespaces are supported and course length uses Decimals.
 """
 
 from __future__ import annotations
@@ -16,11 +16,10 @@ from __future__ import annotations
 import hashlib
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
-from typing import Iterable, Optional, Tuple
+from typing import Iterable, Optional, Tuple, List
 from xml.etree import ElementTree as ET
 
 from django.db import transaction
-from django.utils.timezone import make_aware
 from django.utils import timezone
 
 from oraw_app.models import (
@@ -34,26 +33,49 @@ from oraw_app.models import (
 )
 
 # ============================================================================
-# XML helpers / XML-apurit
+# XML helpers (namespace-agnostic) / XML-apurit (nimiavaruus-agnostinen)
 # ============================================================================
+
+def _local(tag: str) -> str:
+    """
+    FI: Palauta tägin paikallisnimi (ilman nimiavaruutta).
+    EN: Return the element's local-name (without namespace).
+    """
+    if "}" in tag:
+        return tag.split("}", 1)[1]
+    return tag
+
 
 def _first(node: ET.Element, *path: str) -> Optional[ET.Element]:
     """
-    FI: Hakee ensimmäisen lapsisolmun annetulla polulla.
-    EN: Returns the first child element for a given path.
+    FI: Etsi ketjutettuna ensimmäinen lapsi kustakin tasosta paikallisnimellä.
+    EN: Walk down by local-name and return the first matching child at each step.
     """
     cur = node
-    for p in path:
-        nxt = cur.find(p)
-        if nxt is None:
+    for name in path:
+        found = None
+        for child in list(cur):
+            if _local(child.tag) == name:
+                found = child
+                break
+        if found is None:
             return None
-        cur = nxt
+        cur = found
     return cur
+
+
+def _children(node: ET.Element, name: str) -> List[ET.Element]:
+    """
+    FI: Palauta kaikki suorat lapset annetulla paikallisnimellä.
+    EN: Return all direct children with a given local-name.
+    """
+    return [el for el in list(node) if _local(el.tag) == name]
+
 
 def _text(node: ET.Element, *path: str) -> Optional[str]:
     """
-    FI: Hakee solmun tekstin annetulla polulla.
-    EN: Returns text of the element found via path.
+    FI: Palauta polulla löytyvän elementin teksti tai None.
+    EN: Return text of the element at path or None.
     """
     el = _first(node, *path)
     if el is None:
@@ -61,10 +83,11 @@ def _text(node: ET.Element, *path: str) -> Optional[str]:
     val = (el.text or "").strip()
     return val or None
 
+
 def _attr(node: ET.Element, *path: str) -> Optional[str]:
     """
-    FI: Palauttaa viimeisen polkuosan attribuutin arvon (muoto: ... , 'attrname').
-    EN: Returns attribute value of the last path segment (..., 'attrname').
+    FI: Palauta viimeisen polkuosion attribuuttiarvo (… , 'attrname').
+    EN: Return attribute value of the last path segment (… , 'attrname').
     """
     *elem_path, attr_name = path
     el = _first(node, *elem_path) if elem_path else node
@@ -76,16 +99,15 @@ def _attr(node: ET.Element, *path: str) -> Optional[str]:
     val = val.strip()
     return val or None
 
+
 # ============================================================================
 # Length normalization / Pituuden normalisointi
 # ============================================================================
 
 def _length_to_km(length_text: Optional[str], unit: Optional[str]) -> Optional[float]:
     """
-    FI: MUUTA TARVITTAESSA – tämä on teidän vanha logiikka, joka palauttaa float tai None.
-        Jos length_text on metreissä/kilometreissä, muunna kilometreiksi (float).
-    EN: ADJUST IF NEEDED – your existing implementation that returns float or None.
-        Converts given length_text + unit to kilometres (float).
+    FI: Muunna metreistä/kilometreistä kilometreiksi (float) tai palauta None.
+    EN: Convert metres/kilometres to kilometres (float) or return None.
     """
     if length_text is None:
         return None
@@ -108,17 +130,14 @@ def _length_to_km(length_text: Optional[str], unit: Optional[str]) -> Optional[f
 
 def _length_to_decimal_km(length_text: Optional[str], unit: Optional[str]) -> Optional[Decimal]:
     """
-    FI: Muunna XML:n pituus (m tai km) turvallisesti Decimal-kilometreiksi.
-        Palauttaa None, jos arvo puuttuu/virheellinen. Ei koskaan palauta ''.
-    EN: Safely convert XML length (m or km) to Decimal kilometres.
-        Returns None if missing/invalid. Never returns ''.
+    FI: Muunna pituus Decimal-kilometreiksi turvallisesti (tai None).
+    EN: Safely convert length to Decimal kilometres (or None).
     """
-    km_float = _length_to_km(length_text, unit)  # existing helper → float or None
+    km_float = _length_to_km(length_text, unit)
     if km_float is None:
         return None
     try:
-        # Convert float → Decimal via str to avoid binary float artefacts
-        return Decimal(str(km_float))
+        return Decimal(str(km_float))  # avoid float artefacts
     except InvalidOperation:
         return None
 
@@ -129,10 +148,6 @@ def _length_to_decimal_km(length_text: Optional[str], unit: Optional[str]) -> Op
 
 @dataclass
 class ImportReport:
-    """
-    FI: Kevyt raportti importin yhteenvedolle.
-    EN: Lightweight report for summarizing the import.
-    """
     competitions_created: int = 0
     courses_created: int = 0
     athletes_created: int = 0
@@ -150,11 +165,11 @@ def _sha256_bytes(payload: bytes) -> str:
 
 def _parse_competition(root: ET.Element) -> Tuple[str, Optional[str], Optional[str], Optional[str]]:
     """
-    FI: Palauttaa kilpailun perustiedot: name, date (YYYY-MM-DD), organizer, place.
-    EN: Returns basic competition info: name, date, organizer, place.
+    FI: Palauttaa kilpailun perustiedot: nimi, päivä (YYYY-MM-DD), järjestäjä, paikka.
+    EN: Return basic competition info: name, date (YYYY-MM-DD), organizer, place.
     """
     name = _text(root, "Event", "Name") or "Unnamed competition"
-    date = _text(root, "Event", "StartTime", "Date")  # e.g., 2025-07-10
+    date = _text(root, "Event", "StartTime", "Date")
     organizer = _text(root, "Event", "Organizer", "Name")
     place = _text(root, "Event", "City")
     return name, date, organizer, place
@@ -170,7 +185,7 @@ def import_result_list(*, file_bytes: bytes, filename: str) -> ImportReport:
     """
     report = ImportReport()
 
-    # --- Store (or dedupe) original XML -------------------------------------------------
+    # --- Store (or dedupe) original XML -------------------------------------
     sha256 = _sha256_bytes(file_bytes)
     uploaded, created = UploadedFile.objects.get_or_create(
         sha256=sha256,
@@ -181,15 +196,12 @@ def import_result_list(*, file_bytes: bytes, filename: str) -> ImportReport:
         },
     )
     report.uploaded_file = uploaded
-    if not created:
-        # No need to re-import duplicate file (you can choose to short-circuit).
-        # But here we continue; importer is idempotent per unique constraints.
-        pass
+    # importer is idempotent; we continue even if duplicate
 
-    # --- Parse XML ----------------------------------------------------------------------
+    # --- Parse XML -----------------------------------------------------------
     root = ET.fromstring(file_bytes)
 
-    # --- Competition --------------------------------------------------------------------
+    # --- Competition ---------------------------------------------------------
     comp_name, comp_date, comp_org, comp_place = _parse_competition(root)
     competition, created = Competition.objects.get_or_create(
         name=comp_name,
@@ -203,40 +215,37 @@ def import_result_list(*, file_bytes: bytes, filename: str) -> ImportReport:
     if created:
         report.competitions_created += 1
 
-    # --- ResultList: Classes -> Courses, then Persons -> Results/Splits -----------------
-    # Path aligned with IOF XML "ResultList" schema; adjust if your XML differs:
-    # root / ClassResult[]
-    class_results: Iterable[ET.Element] = root.findall("ClassResult")
+    # --- ResultList: Classes -> Courses, Persons -> Results/Splits -----------
+    # Namespace-agnostic selection:
+    class_results: List[ET.Element] = _children(root, "ClassResult")
 
     for class_res in class_results:
-        # Course / Rata
+        # Course
         class_name = _text(class_res, "Class", "Name") or "Unnamed course"
         length_text = _text(class_res, "Course", "Length")
         length_unit = _attr(class_res, "Course", "Length", "unit")
-        # ↓↓↓ KEY CHANGE: safe Decimal km
         length_km = _length_to_decimal_km(length_text, length_unit)
 
-        course, created = Course.objects.get_or_create(
+        course, c_created = Course.objects.get_or_create(
             competition=competition,
             name=class_name,
             defaults={"length_km": length_km},
         )
-        if created:
+        if c_created:
             report.courses_created += 1
-        # Update length if it was previously null and we got a proper value
-        if course.length_km is None and length_km is not None:
+        elif course.length_km is None and length_km is not None:
             course.length_km = length_km
             course.save(update_fields=["length_km"])
 
-        # Persons/Results under this class
-        # root/ClassResult/PersonResult[]
-        person_results: Iterable[ET.Element] = class_res.findall("PersonResult")
+        # PersonResult[]
+        person_results: List[ET.Element] = _children(class_res, "PersonResult")
         for person_res in person_results:
             # Athlete
             given = _text(person_res, "Person", "Name", "Given") or ""
             family = _text(person_res, "Person", "Name", "Family") or ""
             full_name = (given + " " + family).strip() or "Unknown athlete"
             club = _text(person_res, "Organisation", "Name")
+
             # Optional birth year
             birth = _text(person_res, "Person", "BirthDate")
             birth_year = None
@@ -248,7 +257,6 @@ def import_result_list(*, file_bytes: bytes, filename: str) -> ImportReport:
                 defaults={
                     "club": club,
                     "birth_year": birth_year,
-                    # GDPR defaults
                     "is_public": True,
                     "public_alias": None,
                 },
@@ -256,7 +264,7 @@ def import_result_list(*, file_bytes: bytes, filename: str) -> ImportReport:
             if a_created:
                 report.athletes_created += 1
 
-            # Control card (if present)
+            # Control card (optional)
             card_vendor = _attr(person_res, "Result", "ControlCard", "vendor")
             card_uid = _text(person_res, "Result", "ControlCard")
             control_card = None
@@ -267,8 +275,7 @@ def import_result_list(*, file_bytes: bytes, filename: str) -> ImportReport:
                 if cc_created:
                     report.control_cards_created += 1
 
-            # Result (one per athlete+course)
-            # Status, time etc.
+            # Result
             status = _text(person_res, "Result", "Status") or "OK"
             time_s_text = _text(person_res, "Result", "Time")
             time_seconds = int(time_s_text) if (time_s_text and time_s_text.isdigit()) else None
@@ -288,7 +295,6 @@ def import_result_list(*, file_bytes: bytes, filename: str) -> ImportReport:
             if r_created:
                 report.results_created += 1
             else:
-                # Update basic fields if missing; keep importer idempotent
                 fields_to_update = []
                 if result.status != status:
                     result.status = status
@@ -306,8 +312,8 @@ def import_result_list(*, file_bytes: bytes, filename: str) -> ImportReport:
                     result.save(update_fields=fields_to_update)
 
             # Splits (optional)
-            # root/.../SplitTime[]
-            split_nodes: Iterable[ET.Element] = person_res.findall("./Result/SplitTime")
+            result_node = _first(person_res, "Result")
+            split_nodes: List[ET.Element] = _children(result_node, "SplitTime") if result_node is not None else []
             seq = 1
             cum = 0
             for sp in split_nodes:
@@ -315,7 +321,6 @@ def import_result_list(*, file_bytes: bytes, filename: str) -> ImportReport:
                 sp_time_text = _text(sp, "Time")
                 sp_time = int(sp_time_text) if (sp_time_text and sp_time_text.isdigit()) else None
                 if sp_time is None:
-                    # skip invalid split
                     continue
                 cum += sp_time
                 Split.objects.create(
