@@ -130,7 +130,7 @@ def import_result_list(
         date=comp_date or None,
         defaults={"organizer": organizer, "location": location},
     )
-    if source_file and not competition.source_file
+    if source_file and not competition.source_file:
         competition.source_file = source_file
         competition.save(update_fields=["source_file"])
 
