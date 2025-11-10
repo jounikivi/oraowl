@@ -14,6 +14,7 @@ from __future__ import annotations
 import xml.etree.ElementTree as ET
 from typing import Optional, Tuple
 from django.db import transaction
+from decimal import Decimal, InvalidOperation
 
 from oraw_app.models import (
     Competition,
@@ -25,6 +26,28 @@ from oraw_app.models import (
     ControlCard,
 )
 from .iofxml import parse_time_to_seconds, clean_text
+
+# ----------------------------------------------------------------------------
+# Course length parsing helper / Radan pituuden turvallinen parsinta
+# ----------------------------------------------------------------------------
+ # keep with other imports
+def parse_length_km(raw):
+    """
+    FI: Palauttaa Decimal tai None radan pituudelle. Ei koskaan palauta tyhjää
+        merkkijonoa; hyväksyy myös pilkun desimaalierottimena (esim. '4,2').
+    EN: Returns Decimal or None for course length_km. Never returns empty
+        string; also accepts comma as decimal separator (e.g., '4,2').
+    """
+    if raw is None:
+        return None
+    s = str(raw).strip().replace(",", ".")
+    if not s:
+        return None
+    try:
+        return Decimal(s)
+    except InvalidOperation:
+        return None
+
 
 # ============================================================
 # 🔧 Namespace helpers
