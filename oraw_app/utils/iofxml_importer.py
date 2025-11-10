@@ -41,20 +41,16 @@ from oraw_app.models import (
 # ============================================================================
 
 def _local(tag: str) -> str:
-    """
-    FI: Palauta tägin paikallisnimi (ilman nimiavaruutta).
-    EN: Return the element's local-name (without namespace).
-    """
+    """FI: Palauta tägin paikallisnimi (ilman nimiavaruutta).
+       EN: Return the element's local-name (without namespace)."""
     if "}" in tag:
         return tag.split("}", 1)[1]
     return tag
 
 
 def _first(node: ET.Element, *path: str) -> Optional[ET.Element]:
-    """
-    FI: Etsi ketjutettuna ensimmäinen lapsi kustakin tasosta paikallisnimellä.
-    EN: Walk down by local-name and return the first matching child at each step.
-    """
+    """FI: Etsi ketjutettuna ensimmäinen lapsi kustakin tasosta paikallisnimellä.
+       EN: Walk down by local-name and return the first matching child at each step."""
     cur = node
     for name in path:
         found = None
@@ -69,18 +65,14 @@ def _first(node: ET.Element, *path: str) -> Optional[ET.Element]:
 
 
 def _children(node: ET.Element, name: str) -> List[ET.Element]:
-    """
-    FI: Palauta kaikki suorat lapset annetulla paikallisnimellä.
-    EN: Return all direct children with a given local-name.
-    """
+    """FI: Palauta kaikki suorat lapset annetulla paikallisnimellä.
+       EN: Return all direct children with a given local-name."""
     return [el for el in list(node) if _local(el.tag) == name]
 
 
 def _text(node: ET.Element, *path: str) -> Optional[str]:
-    """
-    FI: Palauta polulla löytyvän elementin teksti tai None.
-    EN: Return text of the element at path or None.
-    """
+    """FI: Palauta polulla löytyvän elementin teksti tai None.
+       EN: Return text of the element at path or None."""
     el = _first(node, *path)
     if el is None:
         return None
@@ -89,10 +81,8 @@ def _text(node: ET.Element, *path: str) -> Optional[str]:
 
 
 def _attr(node: ET.Element, *path: str) -> Optional[str]:
-    """
-    FI: Palauta viimeisen polkuosion attribuuttiarvo (… , 'attrname').
-    EN: Return attribute value of the last path segment (… , 'attrname').
-    """
+    """FI: Palauta viimeisen polkuosion attribuuttiarvo (… , 'attrname').
+       EN: Return attribute value of the last path segment (… , 'attrname')."""
     *elem_path, attr_name = path
     el = _first(node, *elem_path) if elem_path else node
     if el is None:
@@ -108,20 +98,11 @@ def _attr(node: ET.Element, *path: str) -> Optional[str]:
 # Time parsing / Aikojen parsinta
 # ============================================================================
 
-# ISO-8601 duration: PnDTnHnMnS (kaikki osat valinnaisia; vähintään "PT…")
 ISO_DUR_RE = re.compile(r"^P(?:(\d+)D)?T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$")
 
 def parse_time_to_seconds(value: Optional[str]) -> Optional[int]:
-    """
-    FI: Parsii IOF-aikaformaatit sekunneiksi:
-        - pelkät sekunnit (esim. '3512')
-        - 'HH:MM:SS'
-        - ISO-8601-kesto 'PT#H#M#S' (valinnainen 'PnD' päiville)
-    EN: Parse IOF time formats into seconds:
-        - plain integer seconds (e.g. '3512')
-        - 'HH:MM:SS'
-        - ISO-8601 duration 'PT#H#M#S' (optional 'PnD' prefix)
-    """
+    """FI: Parsii IOF-aikaformaatit sekunneiksi (sek, HH:MM:SS, ISO-8601).
+       EN: Parse IOF time formats to seconds (plain, HH:MM:SS, ISO-8601)."""
     if not value:
         return None
     s = value.strip()
@@ -160,10 +141,8 @@ def parse_time_to_seconds(value: Optional[str]) -> Optional[int]:
 # ============================================================================
 
 def _length_to_km(length_text: Optional[str], unit: Optional[str]) -> Optional[float]:
-    """
-    FI: Muunna metreistä/kilometreistä kilometreiksi (float) tai palauta None.
-    EN: Convert metres/kilometres to kilometres (float) or return None.
-    """
+    """FI: Muunna metreistä/kilometreistä kilometreiksi (float) tai palauta None.
+       EN: Convert metres/kilometres to kilometres (float) or return None."""
     if length_text is None:
         return None
     s = length_text.strip().replace(",", ".")
@@ -179,20 +158,17 @@ def _length_to_km(length_text: Optional[str], unit: Optional[str]) -> Optional[f
         return value
     if u in {"m", "meter", "metre", "meters", "metres"}:
         return value / 1000.0
-    # Tuntematon yksikkö → oletetaan km / Unknown unit -> assume km
     return value
 
 
 def _length_to_decimal_km(length_text: Optional[str], unit: Optional[str]) -> Optional[Decimal]:
-    """
-    FI: Muunna pituus Decimal-kilometreiksi turvallisesti (tai None).
-    EN: Safely convert length to Decimal kilometres (or None).
-    """
+    """FI: Muunna pituus Decimal-kilometreiksi turvallisesti (tai None).
+       EN: Safely convert length to Decimal kilometres (or None)."""
     km_float = _length_to_km(length_text, unit)
     if km_float is None:
         return None
     try:
-        return Decimal(str(km_float))  # avoid float artefacts
+        return Decimal(str(km_float))
     except InvalidOperation:
         return None
 
@@ -219,10 +195,8 @@ def _sha256_bytes(payload: bytes) -> str:
 
 
 def _parse_competition(root: ET.Element) -> Tuple[str, Optional[str], Optional[str], Optional[str]]:
-    """
-    FI: Palauttaa kilpailun perustiedot: nimi, päivä (YYYY-MM-DD), järjestäjä, paikka.
-    EN: Return basic competition info: name, date (YYYY-MM-DD), organizer, place.
-    """
+    """FI: Palauttaa kilpailun perustiedot: nimi, päivä, järjestäjä, paikka.
+       EN: Return basic competition info: name, date, organizer, place."""
     name = _text(root, "Event", "Name") or "Unnamed competition"
     date = _text(root, "Event", "StartTime", "Date")
     organizer = _text(root, "Event", "Organizer", "Name")
@@ -232,12 +206,8 @@ def _parse_competition(root: ET.Element) -> Tuple[str, Optional[str], Optional[s
 
 @transaction.atomic
 def import_result_list(*, file_bytes: bytes, filename: str) -> ImportReport:
-    """
-    FI: Tuo IOFXML ResultList -datan bytes-muodossa. Tallentaa UploadedFileen ja
-        rakentaa Competition/Course/Athlete/Result/Split/ControlCard -rivit.
-    EN: Import IOFXML ResultList from bytes. Stores in UploadedFile and creates
-        Competition/Course/Athlete/Result/Split/ControlCard rows.
-    """
+    """FI: Tuo IOFXML ResultList -datan bytes-muodossa.
+       EN: Import IOFXML ResultList from bytes."""
     report = ImportReport()
 
     # --- Store (or dedupe) original XML -------------------------------------
@@ -251,7 +221,6 @@ def import_result_list(*, file_bytes: bytes, filename: str) -> ImportReport:
         },
     )
     report.uploaded_file = uploaded
-    # importer is idempotent; we continue even if duplicate
 
     # --- Parse XML -----------------------------------------------------------
     root = ET.fromstring(file_bytes)
@@ -259,34 +228,14 @@ def import_result_list(*, file_bytes: bytes, filename: str) -> ImportReport:
     # --- Competition ---------------------------------------------------------
     comp_name, comp_date, comp_org, comp_place = _parse_competition(root)
 
-    # Luo kilpailu vain varmasti olemassa olevilla kentillä; lisäpäivitykset alla
+    # Luo vain varmoilla kentillä – ei place / ei uploaded_file
     competition, created = Competition.objects.get_or_create(
         name=comp_name,
         date=comp_date,
         defaults={
-            "organizer": comp_org,  # todennäköisesti olemassa
+            "organizer": comp_org,
         },
     )
-
-    # Päivitä vapaaehtoiset kentät vain jos malli sisältää ne
-    fields_to_update: List[str] = []
-
-    # location / place
-    if hasattr(competition, "location") and comp_place and not getattr(competition, "location"):
-        competition.location = comp_place
-        fields_to_update.append("location")
-    elif hasattr(competition, "place") and comp_place and not getattr(competition, "place"):
-        competition.place = comp_place
-        fields_to_update.append("place")
-
-    # uploaded_file (jos malli tuntee sen)
-    if hasattr(competition, "uploaded_file") and getattr(competition, "uploaded_file") is None:
-        competition.uploaded_file = uploaded
-        fields_to_update.append("uploaded_file")
-
-    if fields_to_update:
-        competition.save(update_fields=fields_to_update)
-
     if created:
         report.competitions_created += 1
 
@@ -338,7 +287,7 @@ def import_result_list(*, file_bytes: bytes, filename: str) -> ImportReport:
             if a_created:
                 report.athletes_created += 1
 
-            # Control card (optional)
+            # Control card
             card_vendor = _attr(person_res, "Result", "ControlCard", "vendor")
             card_uid = _text(person_res, "Result", "ControlCard")
             control_card = None
@@ -385,7 +334,7 @@ def import_result_list(*, file_bytes: bytes, filename: str) -> ImportReport:
                 if fields_to_update_r:
                     result.save(update_fields=fields_to_update_r)
 
-            # Splits (optional)
+            # Splits
             result_node = _first(person_res, "Result")
             split_nodes: List[ET.Element] = (
                 _children(result_node, "SplitTime") if result_node is not None else []
