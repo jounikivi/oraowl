@@ -7,8 +7,8 @@ from __future__ import annotations
 from django.contrib import messages
 from django.db.models import Q
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.shortcuts import render, redirect
-from django.urls import reverse, reverse_lazy
+from django.shortcuts import render
+from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, FormView
 from django.contrib.auth import login
 from django.contrib.auth.views import LogoutView
@@ -34,43 +34,38 @@ def home(request):
 # ============================================================================
 class UploadIOFXMLView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     """
-    FI: Staff-käyttäjien käyttöliittymä IOFXML (ResultList) -tiedoston lataukseen.
+    FI: Staff-käyttäjien UI IOFXML (ResultList) -tiedoston lataamiseen.
         Lukee tiedoston muistissa ja kutsuu importteria signatuurilla
         import_result_list(file_bytes=..., filename=...).
 
     EN: Staff-only UI for uploading an IOFXML (ResultList) file.
-        Reads the file in-memory and calls the importer with
+        Reads the file in memory and calls the importer with
         import_result_list(file_bytes=..., filename=...).
     """
-    template_name = "oraw_app/iofxml/upload.html"  # varmista, että tämä polku on käytössä
+    template_name = "oraw_app/upload_iofxml.html"
     form_class = IOFXMLForm
     success_url = reverse_lazy("oraw_app:upload_iofxml")
 
     def test_func(self) -> bool:
-        # FI: Salli vain staff
-        # EN: Allow staff users only
+        # FI: Salli vain staff-käyttäjät.
+        # EN: Allow staff users only.
         return self.request.user.is_staff
 
     def form_valid(self, form):
         """
-        FI: Lue tiedosto bytes-muotoon ja suorita importteri.
-            Näytä viesti onnistumisesta/epäonnistumisesta.
-
-        EN: Read the file as bytes and run the importer.
-            Show a flash message on success/failure.
+        FI: Lue tiedosto bytes-muotoon ja suorita importteri. Näytä palauteviesti.
+        EN: Read the file as bytes, run the importer, and show a flash message.
         """
         uploaded = form.cleaned_data["file"]  # IOFXMLForm has field "file"
         file_bytes = uploaded.read()
+
         try:
-            report = import_result_list(file_bytes=file_bytes, filename=uploaded.name)
+            import_result_list(file_bytes=file_bytes, filename=uploaded.name)
         except Exception as exc:
             messages.error(self.request, f"Tuonti epäonnistui: {exc}")
             return self.form_invalid(form)
 
-        messages.success(
-            self.request,
-            "IOFXML-tuonti suoritettu onnistuneesti. Uudet kilpailut ja tulokset ovat nyt saatavilla.",
-        )
+        messages.success(self.request, "IOFXML-tuonti onnistui.")
         return super().form_valid(form)
 
 
@@ -102,7 +97,7 @@ class CompetitionListView(ListView):
 class CompetitionDetailView(DetailView):
     """
     FI: Näyttää kilpailun tiedot, radat ja tulokset.
-    EN: Displays competition details, courses and results.
+    EN: Displays competition details, courses, and results.
     """
     model = Competition
     template_name = "oraw_app/competitions/detail.html"
@@ -111,22 +106,21 @@ class CompetitionDetailView(DetailView):
     def get_context_data(self, **kwargs):
         """
         FI: Lisää radat ja urheilijoiden tulokset kontekstiin.
-        EN: Adds courses and athletes’ results to the context.
+        EN: Adds courses and athletes' results to the context.
         """
         ctx = super().get_context_data(**kwargs)
         competition = self.object
 
-        # FI: Käytä related_name="courses" (jos malli määritelty niin)
-        # EN: Use related_name="courses" (if defined in model)
+        # FI: Jos Course ForeignKey:ssä on related_name="courses", käytä sitä.
+        # EN: If Course FK has related_name="courses", use it.
         courses = competition.courses.all().order_by("name")
 
-        # FI: Tulokset kilpailun ratojen kautta, lajittelu radan nimen ja sijoituksen sekä ajan mukaan
-        # EN: Results via course -> competition relation, ordered by course name, position and time
+        # FI: Tulokset kilpailun ratojen kautta, järjestä radan nimen, sijan ja ajan mukaan.
+        # EN: Results via course->competition; order by course, position, and time.
         results = (
-            Result.objects
-            .filter(course__competition=competition)
+            Result.objects.filter(course__competition=competition)
             .select_related("athlete", "course")
-            .order_by("course__name", "position", "time_seconds")  # 'time_seconds' matches your model
+            .order_by("course__name", "position", "time_seconds")
         )
 
         ctx["courses"] = courses
@@ -158,11 +152,8 @@ class AthleteListView(ListView):
         gender = (self.request.GET.get("gender") or "").strip()
 
         if q:
-            # FI: Teidän mallissa käytetään yleensä 'full_name' + 'public_alias'
-            # EN: In your model you typically have 'full_name' + 'public_alias'
             qs = qs.filter(
-                Q(full_name__icontains=q) |
-                Q(public_alias__icontains=q)
+                Q(full_name__icontains=q) | Q(public_alias__icontains=q)
             )
         if club:
             qs = qs.filter(club__icontains=club)
@@ -175,7 +166,7 @@ class AthleteListView(ListView):
 class AthleteDetailView(DetailView):
     """
     FI: Näyttää yksittäisen urheilijan ja hänen kilpailuhistoriansa.
-    EN: Displays an athlete with competition history.
+    EN: Displays a single athlete with competition history.
     """
     model = Athlete
     template_name = "oraw_app/athletes/detail.html"
@@ -183,14 +174,13 @@ class AthleteDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         """
-        FI: Lisää kilpailutulokset kontekstiin, jotta ne voidaan näyttää HTML-sivulla.
-        EN: Adds competition results to context for template rendering.
+        FI: Lisää kilpailutulokset kontekstiin.
+        EN: Adds competition results to the context.
         """
         ctx = super().get_context_data(**kwargs)
         athlete = self.object
         results = (
-            Result.objects
-            .filter(athlete=athlete)
+            Result.objects.filter(athlete=athlete)
             .select_related("course__competition")
             .order_by("-course__competition__date", "course__name")
         )
@@ -203,13 +193,9 @@ class AthleteDetailView(DetailView):
 # ============================================================================
 class SignUpView(FormView):
     """
-    FI: Käyttäjän rekisteröinti. Käyttää omaa SignupForm-luokkaa (forms.py),
-        joka sisältää suomenkieliset kenttien nimet ja yhtenäisen ulkoasun.
-        Onnistuneen rekisteröinnin jälkeen käyttäjä kirjataan sisään.
-
-    EN: User registration using the custom SignupForm (forms.py)
-        with localized Finnish labels and consistent layout.
-        Logs the user in automatically after successful registration.
+    FI: Rekisteröinti omalla SignupForm-luokalla. Onnistumisen jälkeen
+        käyttäjä kirjataan sisään.
+    EN: Registration using custom SignupForm. Logs the user in on success.
     """
     template_name = "oraw_app/accounts/signup.html"
     form_class = SignupForm
@@ -217,8 +203,8 @@ class SignUpView(FormView):
 
     def form_valid(self, form):
         """
-        FI: Luo käyttäjän ja kirjaa hänet sisään automaattisesti.
-        EN: Creates the user and logs them in automatically.
+        FI: Luo käyttäjän ja kirjaa sisään.
+        EN: Create the user and log them in.
         """
         user = form.save()
         login(self.request, user)
@@ -230,12 +216,12 @@ class SignUpView(FormView):
 # ============================================================================
 class CustomLogoutView(LogoutView):
     """
-    FI: Uloskirjautuminen POST-metodilla. Lisää myös onnistumisviestin.
-    EN: Logout via POST method. Adds a success message.
+    FI: Uloskirjautuminen POST-metodilla ja lyhyt palauteviesti.
+    EN: Logout via POST with a short feedback message.
     """
     next_page = "oraw_app:home"
 
     def dispatch(self, request, *args, **kwargs):
         response = super().dispatch(request, *args, **kwargs)
-        messages.success(request, "Olet kirjautunut ulos onnistuneesti.")
+        messages.success(request, "Olet kirjautunut ulos.")
         return response
