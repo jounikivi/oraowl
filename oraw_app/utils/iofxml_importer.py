@@ -14,9 +14,11 @@ EN: Helper module for importing IOFXML ResultList into ORAOwl.
 from __future__ import annotations
 
 import hashlib
+import re
 from dataclasses import dataclass
+from datetime import timedelta
 from decimal import Decimal, InvalidOperation
-from typing import Iterable, Optional, Tuple, List
+from typing import Optional, Tuple, List
 from xml.etree import ElementTree as ET
 
 from django.db import transaction
@@ -98,6 +100,57 @@ def _attr(node: ET.Element, *path: str) -> Optional[str]:
         return None
     val = val.strip()
     return val or None
+
+
+# ============================================================================
+# Time parsing / Aikojen parsinta
+# ============================================================================
+
+# ISO-8601 duration: PnDTnHnMnS (kaikki osat valinnaisia; vähintään "PT…")
+ISO_DUR_RE = re.compile(r"^P(?:(\d+)D)?T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$")
+
+def parse_time_to_seconds(value: Optional[str]) -> Optional[int]:
+    """
+    FI: Parsii IOF-aikaformaatit sekunneiksi:
+        - pelkät sekunnit (esim. '3512')
+        - 'HH:MM:SS'
+        - ISO-8601-kesto 'PT#H#M#S' (valinnainen 'PnD' päiville)
+    EN: Parse IOF time formats into seconds:
+        - plain integer seconds (e.g. '3512')
+        - 'HH:MM:SS'
+        - ISO-8601 duration 'PT#H#M#S' (optional 'PnD' prefix)
+    """
+    if not value:
+        return None
+    s = value.strip()
+
+    # 1) Plain seconds
+    if s.isdigit():
+        try:
+            return int(s)
+        except ValueError:
+            return None
+
+    # 2) HH:MM:SS
+    parts = s.split(":")
+    if len(parts) == 3 and all(p.isdigit() for p in parts):
+        h, m, sec = map(int, parts)
+        return h * 3600 + m * 60 + sec
+
+    # 3) ISO-8601 duration
+    m = ISO_DUR_RE.match(s)
+    if m:
+        days, hours, mins, secs = (m.group(i) for i in range(1, 5))
+        td = timedelta(
+            days=int(days or 0),
+            hours=int(hours or 0),
+            minutes=int(mins or 0),
+            seconds=int(secs or 0),
+        )
+        return int(td.total_seconds())
+
+    # Unknown format -> None (fail softly)
+    return None
 
 
 # ============================================================================
@@ -278,7 +331,7 @@ def import_result_list(*, file_bytes: bytes, filename: str) -> ImportReport:
             # Result
             status = _text(person_res, "Result", "Status") or "OK"
             time_s_text = _text(person_res, "Result", "Time")
-            time_seconds = int(time_s_text) if (time_s_text and time_s_text.isdigit()) else None
+            time_seconds = parse_time_to_seconds(time_s_text)
             place_text = _text(person_res, "Result", "Position")
             place = int(place_text) if (place_text and place_text.isdigit()) else None
 
@@ -313,13 +366,15 @@ def import_result_list(*, file_bytes: bytes, filename: str) -> ImportReport:
 
             # Splits (optional)
             result_node = _first(person_res, "Result")
-            split_nodes: List[ET.Element] = _children(result_node, "SplitTime") if result_node is not None else []
+            split_nodes: List[ET.Element] = (
+                _children(result_node, "SplitTime") if result_node is not None else []
+            )
             seq = 1
             cum = 0
             for sp in split_nodes:
                 code = _text(sp, "ControlCode")
                 sp_time_text = _text(sp, "Time")
-                sp_time = int(sp_time_text) if (sp_time_text and sp_time_text.isdigit()) else None
+                sp_time = parse_time_to_seconds(sp_time_text)
                 if sp_time is None:
                     continue
                 cum += sp_time
