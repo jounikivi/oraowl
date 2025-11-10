@@ -1,19 +1,28 @@
+# oraw_app/utils/iofxml_importer.py
 """
-oraw_app/utils/iofxml_importer.py
+FI: IOFXML ResultList -tuonnin apukirjasto ORAOwl-projektille.
+    - Parsii kilpailun, radat, urheilijat, tulokset ja väliajat.
+    - Tallentaa alkuperäisen XML:n UploadedFile-malliin (deduplikointi sha256).
+    - HUOM: Nimiavaruus (xmlns) tuettu ja ratojen pituus käsitellään Decimal-arvoina.
 
-FI: IOF v3 (ResultList XML) -tiedoston tuonti tietokantaan.
-EN: Importer for IOF v3 (ResultList XML) data into the database.
-
-Rules:
-- Code in English, bilingual comments (FI/EN)
-- Readable, modular, GDPR-ready
+EN: Helper module for importing IOFXML ResultList into ORAOwl.
+    - Parses competition, courses, athletes, results and splits.
+    - Stores the original XML into UploadedFile (sha256 dedupe).
+    - NOTE: XML namespaces are supported and course length uses Decimals.
 """
 
 from __future__ import annotations
 
-import xml.etree.ElementTree as ET
-from typing import Optional, Tuple
+import hashlib
+import re
+from dataclasses import dataclass
+from datetime import timedelta
+from decimal import Decimal, InvalidOperation
+from typing import Optional, Tuple, List
+from xml.etree import ElementTree as ET
+
 from django.db import transaction
+from django.utils import timezone
 
 from oraw_app.models import (
     Competition,
@@ -21,202 +30,360 @@ from oraw_app.models import (
     Athlete,
     Result,
     Split,
-    UploadedFile,
     ControlCard,
+    UploadedFile,
 )
-from .iofxml import parse_time_to_seconds, clean_text
 
-# ============================================================
-# 🔧 Namespace helpers
-# ============================================================
+# ============================================================================
+# XML helpers (namespace-agnostic) / XML-apurit (nimiavaruus-agnostinen)
+# ============================================================================
 
-def _ns_url_from_tag(tag: str) -> Optional[str]:
-    """Extract namespace from tag: '{namespace}ResultList' -> 'namespace'."""
-    if tag.startswith("{") and "}" in tag:
-        return tag[1:].split("}", 1)[0]
-    return None
-
-
-NS_URL: Optional[str] = None
-
-
-def _qn(name: str) -> str:
-    """Qualify tag name with namespace."""
-    return f"{{{NS_URL}}}{name}" if NS_URL else name
+def _local(tag: str) -> str:
+    """
+    FI: Palauta tägin paikallisnimi (ilman nimiavaruutta).
+    EN: Return the element's local-name (without namespace).
+    """
+    if "}" in tag:
+        return tag.split("}", 1)[1]
+    return tag
 
 
-def _p(*names: str) -> str:
-    """Build a qualified XML path A/B/C."""
-    return "/".join(_qn(n) for n in names)
+def _first(node: ET.Element, *path: str) -> Optional[ET.Element]:
+    """
+    FI: Etsi ketjutettuna ensimmäinen lapsi kustakin tasosta paikallisnimellä.
+    EN: Walk down by local-name and return the first matching child at each step.
+    """
+    cur = node
+    for name in path:
+        found = None
+        for child in list(cur):
+            if _local(child.tag) == name:
+                found = child
+                break
+        if found is None:
+            return None
+        cur = found
+    return cur
 
 
-# ============================================================
-# 🧩 XML helpers
-# ============================================================
+def _children(node: ET.Element, name: str) -> List[ET.Element]:
+    """
+    FI: Palauta kaikki suorat lapset annetulla paikallisnimellä.
+    EN: Return all direct children with a given local-name.
+    """
+    return [el for el in list(node) if _local(el.tag) == name]
 
-def _text(el: Optional[ET.Element], *path: str) -> Optional[str]:
-    """FI: Palauta teksti polusta. EN: Return text at namespaced path."""
+
+def _text(node: ET.Element, *path: str) -> Optional[str]:
+    """
+    FI: Palauta polulla löytyvän elementin teksti tai None.
+    EN: Return text of the element at path or None.
+    """
+    el = _first(node, *path)
     if el is None:
         return None
-    found = el.find(_p(*path))
-    return clean_text(found.text if found is not None else None)
+    val = (el.text or "").strip()
+    return val or None
 
 
-def _attr(el: Optional[ET.Element], first: str, attr: str, *rest: str) -> Optional[str]:
-    """FI: Palauta attribuutti. EN: Return attribute value."""
+def _attr(node: ET.Element, *path: str) -> Optional[str]:
+    """
+    FI: Palauta viimeisen polkuosion attribuuttiarvo (… , 'attrname').
+    EN: Return attribute value of the last path segment (… , 'attrname').
+    """
+    *elem_path, attr_name = path
+    el = _first(node, *elem_path) if elem_path else node
     if el is None:
         return None
-    found = el.find(_p(first, *rest))
-    return clean_text(found.get(attr) if found is not None else None)
-
-
-def _length_to_km(length_text: Optional[str], unit: Optional[str]) -> Optional[float]:
-    """FI: Muunna metri/kilometri -> km. EN: Convert meters/kilometers -> km."""
-    if not length_text:
+    val = el.get(attr_name)
+    if val is None:
         return None
-    try:
-        val = float(length_text)
-    except ValueError:
-        return None
-    unit = (unit or "").lower()
-    if unit == "m":
-        return round(val / 1000.0, 2)
-    return round(val, 2)
+    val = val.strip()
+    return val or None
 
 
-def _norm_gender(value: Optional[str]) -> Optional[str]:
-    """FI: Normalisoi sukupuolikoodi. EN: Normalize gender value."""
+# ============================================================================
+# Time parsing / Aikojen parsinta
+# ============================================================================
+
+# ISO-8601 duration: PnDTnHnMnS (kaikki osat valinnaisia; vähintään "PT…")
+ISO_DUR_RE = re.compile(r"^P(?:(\d+)D)?T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?$")
+
+def parse_time_to_seconds(value: Optional[str]) -> Optional[int]:
+    """
+    FI: Parsii IOF-aikaformaatit sekunneiksi:
+        - pelkät sekunnit (esim. '3512')
+        - 'HH:MM:SS'
+        - ISO-8601-kesto 'PT#H#M#S' (valinnainen 'PnD' päiville)
+    EN: Parse IOF time formats into seconds:
+        - plain integer seconds (e.g. '3512')
+        - 'HH:MM:SS'
+        - ISO-8601 duration 'PT#H#M#S' (optional 'PnD' prefix)
+    """
     if not value:
         return None
-    v = value.strip().upper()
-    if v in {"M", "MALE"}:
-        return "M"
-    if v in {"F", "FEMALE", "W"}:
-        return "F"
+    s = value.strip()
+
+    # 1) Plain seconds
+    if s.isdigit():
+        try:
+            return int(s)
+        except ValueError:
+            return None
+
+    # 2) HH:MM:SS
+    parts = s.split(":")
+    if len(parts) == 3 and all(p.isdigit() for p in parts):
+        h, m, sec = map(int, parts)
+        return h * 3600 + m * 60 + sec
+
+    # 3) ISO-8601 duration
+    m = ISO_DUR_RE.match(s)
+    if m:
+        days, hours, mins, secs = (m.group(i) for i in range(1, 5))
+        td = timedelta(
+            days=int(days or 0),
+            hours=int(hours or 0),
+            minutes=int(mins or 0),
+            seconds=int(secs or 0),
+        )
+        return int(td.total_seconds())
+
+    # Unknown format -> None (fail softly)
     return None
 
 
-# ============================================================
-# 📥 Main importer
-# ============================================================
+# ============================================================================
+# Length normalization / Pituuden normalisointi
+# ============================================================================
+
+def _length_to_km(length_text: Optional[str], unit: Optional[str]) -> Optional[float]:
+    """
+    FI: Muunna metreistä/kilometreistä kilometreiksi (float) tai palauta None.
+    EN: Convert metres/kilometres to kilometres (float) or return None.
+    """
+    if length_text is None:
+        return None
+    s = length_text.strip().replace(",", ".")
+    if not s:
+        return None
+    try:
+        value = float(s)
+    except ValueError:
+        return None
+
+    u = (unit or "").strip().lower()
+    if u in {"km", "kilometer", "kilometre", "kilometres", "kilometers"}:
+        return value
+    if u in {"m", "meter", "metre", "meters", "metres"}:
+        return value / 1000.0
+    # Unknown unit → assume km
+    return value
+
+
+def _length_to_decimal_km(length_text: Optional[str], unit: Optional[str]) -> Optional[Decimal]:
+    """
+    FI: Muunna pituus Decimal-kilometreiksi turvallisesti (tai None).
+    EN: Safely convert length to Decimal kilometres (or None).
+    """
+    km_float = _length_to_km(length_text, unit)
+    if km_float is None:
+        return None
+    try:
+        return Decimal(str(km_float))  # avoid float artefacts
+    except InvalidOperation:
+        return None
+
+
+# ============================================================================
+# Core import / Tuonnin ydin
+# ============================================================================
+
+@dataclass
+class ImportReport:
+    competitions_created: int = 0
+    courses_created: int = 0
+    athletes_created: int = 0
+    results_created: int = 0
+    splits_created: int = 0
+    control_cards_created: int = 0
+    uploaded_file: Optional[UploadedFile] = None
+
+
+def _sha256_bytes(payload: bytes) -> str:
+    h = hashlib.sha256()
+    h.update(payload)
+    return h.hexdigest()
+
+
+def _parse_competition(root: ET.Element) -> Tuple[str, Optional[str], Optional[str], Optional[str]]:
+    """
+    FI: Palauttaa kilpailun perustiedot: nimi, päivä (YYYY-MM-DD), järjestäjä, paikka.
+    EN: Return basic competition info: name, date (YYYY-MM-DD), organizer, place.
+    """
+    name = _text(root, "Event", "Name") or "Unnamed competition"
+    date = _text(root, "Event", "StartTime", "Date")
+    organizer = _text(root, "Event", "Organizer", "Name")
+    place = _text(root, "Event", "City")
+    return name, date, organizer, place
+
 
 @transaction.atomic
-def import_result_list(
-    xml_bytes: bytes,
-    source_file: Optional[UploadedFile],
-) -> Tuple[Competition, int, int]:
+def import_result_list(*, file_bytes: bytes, filename: str) -> ImportReport:
     """
-    FI: Tuo IOF v3 ResultList XML ja tallenna tietokantaan.
-    EN: Import IOF v3 ResultList XML into database.
-
-    Returns:
-        (Competition, athletes_created, results_created)
+    FI: Tuo IOFXML ResultList -datan bytes-muodossa. Tallentaa UploadedFileen ja
+        rakentaa Competition/Course/Athlete/Result/Split/ControlCard -rivit.
+    EN: Import IOFXML ResultList from bytes. Stores in UploadedFile and creates
+        Competition/Course/Athlete/Result/Split/ControlCard rows.
     """
-    root = ET.fromstring(xml_bytes)
+    report = ImportReport()
 
-    # Activate namespace
-    global NS_URL
-    NS_URL = _ns_url_from_tag(root.tag)
-
-    # --- 1) Competition ---
-    event_el = root.find(_p("Event"))
-    comp_name = _text(event_el, "Name") or "Unnamed event"
-    comp_date = _text(event_el, "StartTime", "Date")
-    organizer = _text(event_el, "Organizer", "Name") or _text(event_el, "Organiser", "Name")
-    location = _text(event_el, "Place")
-
-    competition, _ = Competition.objects.get_or_create(
-        name=comp_name,
-        date=comp_date or None,
-        defaults={"organizer": organizer, "location": location},
+    # --- Store (or dedupe) original XML -------------------------------------
+    sha256 = _sha256_bytes(file_bytes)
+    uploaded, created = UploadedFile.objects.get_or_create(
+        sha256=sha256,
+        defaults={
+            "original_name": filename,
+            "content": file_bytes,
+            "uploaded_at": timezone.now(),
+        },
     )
-    if source_file and not competition.source_file:
-        competition.source_file = source_file
-        competition.save(update_fields=["source_file"])
+    report.uploaded_file = uploaded
+    # importer is idempotent; we continue even if duplicate
 
-    # --- 2) Course & Class ---
-    
-    class_results = root.findall(_p("ClassResult"))
-    athletes_created = 0
-    results_created = 0
+    # --- Parse XML -----------------------------------------------------------
+    root = ET.fromstring(file_bytes)
+
+    # --- Competition ---------------------------------------------------------
+    comp_name, comp_date, comp_org, comp_place = _parse_competition(root)
+    competition, created = Competition.objects.get_or_create(
+        name=comp_name,
+        date=comp_date,
+        defaults={
+            "organizer": comp_org,
+            "place": comp_place,
+            "uploaded_file": uploaded,
+        },
+    )
+    if created:
+        report.competitions_created += 1
+
+
 
     for class_res in class_results:
-        class_name = _text(class_res, "Class", "Name") or "Unknown"
-
+        # Course
+        class_name = _text(class_res, "Class", "Name") or "Unnamed course"
         length_text = _text(class_res, "Course", "Length")
-        length_unit = _attr(class_res, "Course", "unit", "Length")
-        length_km = _length_to_km(length_text, length_unit)
+        length_unit = _attr(class_res, "Course", "Length", "unit")
+        length_km = _length_to_decimal_km(length_text, length_unit)
 
-        course, _ = Course.objects.get_or_create(
+        course, c_created = Course.objects.get_or_create(
             competition=competition,
             name=class_name,
             defaults={"length_km": length_km},
         )
-        if course.length_km is None and length_km is not None:
+        if c_created:
+            report.courses_created += 1
+        elif course.length_km is None and length_km is not None:
             course.length_km = length_km
             course.save(update_fields=["length_km"])
 
-        # --- 3) Athletes, Results, Splits ---
-        for pr in class_res.findall(_p("PersonResult")):
-            first = _text(pr, "Person", "Name", "Given") or ""
-            last = _text(pr, "Person", "Name", "Family") or ""
-            club = _text(pr, "Organisation", "Name")
-            gender = _norm_gender(_text(pr, "Person", "Sex"))
+        # PersonResult[]
+        person_results: List[ET.Element] = _children(class_res, "PersonResult")
+        for person_res in person_results:
+            # Athlete
+            given = _text(person_res, "Person", "Name", "Given") or ""
+            family = _text(person_res, "Person", "Name", "Family") or ""
+            full_name = (given + " " + family).strip() or "Unknown athlete"
+            club = _text(person_res, "Organisation", "Name")
 
-            athlete, created_a = Athlete.objects.get_or_create(
-                first_name=first,
-                last_name=last,
-                defaults={"club": club, "gender": gender},
+            # Optional birth year
+            birth = _text(person_res, "Person", "BirthDate")
+            birth_year = None
+            if birth and len(birth) >= 4 and birth[:4].isdigit():
+                birth_year = int(birth[:4])
+
+            athlete, a_created = Athlete.objects.get_or_create(
+                full_name=full_name,
+                defaults={
+                    "club": club,
+                    "birth_year": birth_year,
+                    "is_public": True,
+                    "public_alias": None,
+                },
             )
-            if created_a:
-                athletes_created += 1
+            if a_created:
+                report.athletes_created += 1
 
-            for r in pr.findall(_p("Result")):
-                time_s = parse_time_to_seconds(_text(r, "Time"))
-                status = _text(r, "Status") or "UNK"
-                pos_text = _text(r, "Position")
-                position = int(pos_text) if pos_text and pos_text.isdigit() else None
-
-                # --- Control card ---
-                card_uid = _text(r, "ControlCard")
-                card = None
-                if card_uid:
-                    card, _ = ControlCard.objects.get_or_create(
-                        vendor=ControlCard.VENDOR_UNKNOWN,
-                        uid=card_uid,
-                    )
-
-                # --- Result ---
-                result, created_r = Result.objects.update_or_create(
-                    course=course,
-                    athlete=athlete,
-                    defaults={
-                        "finish_time_s": time_s,
-                        "status": status,
-                        "position": position,
-                        "control_card": card,
-                    },
+            # Control card (optional)
+            card_vendor = _attr(person_res, "Result", "ControlCard", "vendor")
+            card_uid = _text(person_res, "Result", "ControlCard")
+            control_card = None
+            if card_vendor and card_uid:
+                control_card, cc_created = ControlCard.objects.get_or_create(
+                    vendor=card_vendor, uid=card_uid
                 )
-                if created_r:
-                    results_created += 1
+                if cc_created:
+                    report.control_cards_created += 1
 
-                # --- Splits ---
-                result.splits.all().delete()
-                last_cum = 0
-                seq = 0
-                for st in r.findall(_p("SplitTime")):
-                    seq += 1
-                    ctrl_code = _text(st, "ControlCode") or f"UNK{seq}"
-                    cum_time = parse_time_to_seconds(_text(st, "Time")) or 0
-                    leg_time = cum_time - last_cum if last_cum else cum_time
+            # Result
+            status = _text(person_res, "Result", "Status") or "OK"
+            time_s_text = _text(person_res, "Result", "Time")
+            time_seconds = parse_time_to_seconds(time_s_text)
+            place_text = _text(person_res, "Result", "Position")
+            place = int(place_text) if (place_text and place_text.isdigit()) else None
 
-                    Split.objects.create(
-                        result=result,
-                        seq=seq,
-                        control_code=ctrl_code,
-                        split_time_s=leg_time,
-                        cum_time_s=cum_time,
-                    )
-                    last_cum = cum_time
+            result, r_created = Result.objects.get_or_create(
+                athlete=athlete,
+                course=course,
+                defaults={
+                    "status": status,
+                    "time_seconds": time_seconds,
+                    "position": place,
+                    "control_card": control_card,
+                },
+            )
+            if r_created:
+                report.results_created += 1
+            else:
+                fields_to_update = []
+                if result.status != status:
+                    result.status = status
+                    fields_to_update.append("status")
+                if result.time_seconds is None and time_seconds is not None:
+                    result.time_seconds = time_seconds
+                    fields_to_update.append("time_seconds")
+                if result.position is None and place is not None:
+                    result.position = place
+                    fields_to_update.append("position")
+                if result.control_card is None and control_card is not None:
+                    result.control_card = control_card
+                    fields_to_update.append("control_card")
+                if fields_to_update:
+                    result.save(update_fields=fields_to_update)
 
-    return competition, athletes_created, results_created
+            # Splits (optional)
+            result_node = _first(person_res, "Result")
+            split_nodes: List[ET.Element] = (
+                _children(result_node, "SplitTime") if result_node is not None else []
+            )
+            seq = 1
+            cum = 0
+            for sp in split_nodes:
+                code = _text(sp, "ControlCode")
+                sp_time_text = _text(sp, "Time")
+                sp_time = parse_time_to_seconds(sp_time_text)
+                if sp_time is None:
+                    continue
+                cum += sp_time
+                Split.objects.create(
+                    result=result,
+                    sequence=seq,
+                    control_code=code or "",
+                    split_time_seconds=sp_time,
+                    cumulative_time_seconds=cum,
+                )
+                report.splits_created += 1
+                seq += 1
+
+    return report

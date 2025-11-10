@@ -6,7 +6,10 @@
 <div class="container mt-4">
   <h1 class="mb-3">Upload IOFXML</h1>
 
-  {# FI: Viestialue. EN: Flash messages. #}
+  <!-- ============================================================
+       FI: Viestialue (Django messages).
+       EN: Flash message area (Django messages framework).
+       ============================================================ -->
   {% if messages %}
     <div class="mb-3">
       {% for message in messages %}
@@ -19,15 +22,34 @@
 
   <div class="card shadow-sm">
     <div class="card-body">
-      <form method="post" enctype="multipart/form-data">
+
+      <!-- ============================================================
+           FI: Käytetään IOFXMLForm-lomaketta (kenttä "file").
+           EN: Use the IOFXMLForm (field name "file").
+           ============================================================ -->
+      <form method="post" enctype="multipart/form-data" novalidate>
         {% csrf_token %}
+        {{ form.non_field_errors }}
+
         <div class="mb-3">
-          <label for="id_iofxml_file" class="form-label">IOFXML file</label>
-          <input id="id_iofxml_file" name="iofxml_file" type="file" class="form-control" required>
+          <label class="form-label">IOFXML file</label>
+          {{ form.file }}
           <div class="form-text">IOF XML 3.0/3.1 ResultList</div>
+
+          <!-- FI: Näytä kenttäkohtaiset virheet selkeästi.
+               EN: Display field-specific errors clearly. -->
+          {% if form.file.errors %}
+            <div class="text-danger small mt-1">
+              {{ form.file.errors }}
+            </div>
+          {% endif %}
         </div>
-        <button type="submit" class="btn btn-primary">Import IOFXML</button>
+
+        <button type="submit" class="btn btn-primary">
+          Import IOFXML
+        </button>
       </form>
+
     </div>
   </div>
 </div>
