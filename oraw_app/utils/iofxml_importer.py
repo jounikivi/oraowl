@@ -3,12 +3,14 @@
 FI: IOFXML ResultList -tuonnin apukirjasto ORAOwl-projektille.
     - Parsii kilpailun, radat, urheilijat, tulokset ja väliajat.
     - Tallentaa alkuperäisen XML:n UploadedFile-malliin (deduplikointi sha256).
-    - HUOM: Nimiavaruus (xmlns) tuettu ja ratojen pituus käsitellään Decimal-arvoina.
+    - HUOM: Nimiavaruus (xmlns) tuettu ja radan pituus käsitellään Decimal-arvoina.
+    - Aikaformaatit: kokonaissekunnit, 'HH:MM:SS', ISO-8601 'PT#H#M#S' (+ valinnainen 'PnD').
 
 EN: Helper module for importing IOFXML ResultList into ORAOwl.
     - Parses competition, courses, athletes, results and splits.
     - Stores the original XML into UploadedFile (sha256 dedupe).
-    - NOTE: XML namespaces are supported and course length uses Decimals.
+    - NOTE: XML namespaces supported; course length uses Decimals.
+    - Time formats: plain seconds, 'HH:MM:SS', ISO-8601 'PT#H#M#S' (optional 'PnD').
 """
 
 from __future__ import annotations
@@ -177,7 +179,7 @@ def _length_to_km(length_text: Optional[str], unit: Optional[str]) -> Optional[f
         return value
     if u in {"m", "meter", "metre", "meters", "metres"}:
         return value / 1000.0
-    # Unknown unit → assume km
+    # Tuntematon yksikkö → oletetaan km / Unknown unit -> assume km
     return value
 
 
@@ -240,7 +242,7 @@ def import_result_list(*, file_bytes: bytes, filename: str) -> ImportReport:
 
     # --- Store (or dedupe) original XML -------------------------------------
     sha256 = _sha256_bytes(file_bytes)
-    uploaded, created = UploadedFile.objects.get_or_create(
+    uploaded, created_up = UploadedFile.objects.get_or_create(
         sha256=sha256,
         defaults={
             "original_name": filename,
@@ -256,20 +258,39 @@ def import_result_list(*, file_bytes: bytes, filename: str) -> ImportReport:
 
     # --- Competition ---------------------------------------------------------
     comp_name, comp_date, comp_org, comp_place = _parse_competition(root)
+
+    # Luo kilpailu vain varmasti olemassa olevilla kentillä; lisäpäivitykset alla
     competition, created = Competition.objects.get_or_create(
         name=comp_name,
         date=comp_date,
         defaults={
-            "organizer": comp_org,
-            "place": comp_place,
-            "uploaded_file": uploaded,
+            "organizer": comp_org,  # todennäköisesti olemassa
         },
     )
+
+    # Päivitä vapaaehtoiset kentät vain jos malli sisältää ne
+    fields_to_update: List[str] = []
+
+    # location / place
+    if hasattr(competition, "location") and comp_place and not getattr(competition, "location"):
+        competition.location = comp_place
+        fields_to_update.append("location")
+    elif hasattr(competition, "place") and comp_place and not getattr(competition, "place"):
+        competition.place = comp_place
+        fields_to_update.append("place")
+
+    # uploaded_file (jos malli tuntee sen)
+    if hasattr(competition, "uploaded_file") and getattr(competition, "uploaded_file") is None:
+        competition.uploaded_file = uploaded
+        fields_to_update.append("uploaded_file")
+
+    if fields_to_update:
+        competition.save(update_fields=fields_to_update)
+
     if created:
         report.competitions_created += 1
 
     # --- ResultList: Classes -> Courses, Persons -> Results/Splits -----------
-    # Namespace-agnostic selection:
     class_results: List[ET.Element] = _children(root, "ClassResult")
 
     for class_res in class_results:
@@ -348,21 +369,21 @@ def import_result_list(*, file_bytes: bytes, filename: str) -> ImportReport:
             if r_created:
                 report.results_created += 1
             else:
-                fields_to_update = []
+                fields_to_update_r: List[str] = []
                 if result.status != status:
                     result.status = status
-                    fields_to_update.append("status")
+                    fields_to_update_r.append("status")
                 if result.time_seconds is None and time_seconds is not None:
                     result.time_seconds = time_seconds
-                    fields_to_update.append("time_seconds")
+                    fields_to_update_r.append("time_seconds")
                 if result.position is None and place is not None:
                     result.position = place
-                    fields_to_update.append("position")
+                    fields_to_update_r.append("position")
                 if result.control_card is None and control_card is not None:
                     result.control_card = control_card
-                    fields_to_update.append("control_card")
-                if fields_to_update:
-                    result.save(update_fields=fields_to_update)
+                    fields_to_update_r.append("control_card")
+                if fields_to_update_r:
+                    result.save(update_fields=fields_to_update_r)
 
             # Splits (optional)
             result_node = _first(person_res, "Result")
