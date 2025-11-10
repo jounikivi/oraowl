@@ -7,16 +7,15 @@ from __future__ import annotations
 from django.contrib import messages
 from django.db.models import Q
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.core.files.storage import default_storage
-from django.core.management import call_command
 from django.shortcuts import render, redirect
 from django.urls import reverse, reverse_lazy
-from django.views import View
 from django.views.generic import ListView, DetailView, FormView
 from django.contrib.auth import login
 from django.contrib.auth.views import LogoutView
+
 from oraw_app.models import Competition, Athlete, Result
-from oraw_app.forms import SignupForm
+from oraw_app.forms import SignupForm, IOFXMLForm
+from oraw_app.utils.iofxml_importer import import_result_list
 
 
 # ============================================================================
@@ -31,58 +30,48 @@ def home(request):
 
 
 # ============================================================================
-# IOFXML upload view / IOFXML-latausnäkymä
+# IOFXML upload view / IOFXML-latausnäkymä (staff-only)
 # ============================================================================
-class UploadIOFXMLView(LoginRequiredMixin, UserPassesTestMixin, View):
+class UploadIOFXMLView(LoginRequiredMixin, UserPassesTestMixin, FormView):
     """
-    FI: Staff-käyttäjien käyttöliittymä IOFXML-tiedoston tuontiin.
-        Kutsuu olemassa olevaa 'import_iofxml'-komentoa, jotta UI ja CLI toimivat
-        identtisesti (yksi totuuden lähde).
+    FI: Staff-käyttäjien käyttöliittymä IOFXML (ResultList) -tiedoston lataukseen.
+        Lukee tiedoston muistissa ja kutsuu importteria signatuurilla
+        import_result_list(file_bytes=..., filename=...).
 
-    EN: Staff-only UI for IOFXML import.
-        Calls the 'import_iofxml' management command to ensure identical behavior
-        with the CLI importer.
+    EN: Staff-only UI for uploading an IOFXML (ResultList) file.
+        Reads the file in-memory and calls the importer with
+        import_result_list(file_bytes=..., filename=...).
     """
-    template_name = "oraw_app/upload_iofxml.html"
+    template_name = "oraw_app/iofxml/upload.html"  # varmista, että tämä polku on käytössä
+    form_class = IOFXMLForm
+    success_url = reverse_lazy("oraw_app:upload_iofxml")
 
     def test_func(self) -> bool:
-        """
-        FI: Sallitaan käyttö vain staff-käyttäjille.
-        EN: Allow access only for staff users.
-        """
+        # FI: Salli vain staff
+        # EN: Allow staff users only
         return self.request.user.is_staff
 
-    def get(self, request):
+    def form_valid(self, form):
         """
-        FI: Palauttaa tyhjän lomakenäkymän.
-        EN: Render the empty upload form.
-        """
-        return render(request, self.template_name)
+        FI: Lue tiedosto bytes-muotoon ja suorita importteri.
+            Näytä viesti onnistumisesta/epäonnistumisesta.
 
-    def post(self, request):
+        EN: Read the file as bytes and run the importer.
+            Show a flash message on success/failure.
         """
-        FI: Käsittelee tiedoston latauksen ja suorittaa tuonnin komentona.
-        EN: Handles file upload and executes the import as a management command.
-        """
-        f = request.FILES.get("iofxml_file")
-        if not f:
-            messages.error(request, "Lataus epäonnistui: tiedosto puuttuu.")
-            return render(request, self.template_name)
-
-        # Save file temporarily for import
-        tmp_path = default_storage.save(f"tmp/iofxml/{f.name}", f)
-
+        uploaded = form.cleaned_data["file"]  # IOFXMLForm has field "file"
+        file_bytes = uploaded.read()
         try:
-            call_command("import_iofxml", file=default_storage.path(tmp_path))
-            messages.success(
-                request,
-                "IOFXML-tuonti suoritettu onnistuneesti. "
-                "Uudet kilpailut ja tulokset ovat nyt saatavilla.",
-            )
-            return redirect(reverse("oraw_app:upload_iofxml"))
+            report = import_result_list(file_bytes=file_bytes, filename=uploaded.name)
         except Exception as exc:
-            messages.error(request, f"Tuonti epäonnistui: {exc}")
-            return render(request, self.template_name)
+            messages.error(self.request, f"Tuonti epäonnistui: {exc}")
+            return self.form_invalid(form)
+
+        messages.success(
+            self.request,
+            "IOFXML-tuonti suoritettu onnistuneesti. Uudet kilpailut ja tulokset ovat nyt saatavilla.",
+        )
+        return super().form_valid(form)
 
 
 # ============================================================================
@@ -104,7 +93,7 @@ class CompetitionListView(ListView):
         EN: Filters competitions by name and organizer.
         """
         qs = super().get_queryset().order_by("-date", "name")
-        q = self.request.GET.get("q")
+        q = (self.request.GET.get("q") or "").strip()
         if q:
             qs = qs.filter(Q(name__icontains=q) | Q(organizer__icontains=q))
         return qs
@@ -127,23 +116,22 @@ class CompetitionDetailView(DetailView):
         ctx = super().get_context_data(**kwargs)
         competition = self.object
 
-        # FI: Käytä related_name="courses" eikä oletusta course_set
-        # EN: Use related_name="courses" instead of the default course_set
+        # FI: Käytä related_name="courses" (jos malli määritelty niin)
+        # EN: Use related_name="courses" (if defined in model)
         courses = competition.courses.all().order_by("name")
 
-        # FI: Tulokset kilpailun ratojen kautta
-        # EN: Results via course -> competition relation
+        # FI: Tulokset kilpailun ratojen kautta, lajittelu radan nimen ja sijoituksen sekä ajan mukaan
+        # EN: Results via course -> competition relation, ordered by course name, position and time
         results = (
             Result.objects
             .filter(course__competition=competition)
             .select_related("athlete", "course")
-            .order_by("course__name", "position", "finish_time_s")
+            .order_by("course__name", "position", "time_seconds")  # 'time_seconds' matches your model
         )
-            
+
         ctx["courses"] = courses
         ctx["results"] = results
         return ctx
-
 
 
 # ============================================================================
@@ -170,17 +158,18 @@ class AthleteListView(ListView):
         gender = (self.request.GET.get("gender") or "").strip()
 
         if q:
+            # FI: Teidän mallissa käytetään yleensä 'full_name' + 'public_alias'
+            # EN: In your model you typically have 'full_name' + 'public_alias'
             qs = qs.filter(
-                Q(first_name__icontains=q)
-                | Q(last_name__icontains=q)
-                | Q(public_alias__icontains=q)
+                Q(full_name__icontains=q) |
+                Q(public_alias__icontains=q)
             )
         if club:
             qs = qs.filter(club__icontains=club)
         if gender:
             qs = qs.filter(gender=gender)
 
-        return qs.order_by("last_name", "first_name")
+        return qs.order_by("full_name")
 
 
 class AthleteDetailView(DetailView):
@@ -200,7 +189,8 @@ class AthleteDetailView(DetailView):
         ctx = super().get_context_data(**kwargs)
         athlete = self.object
         results = (
-            Result.objects.filter(athlete=athlete)
+            Result.objects
+            .filter(athlete=athlete)
             .select_related("course__competition")
             .order_by("-course__competition__date", "course__name")
         )
@@ -233,13 +223,11 @@ class SignUpView(FormView):
         user = form.save()
         login(self.request, user)
         return super().form_valid(form)
-    
+
 
 # ============================================================================
 # Logout view / Uloskirjautuminen
 # ============================================================================
-from django.contrib.auth.views import LogoutView
-
 class CustomLogoutView(LogoutView):
     """
     FI: Uloskirjautuminen POST-metodilla. Lisää myös onnistumisviestin.
@@ -248,9 +236,6 @@ class CustomLogoutView(LogoutView):
     next_page = "oraw_app:home"
 
     def dispatch(self, request, *args, **kwargs):
-        from django.contrib import messages
         response = super().dispatch(request, *args, **kwargs)
-        # Show success message only if user was authenticated before logout
         messages.success(request, "Olet kirjautunut ulos onnistuneesti.")
         return response
-
