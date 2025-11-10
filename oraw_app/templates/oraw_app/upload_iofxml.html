@@ -6,10 +6,10 @@
 <div class="container mt-4">
   <h1 class="mb-3">Upload IOFXML</h1>
 
-  {# ============================================================
-     FI: Viestialue (Django messages).
-     EN: Flash message area (Django messages framework).
-     ============================================================ #}
+  <!-- ============================================================
+       FI: Viestialue (Django messages).
+       EN: Flash message area (Django messages framework).
+       ============================================================ -->
   {% if messages %}
     <div class="mb-3">
       {% for message in messages %}
@@ -23,10 +23,10 @@
   <div class="card shadow-sm">
     <div class="card-body">
 
-      {# ============================================================
-         FI: Käytetään IOFXMLForm-lomaketta (kenttä "file").
-         EN: Use the IOFXMLForm (field name "file").
-         ============================================================ #}
+      <!-- ============================================================
+           FI: Käytetään IOFXMLForm-lomaketta (kenttä "file").
+           EN: Use the IOFXMLForm (field name "file").
+           ============================================================ -->
       <form method="post" enctype="multipart/form-data" novalidate>
         {% csrf_token %}
         {{ form.non_field_errors }}
@@ -36,8 +36,8 @@
           {{ form.file }}
           <div class="form-text">IOF XML 3.0/3.1 ResultList</div>
 
-          {# FI: Näytä kenttäkohtaiset virheet selkeästi.
-             EN: Display field-specific errors clearly. #}
+          <!-- FI: Näytä kenttäkohtaiset virheet selkeästi.
+               EN: Display field-specific errors clearly. -->
           {% if form.file.errors %}
             <div class="text-danger small mt-1">
               {{ form.file.errors }}
