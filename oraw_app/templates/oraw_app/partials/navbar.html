@@ -37,11 +37,7 @@ EN: Top navigation bar displayed on all pages.
     <!-- FI: Pikalinkki IOFXML-lataukseen (vain staff).
          EN: Quick link to IOFXML upload (staff only). -->
     {% if request.user.is_staff %}
-    <li class="nav-item d-none d-sm-inline-block">
-      <a href="{% url '' %}" class="nav-link text-white">
-        <i class="fas fa-file-upload"></i> Lataa IOFXML
-      </a>
-    </li>
+    
     {% endif %}
   </ul>
 

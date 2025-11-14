@@ -85,12 +85,7 @@ EN: Application sidebar containing OraOwl branding, user info,
         <!-- IOFXML Import (staff only) / IOFXML-tuonti (vain staff) -->
         <!-- ----------------------------------------------------- -->
         {% if request.user.is_staff %}
-        <li class="nav-item">
-          <a href="{% url '' %}" class="nav-link text-white">
-            <i class="nav-icon fas fa-file-upload"></i>
-            <p>Lataa IOFXML</p>
-          </a>
-        </li>
+        
         {% endif %}
 
         <!-- ----------------------------------------------------- -->
