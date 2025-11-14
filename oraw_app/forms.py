@@ -4,61 +4,11 @@ from __future__ import annotations
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
-from django.core.validators import FileExtensionValidator, validate_email
+from django.core.validators import validate_email
 from django.conf import settings
 
 
-# ============================================================================
-# IOFXML upload form / IOFXML-latauslomake
-# ============================================================================
-class IOFXMLForm(forms.Form):
-    """
-    FI: IOF XML 3.0/3.1 ResultList -tiedoston latauslomake. Tekee kevyen
-        validoinnin: koko, tiedostopääte ja sisällön pikatunnistus.
-    EN: Upload form for IOF XML 3.0/3.1 ResultList. Performs light validation:
-        size, extension and quick content sniffing.
-    """
 
-    # FI: Kentän nimi "file" → vastaa views.py ja template-käyttöä
-    # EN: Field name "file" → matches usage in views.py and templates
-    file = forms.FileField(
-        label="IOFXML file",
-        help_text="Upload IOF XML 3.0/3.1 ResultList (.xml).",
-        validators=[FileExtensionValidator(allowed_extensions=["xml"])],
-        widget=forms.ClearableFileInput(attrs={"accept": ".xml,application/xml"}),
-    )
-
-    # FI: Maksimikoko (MB) konfiguroitavissa asetuksista, oletus 5 MB.
-    # EN: Max size (MB) configurable via settings, default 5 MB.
-    MAX_MB = getattr(settings, "IOFXML_MAX_UPLOAD_MB", 5)
-
-    def clean_file(self):
-        """
-        FI: Perusvalidointi: koko, päätteen osuva tarkistus, sekä nopea
-            XML-pikatunnistus (ei korvaa skeemavalidointia).
-        EN: Basic validation: size, extension check, plus quick XML sniff
-            (does not replace full schema validation).
-        """
-        f = self.cleaned_data["file"]
-
-        # 1) Size
-        max_bytes = int(self.MAX_MB) * 1024 * 1024
-        if f.size == 0:
-            raise forms.ValidationError("Tiedosto on tyhjä.")
-        if f.size > max_bytes:
-            raise forms.ValidationError(
-                f"Tiedosto on liian suuri (> {self.MAX_MB} MB)."
-            )
-
-        # 2) Quick content sniff (ResultList tag)
-        head = f.read(2048).decode(errors="ignore")
-        f.seek(0)  # IMPORTANT: reset read pointer after peek
-        if "<ResultList" not in head and "<resultlist" not in head.lower():
-            raise forms.ValidationError(
-                "Tiedosto ei vaikuta IOF ResultList -XML:ltä."
-            )
-
-        return f
 
 
 # ============================================================================

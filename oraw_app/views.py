@@ -14,8 +14,8 @@ from django.contrib.auth import login
 from django.contrib.auth.views import LogoutView
 
 from oraw_app.models import Competition, Athlete, Result
-from oraw_app.forms import SignupForm, IOFXMLForm
-from oraw_app.utils.iofxml_importer import import_result_list
+from oraw_app.forms import SignupForm
+
 
 
 # ============================================================================
@@ -32,41 +32,7 @@ def home(request):
 # ============================================================================
 # IOFXML upload view / IOFXML-latausnäkymä (staff-only)
 # ============================================================================
-class UploadIOFXMLView(LoginRequiredMixin, UserPassesTestMixin, FormView):
-    """
-    FI: Staff-käyttäjien UI IOFXML (ResultList) -tiedoston lataamiseen.
-        Lukee tiedoston muistissa ja kutsuu importteria signatuurilla
-        import_result_list(file_bytes=..., filename=...).
 
-    EN: Staff-only UI for uploading an IOFXML (ResultList) file.
-        Reads the file in memory and calls the importer with
-        import_result_list(file_bytes=..., filename=...).
-    """
-    template_name = "oraw_app/upload_iofxml.html"
-    form_class = IOFXMLForm
-    success_url = reverse_lazy("oraw_app:upload_iofxml")
-
-    def test_func(self) -> bool:
-        # FI: Salli vain staff-käyttäjät.
-        # EN: Allow staff users only.
-        return self.request.user.is_staff
-
-    def form_valid(self, form):
-        """
-        FI: Lue tiedosto bytes-muotoon ja suorita importteri. Näytä palauteviesti.
-        EN: Read the file as bytes, run the importer, and show a flash message.
-        """
-        uploaded = form.cleaned_data["file"]  # IOFXMLForm has field "file"
-        file_bytes = uploaded.read()
-
-        try:
-            import_result_list(file_bytes=file_bytes, filename=uploaded.name)
-        except Exception as exc:
-            messages.error(self.request, f"Tuonti epäonnistui: {exc}")
-            return self.form_invalid(form)
-
-        messages.success(self.request, "IOFXML-tuonti onnistui.")
-        return super().form_valid(form)
 
 
 # ============================================================================

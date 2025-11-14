@@ -27,7 +27,7 @@ urlpatterns = [
     # ------------------------------------------------------------------------
     # IOFXML upload / IOFXML-tiedoston lataus
     # ------------------------------------------------------------------------
-    path("upload/iofxml/", views.UploadIOFXMLView.as_view(), name="upload_iofxml"),
+    
 
     # ------------------------------------------------------------------------
     # Competitions / Kilpailut
