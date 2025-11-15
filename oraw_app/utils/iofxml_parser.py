@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, List
 import xml.etree.ElementTree as ET
 
 
@@ -70,7 +70,7 @@ class ParsedResult:
     position: Optional[int]
     control_card: Optional[str]
     punching_system: Optional[str]
-    split_times: list[ParsedSplitTime]
+    split_times: List[ParsedSplitTime]
 
 
 @dataclass
@@ -81,7 +81,7 @@ class ParsedClassResult:
     """
     class_name: str
     course: ParsedCourse
-    results: list[ParsedResult]
+    results: List[ParsedResult]
 
 
 @dataclass
@@ -95,7 +95,7 @@ class ParsedCompetition:
     organizer: Optional[str]
     location: Optional[str]
     iof_event_id: Optional[str]
-    classes: list[ParsedClassResult]
+    classes: List[ParsedClassResult]
 
 
 # ---------------------------------------------------------------
@@ -168,6 +168,11 @@ def _int(value: Optional[str]) -> Optional[int]:
     except ValueError:
         return None
 
+
+# ---------------------------------------------------------------
+# FI: Parsitaan henkilö, väliajat, ym. apufunktiot.
+# EN: Parse person, split times and other helpers.
+# ---------------------------------------------------------------
 
 def _parse_athlete(person_result: ET.Element) -> ParsedAthlete:
     """
@@ -246,8 +251,8 @@ def _parse_split_times(result_el: ET.Element) -> list[ParsedSplitTime]:
 
 
 # ---------------------------------------------------------------
-# FI: Julkinen rajapinta (public API).
-# EN: Public API.
+# FI: Päätason parseri.
+# EN: Top-level parser.
 # ---------------------------------------------------------------
 
 def parse_iofxml_result_list(xml_bytes: bytes) -> ParsedCompetition:
@@ -296,18 +301,35 @@ def parse_iofxml_result_list(xml_bytes: bytes) -> ParsedCompetition:
         )
 
     name = _text(event_el, "Name") or "Unknown competition"
-    date = _text(event_el, "StartTime", "Date") or _text(
-        event_el,
-        "StartTime",
-        "DateTime",
-    )
 
+    # Päivä: <StartTime><Date> tai <StartTime><DateTime>
+    start_time_el = _first(event_el, "StartTime")
+    date = None
+    if start_time_el is not None:
+        date = _text(start_time_el, "Date") or _text(start_time_el, "DateTime")
+
+    # Järjestäjä: hyväksytään sekä <Organiser><Name> / <ShortName> että suora teksti
     organiser_el = _first(event_el, "Organiser") or _first(event_el, "Organizer")
     organizer = None
     if organiser_el is not None:
-        organizer = _text(organiser_el, "ShortName") or _text(organiser_el, "Name")
+        direct_text = (organiser_el.text or "").strip()
+        organizer = (
+            direct_text
+            or _text(organiser_el, "ShortName")
+            or _text(organiser_el, "Name")
+        )
 
-    location = _text(event_el, "Place", "Name")
+    # Sijainti (Place/Name tai Place/City, Place/Arena tms.)
+    location = None
+    place_el = _first(event_el, "Place")
+    if place_el is not None:
+        # minimalistisessa tiedostossa voi olla vain Name
+        location = (
+            _text(place_el, "Name")
+            or _text(place_el, "City")
+            or _text(place_el, "Arena")
+        )
+
     iof_event_id = _text(event_el, "Id")
 
     # -----------------------------------------------------------
@@ -317,6 +339,7 @@ def parse_iofxml_result_list(xml_bytes: bytes) -> ParsedCompetition:
     classes: list[ParsedClassResult] = []
 
     for class_result_el in _children(root, "ClassResult"):
+        # Sarjan nimi: Class/ShortName tai Class/Name
         class_name = (
             _text(class_result_el, "Class", "ShortName")
             or _text(class_result_el, "Class", "Name")
@@ -324,17 +347,24 @@ def parse_iofxml_result_list(xml_bytes: bytes) -> ParsedCompetition:
         )
 
         course_el = _first(class_result_el, "Course")
+
+        # --- KORJAUS: Radan nimi ---
+        # FI: Radan nimeksi otetaan ensisijaisesti <Course><Name>,
+        #     ja jos sitä ei ole, käytetään sarjan nimeä (class_name).
+        # EN: Course name prefers <Course><Name>, falling back to class_name.
         if course_el is not None:
+            course_name = _text(course_el, "Name") or class_name
             length_m = _int(_text(course_el, "Length"))
             climb_m = _int(_text(course_el, "Climb"))
             controls_count = _int(_text(course_el, "NumberOfControls"))
         else:
+            course_name = class_name
             length_m = None
             climb_m = None
             controls_count = None
 
         course = ParsedCourse(
-            name=class_name,
+            name=course_name,
             length_m=length_m,
             climb_m=climb_m,
             controls_count=controls_count,
