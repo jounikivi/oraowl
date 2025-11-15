@@ -7,7 +7,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, TYPE_CHECKING
+from typing import Optional
 
 from django.db import transaction
 
@@ -18,23 +18,16 @@ from oraw_app.utils.iofxml_parser import (
     parse_iofxml_result_list,
 )
 
-if TYPE_CHECKING:
-    # FI: Käytetään Django User -mallia vain tyypityksessä.
-    # EN: Use Django's User model for type checking only.
-    from django.contrib.auth.models import AbstractUser as User
-
-
 # HUOM / NOTE:
 # FI: Säädä nämä importit vastaamaan omia mallejasi, jos nimet eroavat.
 # EN: Adjust these imports to match your actual models if names differ.
 from oraw_app.models import (
     Competition,
     Course,
-    Athlete,       # vai Runner tms. → muuta tarvittaessa
+    Athlete,       # jos eri nimi (esim. Runner), muuta tämä
     Result,
     Split,
     ControlCard,
-    UploadedFile,
 )
 
 
@@ -85,7 +78,6 @@ def _map_punching_system(raw: Optional[str]) -> str:
 
 def _get_or_create_competition(
     parsed: ParsedCompetition,
-    uploaded_file: Optional[UploadedFile],
     report: ImportReport,
 ) -> Competition:
     """
@@ -98,27 +90,22 @@ def _get_or_create_competition(
         defaults={
             "organizer": parsed.organizer,
             "location": parsed.location,
-            "iof_event_id": parsed.iof_event_id,
-            "source_file": uploaded_file,
         },
     )
 
     if created:
         report.competitions_created += 1
     else:
-        # Päivitä perustiedot varovasti
+        # FI: Päivitetään perustiedot varovasti (vain jos arvo muuttuu).
+        # EN: Update basic fields carefully (only if the value changes).
         changed = False
         for field, value in {
             "organizer": parsed.organizer,
             "location": parsed.location,
-            "iof_event_id": parsed.iof_event_id,
         }.items():
             if value and getattr(competition, field, None) != value:
                 setattr(competition, field, value)
                 changed = True
-        if uploaded_file is not None and getattr(competition, "source_file", None) is None:
-            competition.source_file = uploaded_file
-            changed = True
 
         if changed:
             competition.save()
@@ -286,8 +273,7 @@ def _create_or_update_result(
 def import_iofxml_result_list(
     xml_bytes: bytes,
     *,
-    filename: Optional[str] = None,
-    uploaded_by: Optional["User"] = None,
+    filename: Optional[str] = None,  # varattu tulevaa käyttöä varten
 ) -> ImportReport:
     """
     FI:
@@ -295,38 +281,19 @@ def import_iofxml_result_list(
         kilpailun, radat, urheilijat, tulokset ja väliajat, ja
         palauttaa ImportReport-yhteenvedon.
 
-        Huomio:
-        - Tiedosto voidaan tallentaa UploadedFile-malliin, jos halutaan
-          säilyttää alkuperäinen IOFXML talteen.
-
     EN:
         High-level IOFXML import. Parses the XML, creates or updates
         competitions, courses, athletes, results and split times, and
         returns an ImportReport summary.
-
-        Note:
-        - The original IOFXML can be stored in UploadedFile if you
-          want to keep the source file.
     """
     report = ImportReport()
 
     # 1) Parsitaan XML väliaikaiseen rakenteeseen.
     parsed_competition: ParsedCompetition = parse_iofxml_result_list(xml_bytes)
 
-    # 2) Tallennetaan haluttaessa UploadedFile (vain metatietona tässä).
-    uploaded_file: Optional[UploadedFile] = None
-    if filename:
-        uploaded_file = UploadedFile.objects.create(
-            original_name=filename,
-            # FI: Varsinainen tiedosto voidaan tallentaa erikseen
-            # EN: The actual file content can be attached separately
-            uploaded_by=uploaded_by,
-            source_type="iofxml_result_list",
-        )
-
-    # 3) Kaikki tietokantaoperaatiot samassa transaktiossa.
+    # 2) Kaikki tietokantaoperaatiot samassa transaktiossa.
     with transaction.atomic():
-        competition = _get_or_create_competition(parsed_competition, uploaded_file, report)
+        competition = _get_or_create_competition(parsed_competition, report)
 
         for class_result in parsed_competition.classes:
             course = _get_or_create_course(competition, class_result, report)
