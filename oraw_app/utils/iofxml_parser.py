@@ -206,14 +206,29 @@ def _parse_athlete(person_result: ET.Element) -> ParsedAthlete:
 
 def _parse_split_times(result_el: ET.Element) -> list[ParsedSplitTime]:
     """
-    FI: Parsii Result-elementistä kaikki väliajat.
-    EN: Parse all split times from a Result element.
+    FI: Parsii Result-elementistä kaikki väliajat. Tukee sekä attribuutti-
+        että alielementtipohjaisia arvoja (controlCode/time vs. ControlCode/Time).
+    EN: Parse all split times from a Result element. Supports both attribute-
+        based and child-element-based values (controlCode/time vs. ControlCode/Time).
     """
     splits: list[ParsedSplitTime] = []
 
     for idx, split_el in enumerate(_children(result_el, "SplitTime"), start=1):
-        control_code = _text(split_el, "ControlCode") or ""
-        time_seconds = _int(_text(split_el, "Time"))
+        # FI: Rastikoodi ensin attribuutista, muuten alielementistä.
+        # EN: Control code from attribute first, otherwise from child element.
+        control_code = (
+            (split_el.get("controlCode") or "").strip()
+            or (_text(split_el, "ControlCode") or "")
+        )
+
+        # FI: Aika sekunteina: ensin attribuutista "time", sitten <Time>-alielementistä.
+        # EN: Time in seconds: first from "time" attribute, then from <Time> child.
+        time_attr = split_el.get("time")
+        if time_attr is not None:
+            time_seconds = _int(time_attr)
+        else:
+            time_seconds = _int(_text(split_el, "Time"))
+
         status = _text(split_el, "Status")
         position = _int(_text(split_el, "Position"))
 
@@ -339,8 +354,32 @@ def parse_iofxml_result_list(xml_bytes: bytes) -> ParsedCompetition:
             status = _text(result_el, "Status") or "OK"
             time_seconds = _int(_text(result_el, "Time"))
             position = _int(_text(result_el, "Position"))
-            control_card = _text(result_el, "ControlCard")
-            punching_system = _text(result_el, "PunchingSystem")
+
+            # -------------------------------------------------------
+            # FI: Leimauskortin numero ja järjestelmä:
+            #     - ensin PersonResult/ControlCard/Id + PunchingSystem
+            #     - vaihtoehtoisesti Result/ControlCard tai Result/PunchingSystem
+            # EN: Control card and punching system:
+            #     - first from PersonResult/ControlCard/Id + PunchingSystem
+            #     - alternatively from Result/ControlCard or Result/PunchingSystem
+            # -------------------------------------------------------
+            card_el = _first(person_result_el, "ControlCard") or _first(
+                result_el,
+                "ControlCard",
+            )
+
+            control_card = None
+            punching_system = None
+
+            if card_el is not None:
+                control_card = _text(card_el, "Id") or _text(card_el)
+                punching_system = _text(card_el, "PunchingSystem") or _text(
+                    result_el,
+                    "PunchingSystem",
+                )
+            else:
+                control_card = _text(result_el, "ControlCard")
+                punching_system = _text(result_el, "PunchingSystem")
 
             split_times = _parse_split_times(result_el)
 
