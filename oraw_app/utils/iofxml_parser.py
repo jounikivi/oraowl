@@ -302,15 +302,37 @@ def parse_iofxml_result_list(xml_bytes: bytes) -> ParsedCompetition:
 
     name = _text(event_el, "Name") or "Unknown competition"
 
-    # Päivä: <StartTime><Date> tai <StartTime><DateTime>
+    # Päivä:
+    # 1) <StartTime><Date>
+    # 2) <StartTime><DateTime>
+    # 3) tai suoraan <StartTime>2025-08-15T17:00:00+03:00</StartTime> → otetaan vain päivä
     start_time_el = _first(event_el, "StartTime")
-    date = None
+    date: Optional[str] = None
     if start_time_el is not None:
+        # Ensin mahdolliset alielementit
         date = _text(start_time_el, "Date") or _text(start_time_el, "DateTime")
+        if date is None:
+            # Jos ei alielementtejä, otetaan suoraan tekstistä (ISO datetime)
+            raw = (start_time_el.text or "").strip()
+            if raw:
+                # Esim. '2025-08-15T17:00:00+03:00' -> '2025-08-15'
+                date = raw.split("T", 1)[0]
 
-    # Järjestäjä: hyväksytään sekä <Organiser><Name> / <ShortName> että suora teksti
-    organiser_el = _first(event_el, "Organiser") or _first(event_el, "Organizer")
+    # -----------------------------------------------------------
+    # Järjestäjä (Organiser/Organizer/Organisation):
+    #  - hyväksytään suora teksti <Organiser>Turun...</Organiser>
+    #  - tai <Organiser><ShortName> / <Name>
+    # -----------------------------------------------------------
     organizer = None
+    organiser_el: Optional[ET.Element] = None
+
+    # Etsitään ensimmäinen lapsi, jonka local-nimi on jokin näistä.
+    for child in list(event_el):
+        lname = _local(child.tag)
+        if lname in {"Organiser", "Organizer", "Organisation"}:
+            organiser_el = child
+            break
+
     if organiser_el is not None:
         direct_text = (organiser_el.text or "").strip()
         organizer = (
@@ -348,10 +370,8 @@ def parse_iofxml_result_list(xml_bytes: bytes) -> ParsedCompetition:
 
         course_el = _first(class_result_el, "Course")
 
-        # --- KORJAUS: Radan nimi ---
-        # FI: Radan nimeksi otetaan ensisijaisesti <Course><Name>,
-        #     ja jos sitä ei ole, käytetään sarjan nimeä (class_name).
-        # EN: Course name prefers <Course><Name>, falling back to class_name.
+        # Radan nimeksi otetaan ensisijaisesti <Course><Name>,
+        # ja jos sitä ei ole, käytetään sarjan nimeä (class_name).
         if course_el is not None:
             course_name = _text(course_el, "Name") or class_name
             length_m = _int(_text(course_el, "Length"))
