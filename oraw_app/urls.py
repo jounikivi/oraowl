@@ -42,7 +42,7 @@ urlpatterns = [
         name="competition_list",
     ),
     path(
-        "competitions/<int:pk>/",
+        "competitions/<uuid:pk>/",
         views.CompetitionDetailView.as_view(),
         name="competition_detail",
     ),
