@@ -1,57 +1,97 @@
-{% extends "base.html" %}
+{% extends "oraw_app/base.html" %}
 {% load static %}
 
-{% block title %}IOFXML Import{% endblock %}
+{% block title %}IOFXML-tuonti{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <h1 class="mb-3">IOFXML Import</h1>
+<!-- ============================================================
+     IOFXML upload page / IOFXML-lataussivu
+     ============================================================ -->
 
-    <p class="text-muted">
-        <strong>FI:</strong> Lataa IOF Data Standard 3.0 <code>ResultList</code> -tiedosto ja tuo se järjestelmään.<br>
-        <strong>EN:</strong> Upload an IOF Data Standard 3.0 <code>ResultList</code> file and import it into the system.
-    </p>
-
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags }} mt-3">{{ message }}</div>
-        {% endfor %}
-    {% endif %}
-
-    <div class="card shadow-sm mt-4">
-        <div class="card-body">
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-
-                <div class="mb-3">
-                    {{ form.file.label_tag }}
-                    {{ form.file }}
-                    {% if form.file.help_text %}
-                        <div class="form-text">{{ form.file.help_text }}</div>
-                    {% endif %}
-                    {{ form.file.errors }}
-                </div>
-
-                <div class="mb-3">
-                    {{ form.note.label_tag }}
-                    {{ form.note }}
-                    {% if form.note.help_text %}
-                        <div class="form-text">{{ form.note.help_text }}</div>
-                    {% endif %}
-                    {{ form.note.errors }}
-                </div>
-
-                <button type="submit" class="btn btn-primary">
-                    Import IOFXML
-                </button>
-            </form>
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-8">
+                <h1 class="m-0">IOFXML-tuonti</h1>
+                <p class="text-muted mt-2 mb-0">
+                    Lataa IOF Data Standard 3.0 <code>ResultList</code> -tiedosto
+                    ja tuo kilpailun tulokset ORAOwl-järjestelmään.
+                </p>
+            </div>
         </div>
     </div>
-
-    <div class="mt-4">
-        <a href="{% url 'oraw_app:competitions_index' %}" class="btn btn-outline-secondary">
-            ← Back to competitions
-        </a>
-    </div>
 </div>
+
+<section class="content">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-lg-7 col-xl-6">
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Sulje"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h3 class="card-title mb-0">
+                            IOFXML ResultList -tiedosto
+                        </h3>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+
+                        <div class="card-body">
+                            {{ form.non_field_errors }}
+
+                            <!-- Tiedosto -->
+                            <div class="mb-3">
+                                <label for="{{ form.file.id_for_label }}" class="form-label">
+                                    Tiedosto
+                                </label>
+                                {{ form.file }}
+                                {% for error in form.file.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text">
+                                    Valitse IOF Data Standard 3.0 ResultList -XML-tiedosto.
+                                </div>
+                            </div>
+
+                            <!-- Muistiinpano -->
+                            <div class="mb-3">
+                                <label for="{{ form.note.id_for_label }}" class="form-label">
+                                    Muistiinpano (valinnainen)
+                                </label>
+                                {{ form.note }}
+                                {% for error in form.note.errors %}
+                                    <div class="text-danger small">{{ error }}</div>
+                                {% endfor %}
+                                <div class="form-text">
+                                    Voit halutessasi kirjoittaa lyhyen kuvauksen latauksesta
+                                    (esimerkiksi kilpailun nimi tai lähde).
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer d-flex justify-content-between align-items-center">
+                            <button type="submit" class="btn btn-primary">
+                                Tuo IOFXML
+                            </button>
+                            <a href="{% url 'oraw_app:competitions_index' %}" class="btn btn-outline-secondary btn-sm">
+                                ← Takaisin kilpailuihin
+                            </a>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
 {% endblock %}
