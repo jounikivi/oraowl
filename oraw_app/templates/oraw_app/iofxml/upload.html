@@ -4,94 +4,67 @@
 {% block title %}IOFXML-tuonti{% endblock %}
 
 {% block content %}
-<!-- ============================================================
-     IOFXML upload page / IOFXML-lataussivu
-     ============================================================ -->
+<div class="content p-3">
+  <div class="container-fluid">
 
-<div class="content-header">
-    <div class="container-fluid">
-        <div class="row mb-2">
-            <div class="col-sm-8">
-                <h1 class="m-0">IOFXML-tuonti</h1>
-                <p class="text-muted mt-2 mb-0">
-                    Lataa IOF Data Standard 3.0 <code>ResultList</code> -tiedosto
-                    ja tuo kilpailun tulokset ORAOwl-järjestelmään.
-                </p>
-            </div>
-        </div>
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h1 class="h3 mb-0">IOFXML-tuonti</h1>
+      <a href="{% url 'oraw_app:competitions_index' %}" class="btn btn-outline-secondary">
+        ← Takaisin kilpailuihin
+      </a>
     </div>
+
+    <p class="text-muted mb-4">
+      Lataa IOF Data Standard 3.0 <code>ResultList</code> -tiedosto ja tuo kilpailun tulokset ORAOwl-järjestelmään.
+    </p>
+
+    {% if messages %}
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+
+    <div class="card shadow-sm">
+      <div class="card-body">
+
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+
+          {{ form.non_field_errors }}
+
+          <!-- Tiedosto -->
+          <div class="mb-3">
+            <label for="{{ form.file.id_for_label }}" class="form-label">Tiedosto</label>
+            {{ form.file }}
+            {% if form.file.errors %}
+              <div class="text-danger small">{{ form.file.errors.0 }}</div>
+            {% endif %}
+            <div class="form-text">
+              Valitse IOFXML (ResultList XML) -tiedosto.
+            </div>
+          </div>
+
+          <!-- Muistiinpano -->
+          <div class="mb-3">
+            <label for="{{ form.note.id_for_label }}" class="form-label">Muistiinpano (valinnainen)</label>
+            {{ form.note }}
+            {% if form.note.errors %}
+              <div class="text-danger small">{{ form.note.errors.0 }}</div>
+            {% endif %}
+            <div class="form-text">
+              Lisää halutessasi lyhyt kuvaus latauksesta.
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary">Tuo IOFXML</button>
+        </form>
+
+      </div>
+    </div>
+
+  </div>
 </div>
-
-<section class="content">
-    <div class="container-fluid">
-        <div class="row">
-            <div class="col-lg-7 col-xl-6">
-
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Sulje"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-
-                <div class="card shadow-sm">
-                    <div class="card-header">
-                        <h3 class="card-title mb-0">
-                            IOFXML ResultList -tiedosto
-                        </h3>
-                    </div>
-
-                    <form method="post" enctype="multipart/form-data">
-                        {% csrf_token %}
-
-                        <div class="card-body">
-                            {{ form.non_field_errors }}
-
-                            <!-- Tiedosto -->
-                            <div class="mb-3">
-                                <label for="{{ form.file.id_for_label }}" class="form-label">
-                                    Tiedosto
-                                </label>
-                                {{ form.file }}
-                                {% for error in form.file.errors %}
-                                    <div class="text-danger small">{{ error }}</div>
-                                {% endfor %}
-                                <div class="form-text">
-                                    Valitse IOF Data Standard 3.0 ResultList -XML-tiedosto.
-                                </div>
-                            </div>
-
-                            <!-- Muistiinpano -->
-                            <div class="mb-3">
-                                <label for="{{ form.note.id_for_label }}" class="form-label">
-                                    Muistiinpano (valinnainen)
-                                </label>
-                                {{ form.note }}
-                                {% for error in form.note.errors %}
-                                    <div class="text-danger small">{{ error }}</div>
-                                {% endfor %}
-                                <div class="form-text">
-                                    Voit halutessasi kirjoittaa lyhyen kuvauksen latauksesta
-                                    (esimerkiksi kilpailun nimi tai lähde).
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card-footer d-flex justify-content-between align-items-center">
-                            <button type="submit" class="btn btn-primary">
-                                Tuo IOFXML
-                            </button>
-                            <a href="{% url 'oraw_app:competitions_index' %}" class="btn btn-outline-secondary btn-sm">
-                                ← Takaisin kilpailuihin
-                            </a>
-                        </div>
-                    </form>
-                </div>
-
-            </div>
-        </div>
-    </div>
-</section>
 {% endblock %}
