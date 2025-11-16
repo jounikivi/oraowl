@@ -1,3 +1,4 @@
+
 # oraw_app/views.py
 from __future__ import annotations
 
@@ -14,8 +15,8 @@ from django.contrib.auth import login
 from django.contrib.auth.views import LogoutView
 
 from oraw_app.models import Competition, Athlete, Result
-from oraw_app.forms import SignupForm
-
+from oraw_app.forms import SignupForm, IOFXMLUploadForm
+from oraw_app.utils.iofxml_importer import import_iofxml_result_list
 
 
 # ============================================================================
@@ -34,10 +35,81 @@ def home(request):
 # ============================================================================
 
 
+class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    """
+    FI: Mixin, joka varmistaa, että käyttäjä on kirjautunut ja kuuluu henkilöstöön.
+    EN: Mixin that ensures the user is authenticated and is a staff member.
+    """
+
+    def test_func(self):
+        """
+        FI: Sallitaan vain staff-käyttäjät.
+        EN: Allow only staff users.
+        """
+        user = self.request.user
+        return bool(user and user.is_staff)
+
+
+class IOFXMLUploadView(StaffRequiredMixin, FormView):
+    """
+    FI: IOFXML 3.0 ResultList -tiedoston lataus- ja tuontinäkymä (vain staff).
+    EN: IOFXML 3.0 ResultList upload & import view (staff only).
+    """
+
+    template_name = "oraw_app/iofxml/upload.html"
+    form_class = IOFXMLUploadForm
+    success_url = reverse_lazy("oraw_app:iofxml_upload")
+
+    def form_valid(self, form):
+        """
+        FI: Kun lomake on validi, luetaan XML-tiedosto, ajetaan importer ja
+            näytetään käyttäjälle yhteenveto tuonnista.
+        EN: When the form is valid, read the XML file, run the importer and
+            show a summary message to the user.
+        """
+        uploaded_file = form.cleaned_data["file"]
+        xml_bytes = uploaded_file.read()
+
+        # FI: Kutsutaan korkeantason importer-funktiota.
+        # EN: Call the high-level importer function.
+        report = import_iofxml_result_list(
+            xml_bytes,
+            filename=uploaded_file.name,
+            uploaded_by=self.request.user,
+        )
+
+        # FI: Rakennetaan kaksikielinen viesti raportin perusteella.
+        # EN: Build a bilingual message based on the report.
+        msg_fi = (
+            "IOFXML-tuonti valmis. "
+            f"Kilpailuja luotu: {report.competitions_created}, "
+            f"päivitetty: {report.competitions_updated}. "
+            f"Ratoja luotu: {report.courses_created}. "
+            f"Urheilijoita luotu: {report.athletes_created}. "
+            f"Tuloksia luotu: {report.results_created}, "
+            f"päivitetty: {report.results_updated}. "
+            f"Väliaikoja luotu: {report.splits_created}."
+        )
+        msg_en = (
+            "IOFXML import completed. "
+            f"Competitions created: {report.competitions_created}, "
+            f"updated: {report.competitions_updated}. "
+            f"Courses created: {report.courses_created}. "
+            f"Athletes created: {report.athletes_created}. "
+            f"Results created: {report.results_created}, "
+            f"updated: {report.results_updated}. "
+            f"Splits created: {report.splits_created}."
+        )
+
+        messages.success(self.request, f"{msg_fi} / {msg_en}")
+        return super().form_valid(form)
+
 
 # ============================================================================
 # Competitions list & detail views / Kilpailunäkymät
 # ============================================================================
+
+
 class CompetitionListView(ListView):
     """
     FI: Kilpailujen listaus sivutuksella ja pikahaulla (?q=).
@@ -97,6 +169,8 @@ class CompetitionDetailView(DetailView):
 # ============================================================================
 # Athlete list & detail views / Urheilijanäkymät
 # ============================================================================
+
+
 class AthleteListView(ListView):
     """
     FI: Urheilijalista taulukkona, tukee hakua ja suodatuksia (?q, ?club, ?gender).
@@ -157,6 +231,8 @@ class AthleteDetailView(DetailView):
 # ============================================================================
 # Signup view / Rekisteröintinäkymä
 # ============================================================================
+
+
 class SignUpView(FormView):
     """
     FI: Rekisteröinti omalla SignupForm-luokalla. Onnistumisen jälkeen
@@ -180,6 +256,8 @@ class SignUpView(FormView):
 # ============================================================================
 # Logout view / Uloskirjautuminen
 # ============================================================================
+
+
 class CustomLogoutView(LogoutView):
     """
     FI: Uloskirjautuminen POST-metodilla ja lyhyt palauteviesti.
