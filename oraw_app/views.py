@@ -110,6 +110,10 @@ class IOFXMLUploadView(StaffRequiredMixin, FormView):
 # Competitions list & detail views / Kilpailunäkymät
 # ============================================================================
 
+# ============================================================================
+# Competitions list & detail views / Kilpailunäkymät
+# ============================================================================
+
 class CompetitionListView(ListView):
     """
     FI:
@@ -119,7 +123,7 @@ class CompetitionListView(ListView):
     """
 
     model = Competition
-    template_name = "oraw_app/competition_list.html"
+    template_name = "oraw_app/competitions/competition_list.html"
     context_object_name = "competitions"
     ordering = ["-date"]
 
@@ -133,7 +137,7 @@ class CompetitionDetailView(DetailView):
     """
 
     model = Competition
-    template_name = "oraw_app/competition_detail.html"
+    template_name = "oraw_app/competitions/competition_detail.html"
     context_object_name = "competition"
 
     def get_context_data(self, **kwargs):
@@ -145,10 +149,13 @@ class CompetitionDetailView(DetailView):
             Add competition's courses into the template context.
         """
         context = super().get_context_data(**kwargs)
-        context["courses"] = Course.objects.filter(
-            competition=self.object
-        ).order_by("name")
+        context["courses"] = (
+            Course.objects.filter(competition=self.object)
+            .order_by("name")
+        )
         return context
+
+
 
 
 
