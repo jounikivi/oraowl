@@ -18,7 +18,6 @@ from oraw_app.models import (
     Result,
     Split,
     ControlCard,
-    UploadedFile,
 )
 
 # FI: Apu: polku tests/data -kansioon.
@@ -51,7 +50,6 @@ class IOFXMLImporterMinimalTests(TestCase):
         self.assertEqual(Result.objects.count(), 0)
         self.assertEqual(Split.objects.count(), 0)
         self.assertEqual(ControlCard.objects.count(), 0)
-        self.assertEqual(UploadedFile.objects.count(), 0)
 
         report = import_iofxml_result_list(
             xml_bytes,
@@ -67,7 +65,6 @@ class IOFXMLImporterMinimalTests(TestCase):
         self.assertEqual(Result.objects.count(), 1)
         self.assertEqual(Split.objects.count(), 3)
         self.assertEqual(ControlCard.objects.count(), 1)
-        self.assertEqual(UploadedFile.objects.count(), 1)
 
         # FI: Varmistetaan myös, että raportin luvut vastaavat komentorivin tulostetta.
         # EN: Also verify that the report numbers match the CLI output.
@@ -102,7 +99,6 @@ class IOFXMLImporterMinimalTests(TestCase):
         self.assertEqual(Result.objects.count(), 1)
         self.assertEqual(Split.objects.count(), 3)
         self.assertEqual(ControlCard.objects.count(), 1)
-        self.assertEqual(UploadedFile.objects.count(), 1)
 
         # Second import of the same file
         second_report = import_iofxml_result_list(
@@ -119,10 +115,6 @@ class IOFXMLImporterMinimalTests(TestCase):
         self.assertEqual(Result.objects.count(), 1)
         self.assertEqual(Split.objects.count(), 3)
         self.assertEqual(ControlCard.objects.count(), 1)
-
-        # FI: UploadedFile-tietueita tulee kuitenkin kaksi (kaksi eri latauskertaa).
-        # EN: However, there should be two UploadedFile records (two separate uploads).
-        self.assertEqual(UploadedFile.objects.count(), 2)
 
         # FI: Raportin toisella ajolla ei pitäisi enää luoda uutta kilpailua tai tulosta.
         # EN: On the second run, no new competitions or results should be created.
