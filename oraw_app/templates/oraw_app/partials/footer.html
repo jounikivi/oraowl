@@ -21,7 +21,7 @@ EN: Global footer displayed on all pages.
   <!-- FI: Linkit tietosuojaan ja käyttöehtoihin (voit lisätä sivut myöhemmin). -->
   <!-- EN: Links to privacy and terms pages (add actual pages later). -->
   <a href="{% url 'oraw_app:home' %}" class="text-light mx-1">Etusivu</a> |
-  <a href="{% url 'oraw_app:competitions_index' %}" class="text-light mx-1">Kilpailut</a> |
+  {% comment %} <a href="{% url 'oraw_app:competitions_index' %}" class="text-light mx-1">Kilpailut</a> | {% endcomment %}
   <a href="#" class="text-light mx-1">Tietosuoja</a> |
   <a href="#" class="text-light mx-1">Käyttöehdot</a>
 
