@@ -1,3 +1,4 @@
+
 # oraw_app/forms.py
 from __future__ import annotations
 
@@ -6,9 +7,6 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
 from django.core.validators import validate_email
 from django.conf import settings
-
-
-
 
 
 # ============================================================================
@@ -92,3 +90,45 @@ class SignupForm(UserCreationForm):
         if User.objects.filter(email__iexact=email).exists():
             raise forms.ValidationError("Tällä sähköpostilla on jo tili.")
         return email
+
+
+# ============================================================================
+# IOFXML upload form / IOFXML-latauslomake
+# ============================================================================
+class IOFXMLUploadForm(forms.Form):
+    """
+    FI: Lomake IOFXML 3.0 ResultList -tiedoston lataamiseen ja tuontiin.
+    EN: Form for uploading and importing an IOFXML 3.0 ResultList file.
+    """
+
+    file = forms.FileField(
+        label="IOFXML ResultList -tiedosto",
+        help_text=(
+            "FI: Valitse IOF Data Standard 3.0 ResultList -tiedosto (XML). "
+            "EN: Select an IOF Data Standard 3.0 ResultList XML file."
+        ),
+        widget=forms.ClearableFileInput(
+            attrs={
+                "class": "form-control",
+            }
+        ),
+    )
+
+    note = forms.CharField(
+        label="Muistiinpano (valinnainen) / Note (optional)",
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "class": "form-control",
+                "rows": 3,
+                "placeholder": (
+                    "FI: Kirjaa halutessasi lyhyt kuvaus latauksesta. "
+                    "EN: Optionally add a short note about this upload."
+                ),
+            }
+        ),
+        help_text=(
+            "FI: Tämä kenttä on vain dokumentointia varten, eikä vaikuta tuontiin. "
+            "EN: This field is for documentation only and does not affect the import."
+        ),
+    )
