@@ -39,12 +39,12 @@ urlpatterns = [
     path(
         "competitions/",
         views.CompetitionListView.as_view(),
-        name="competitions_index",
+        name="competition_list",
     ),
     path(
-        "competitions/<uuid:pk>/",
+        "competitions/<int:pk>/",
         views.CompetitionDetailView.as_view(),
-        name="competitions_detail",
+        name="competition_detail",
     ),
 
     # ------------------------------------------------------------------------

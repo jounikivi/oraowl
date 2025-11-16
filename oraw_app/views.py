@@ -13,10 +13,11 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, FormView
 from django.contrib.auth import login
 from django.contrib.auth.views import LogoutView
-
-from oraw_app.models import Competition, Athlete, Result
+from oraw_app.models import Competition, Athlete, Result, Course
 from oraw_app.forms import SignupForm, IOFXMLUploadForm
 from oraw_app.utils.iofxml_importer import import_iofxml_result_list
+
+
 
 
 # ============================================================================
@@ -109,61 +110,46 @@ class IOFXMLUploadView(StaffRequiredMixin, FormView):
 # Competitions list & detail views / Kilpailunäkymät
 # ============================================================================
 
-
 class CompetitionListView(ListView):
     """
-    FI: Kilpailujen listaus sivutuksella ja pikahaulla (?q=).
-    EN: Competition list with pagination and quick search (?q=).
+    FI:
+        Listaa kaikki kilpailut aikajärjestyksessä (uusin ensin).
+    EN:
+        List all competitions ordered by date (newest first).
     """
-    model = Competition
-    template_name = "oraw_app/competitions/index.html"
-    context_object_name = "competitions"
-    paginate_by = 20
 
-    def get_queryset(self):
-        """
-        FI: Suodattaa kilpailut nimen ja järjestäjän perusteella.
-        EN: Filters competitions by name and organizer.
-        """
-        qs = super().get_queryset().order_by("-date", "name")
-        q = (self.request.GET.get("q") or "").strip()
-        if q:
-            qs = qs.filter(Q(name__icontains=q) | Q(organizer__icontains=q))
-        return qs
+    model = Competition
+    template_name = "oraw_app/competition_list.html"
+    context_object_name = "competitions"
+    ordering = ["-date"]
 
 
 class CompetitionDetailView(DetailView):
     """
-    FI: Näyttää kilpailun tiedot, radat ja tulokset.
-    EN: Displays competition details, courses, and results.
+    FI:
+        Näyttää yhden kilpailun perustiedot ja siihen kuuluvat radat/sarjat.
+    EN:
+        Show basic information of a single competition and its courses.
     """
+
     model = Competition
-    template_name = "oraw_app/competitions/detail.html"
+    template_name = "oraw_app/competition_detail.html"
     context_object_name = "competition"
 
     def get_context_data(self, **kwargs):
         """
-        FI: Lisää radat ja urheilijoiden tulokset kontekstiin.
-        EN: Adds courses and athletes' results to the context.
+        FI:
+            Lisätään contextiin kilpailun radat, jotta ne voidaan näyttää
+            listana templaatissa.
+        EN:
+            Add competition's courses into the template context.
         """
-        ctx = super().get_context_data(**kwargs)
-        competition = self.object
+        context = super().get_context_data(**kwargs)
+        context["courses"] = Course.objects.filter(
+            competition=self.object
+        ).order_by("name")
+        return context
 
-        # FI: Jos Course ForeignKey:ssä on related_name="courses", käytä sitä.
-        # EN: If Course FK has related_name="courses", use it.
-        courses = competition.courses.all().order_by("name")
-
-        # FI: Tulokset kilpailun ratojen kautta, järjestä radan nimen, sijan ja ajan mukaan.
-        # EN: Results via course->competition; order by course, position, and time.
-        results = (
-            Result.objects.filter(course__competition=competition)
-            .select_related("athlete", "course")
-            .order_by("course__name", "position", "time_seconds")
-        )
-
-        ctx["courses"] = courses
-        ctx["results"] = results
-        return ctx
 
 
 # ============================================================================
