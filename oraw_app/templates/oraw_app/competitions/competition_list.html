@@ -1,4 +1,4 @@
-{# oraw_app/templates/oraw_app/competitions/competition_list.html #}
+{# oraw_app/templates/oraw_app/competition_list.html #}
 {% extends "oraw_app/base.html" %}
 
 {% block title %}Competitions{% endblock %}
@@ -24,7 +24,7 @@
           <tr>
             <td>{{ comp.date }}</td>
             <td>
-              <a href="{% url 'oraw_app:competition_detail' comp.pk %}">
+              <a href="{% url 'oraw_app:competition_detail' comp.id %}">
                 {{ comp.name }}
               </a>
             </td>

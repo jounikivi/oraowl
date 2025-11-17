@@ -28,7 +28,7 @@
     Sarjat ja radat / Classes and courses
   </h2>
 
-    {% if courses %}
+  {% if courses %}
     <ul class="list-group">
       {% for course in courses %}
         <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -47,7 +47,7 @@
           </div>
 
           <a
-            href="{% url 'course_results' competition.id course.id %}"
+            href="{% url 'oraw_app:course_results' competition.id course.id %}"
             class="btn btn-outline-primary btn-sm"
           >
             Näytä tulokset / View results →
@@ -56,7 +56,6 @@
       {% endfor %}
     </ul>
   {% else %}
-
     <p class="text-muted">
       Ei ratoja tälle kilpailulle. / No courses for this competition.
     </p>
