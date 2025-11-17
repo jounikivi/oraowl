@@ -188,29 +188,50 @@ class ResultDetailView(DetailView):
 # ============================================================================
 class AthleteListView(ListView):
     """
-    FI: Urheilijalista hakutoiminnoilla.
-    EN: Athlete list with search filters.
+    FI: Urheilijalista taulukkona, tukee hakua ja suodatuksia (?q, ?club, ?gender).
+    EN: Athlete list with filters (?q, ?club, ?gender).
     """
-
     model = Athlete
     template_name = "oraw_app/athletes/index.html"
     context_object_name = "athletes"
     paginate_by = 25
 
     def get_queryset(self):
-        qs = super().get_queryset()
+        """
+        FI:
+            Rakentaa hakuehdot ja palauttaa järjestetyn tuloksen.
+            Haetaan vain julkiset ja ei-poistetut urheilijat.
+        EN:
+            Builds search filters and returns an ordered queryset.
+            Only public and non-deleted athletes are included.
+        """
+        qs = super().get_queryset().filter(
+            is_public=True,
+            deleted_at__isnull=True,
+        )
+
         q = (self.request.GET.get("q") or "").strip()
         club = (self.request.GET.get("club") or "").strip()
         gender = (self.request.GET.get("gender") or "").strip()
 
         if q:
-            qs = qs.filter(Q(full_name__icontains=q) | Q(public_alias__icontains=q))
+            # FI: Hae etu- ja sukunimestä sekä mahdollisesta public_aliasista
+            # EN: Search first name, last name and optional public_alias
+            qs = qs.filter(
+                Q(first_name__icontains=q)
+                | Q(last_name__icontains=q)
+                | Q(public_alias__icontains=q)
+            )
+
         if club:
             qs = qs.filter(club__icontains=club)
+
         if gender:
             qs = qs.filter(gender=gender)
 
-        return qs.order_by("full_name")
+        # FI: Järjestys: sukunimi, etunimi, alias
+        # EN: Order: last name, first name, alias
+        return qs.order_by("last_name", "first_name", "public_alias")
 
 
 class AthleteDetailView(DetailView):

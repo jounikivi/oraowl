@@ -1,35 +1,101 @@
+{# oraw_app/templates/oraw_app/athletes/detail.html #}
 {% extends "oraw_app/base.html" %}
-{% block title %}{{ athlete.display_name }}{% endblock %}
+
+{% block title %}
+  {{ athlete.display_name }} – Athlete
+{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-  <h1>{{ athlete.display_name }}</h1>
-  <p class="text-muted">{{ athlete.club }} — {{ athlete.get_gender_display }}</p>
+<div class="container my-4">
+  <a href="{% url 'oraw_app:athletes_index' %}" class="btn btn-secondary btn-sm mb-3">
+    ← Takaisin urheilijalistaan / Back to athletes
+  </a>
 
-  <h2 class="h5 mt-4 mb-2">Results</h2>
+  <h1 class="mb-2">
+    {{ athlete.display_name }}
+  </h1>
+
+  <dl class="row">
+    <dt class="col-sm-3">Seura / Club</dt>
+    <dd class="col-sm-9">{{ athlete.club|default:"-" }}</dd>
+
+    <dt class="col-sm-3">Sukupuoli / Gender</dt>
+    <dd class="col-sm-9">{{ athlete.gender|default:"-" }}</dd>
+
+    <dt class="col-sm-3">Syntymävuosi / Birth year</dt>
+    <dd class="col-sm-9">
+      {% if athlete.birth_year %}
+        {{ athlete.birth_year }}
+      {% else %}
+        -
+      {% endif %}
+    </dd>
+  </dl>
+
+  <hr>
+
+  <h2 class="mt-4 mb-3">
+    Kilpailuhistoria / Competition history
+  </h2>
+
   {% if results %}
-  <table class="table table-sm table-hover">
-    <thead>
-      <tr><th>Date</th><th>Competition</th><th>Course</th><th>Time</th><th>Place</th></tr>
-    </thead>
-    <tbody>
-      {% for r in results %}
+    <table class="table table-striped table-hover align-middle">
+      <thead>
         <tr>
-          <td>{{ r.course.competition.date }}</td>
-          <td>
-            <a href="{% url 'oraw_app:competitions_detail' r.course.competition.pk %}">
-              {{ r.course.competition.name }}
-            </a>
-          </td>
-          <td>{{ r.course.name }}</td>
-          <td>{{ r.total_time_s|default:"-" }}</td>
-          <td>{{ r.place|default:"-" }}</td>
+          <th>Päivä / Date</th>
+          <th>Kilpailu / Competition</th>
+          <th>Sarja / Course</th>
+          <th>Sijoitus / Position</th>
+          <th>Aika / Time (s)</th>
+          <th>Status</th>
+          <th></th>
         </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for result in results %}
+          <tr>
+            <td>{{ result.course.competition.date }}</td>
+            <td>
+              <a href="{% url 'oraw_app:competition_detail' result.course.competition.pk %}">
+                {{ result.course.competition.name }}
+              </a>
+            </td>
+            <td>
+              <a href="{% url 'course_results' result.course.competition.pk result.course.pk %}">
+                {{ result.course.name }}
+              </a>
+            </td>
+            <td>
+              {% if result.position %}
+                {{ result.position }}
+              {% else %}
+                –
+              {% endif %}
+            </td>
+            <td>
+              {% if result.finish_time_s %}
+                {{ result.finish_time_s }} s
+              {% else %}
+                –
+              {% endif %}
+            </td>
+            <td>{{ result.status }}</td>
+            <td class="text-end">
+              <a
+                href="{% url 'result_detail' result.pk %}"
+                class="btn btn-sm btn-outline-primary"
+              >
+                Väliajat / Splits →
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
   {% else %}
-    <p class="text-muted">No results found for this athlete.</p>
+    <p class="text-muted">
+      Ei tuloksia tälle urheilijalle. / No results for this athlete.
+    </p>
   {% endif %}
 </div>
 {% endblock %}
