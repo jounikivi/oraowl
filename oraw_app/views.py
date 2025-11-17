@@ -105,11 +105,6 @@ class IOFXMLUploadView(StaffRequiredMixin, FormView):
         messages.success(self.request, f"{msg_fi} / {msg_en}")
         return super().form_valid(form)
 
-
-# ============================================================================
-# Competitions list & detail views / Kilpailunäkymät
-# ============================================================================
-
 # ============================================================================
 # Competitions list & detail views / Kilpailunäkymät
 # ============================================================================
@@ -155,6 +150,68 @@ class CompetitionDetailView(DetailView):
         )
         return context
 
+# ============================================================
+# FI: Sarjan tulossivu
+# EN: Course results view
+# ============================================================
+
+
+class CourseResultsView(ListView):
+    """
+    FI:
+        Näyttää yhden radan (Course) kaikki tulokset taulukossa.
+        Tulokset rajataan julkisiin (is_public=True) ja ei-poistettuihin
+        (deleted_at is null) riveihin.
+    EN:
+        Show all results for a single course in a table. Only public and
+        non-deleted results are listed.
+    """
+
+    model = Result
+    template_name = "oraw_app/course_results.html"
+    context_object_name = "results"
+
+    def get_queryset(self):
+        """
+        FI:
+            Haetaan ensin rata (Course), johon kilpailu- ja kurssi-ID viittaavat.
+            Sen jälkeen haetaan kaikki tulokset tälle radalle.
+        EN:
+            First fetch the Course referenced by competition_id and course_id,
+            then fetch all results for that course.
+        """
+        competition_id = self.kwargs["competition_id"]
+        course_id = self.kwargs["course_id"]
+
+        # Haetaan rata ja samalla sen kilpailu (select_related).
+        self.course = Course.objects.select_related("competition").get(
+            id=course_id,
+            competition__id=competition_id,
+        )
+
+        qs = (
+            Result.objects.filter(
+                course=self.course,
+                is_public=True,
+                deleted_at__isnull=True,
+            )
+            .select_related("athlete", "course", "course__competition", "control_card")
+            .order_by("position", "finish_time_s")
+        )
+        return qs
+
+    def get_context_data(self, **kwargs):
+        """
+        FI:
+            Lisätään templaatille myös kilpailu ja rata, jotta otsikot ja
+            breadcrumbit on helppo tehdä.
+        EN:
+            Add competition and course to the context for use in templates.
+        """
+        context = super().get_context_data(**kwargs)
+        context["course"] = self.course
+        context["competition"] = self.course.competition
+        return context
 
 
 
