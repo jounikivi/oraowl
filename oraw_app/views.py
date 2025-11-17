@@ -168,7 +168,7 @@ class CourseResultsView(ListView):
     """
 
     model = Result
-    template_name = "oraw_app/course_results.html"
+    template_name = "oraw_app/competitions/course_results.html"
     context_object_name = "results"
 
     def get_queryset(self):
