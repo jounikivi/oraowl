@@ -51,6 +51,12 @@ urlpatterns = [
         views.CourseResultsView.as_view(),
         name="course_results",
     ),
+     path(
+        "results/<uuid:pk>/",
+        views.ResultDetailView.as_view(),
+        name="result_detail",
+    ),
+
     
     # ------------------------------------------------------------------------
     # Athletes / Urheilijat
