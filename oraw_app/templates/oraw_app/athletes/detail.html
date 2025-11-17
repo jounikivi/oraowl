@@ -61,7 +61,7 @@
               </a>
             </td>
             <td>
-              <a href="{% url 'course_results' result.course.competition.pk result.course.pk %}">
+              <a href="{% url 'oraw_app:course_results' result.course.competition.pk result.course.pk %}">
                 {{ result.course.name }}
               </a>
             </td>
@@ -82,11 +82,10 @@
             <td>{{ result.status }}</td>
             <td class="text-end">
               <a
-                href="{% url 'result_detail' result.pk %}"
-                class="btn btn-sm btn-outline-primary"
-              >
-                Väliajat / Splits →
-              </a>
+              href="{% url 'oraw_app:result_detail' result.pk %}"
+              class="btn btn-sm btn-outline-primary">
+              Väliajat / Splits →
+            </a>
             </td>
           </tr>
         {% endfor %}
