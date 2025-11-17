@@ -236,8 +236,25 @@ class AthleteListView(ListView):
 
 class AthleteDetailView(DetailView):
     """
-    FI: Näyttää urheilijan ja hänen tuloshistoriansa.
-    EN: Displays an athlete and their result history.
+    FI:
+        Näyttää urheilijan profiilisivun sekä kilpailuhistorian.
+        Lisäksi lasketaan pieni yhteenveto tilastoista:
+        - kilpailujen määrä
+        - tulosten määrä
+        - OK-tulosten määrä
+        - podium-sijoitukset (1–3)
+        - paras sijoitus
+        - viimeisin kilpailupäivä
+
+    EN:
+        Displays the athlete profile and competition history.
+        Also provides a small stats summary:
+        - number of competitions
+        - number of results
+        - number of OK results
+        - podium finishes (1–3)
+        - best position
+        - date of latest competition
     """
 
     model = Athlete
@@ -248,13 +265,58 @@ class AthleteDetailView(DetailView):
         ctx = super().get_context_data(**kwargs)
         athlete = self.object
 
-        ctx["results"] = (
-            Result.objects.filter(athlete=athlete)
+        # ------------------------------------------------------------
+        # FI: Haetaan urheilijan julkiset tulokset
+        # EN: Fetch public (non-deleted) results for this athlete
+        # ------------------------------------------------------------
+        results_qs = (
+            Result.objects.filter(
+                athlete=athlete,
+                is_public=True,
+                deleted_at__isnull=True,
+            )
             .select_related("course__competition")
             .order_by("-course__competition__date", "course__name")
         )
 
+        ctx["results"] = results_qs
+
+        # ------------------------------------------------------------
+        # FI: Lasketaan yhteenvedon tilastot
+        # EN: Compute summary statistics
+        # ------------------------------------------------------------
+        total_results = results_qs.count()
+        competitions_count = (
+            results_qs.values("course__competition").distinct().count()
+            if total_results
+            else 0
+        )
+
+        ok_results_qs = results_qs.filter(status="OK")
+        ok_results = ok_results_qs.count()
+        podiums = ok_results_qs.filter(position__in=[1, 2, 3]).count()
+
+        best_position_obj = (
+            ok_results_qs.exclude(position__isnull=True).order_by("position").first()
+        )
+        best_position = best_position_obj.position if best_position_obj else None
+
+        latest_result = results_qs.first()
+        latest_date = (
+            latest_result.course.competition.date if latest_result else None
+        )
+
+        ctx["stats"] = {
+            "total_results": total_results,
+            "competitions_count": competitions_count,
+            "ok_results": ok_results,
+            "podiums": podiums,
+            "best_position": best_position,
+            "latest_date": latest_date,
+        }
+
         return ctx
+
 
 
 # ============================================================================
