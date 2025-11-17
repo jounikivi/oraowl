@@ -13,7 +13,7 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, FormView
 from django.contrib.auth import login
 from django.contrib.auth.views import LogoutView
-from oraw_app.models import Competition, Athlete, Result, Course
+from oraw_app.models import Competition, Athlete, Result, Course, Split
 from oraw_app.forms import SignupForm, IOFXMLUploadForm
 from oraw_app.utils.iofxml_importer import import_iofxml_result_list
 
@@ -212,6 +212,60 @@ class CourseResultsView(ListView):
         context["course"] = self.course
         context["competition"] = self.course.competition
         return context
+    
+# ============================================================
+# FI: Yksittäisen tuloksen väliaikasivu
+# EN: Single result split times view
+# ============================================================
+
+
+class ResultDetailView(DetailView):
+    """
+    FI:
+        Näyttää yhden tuloksen perustiedot sekä kaikki väliajat taulukossa.
+        Käyttää Result-olion lisäksi Split-mallia väliaikojen hakuun.
+
+    EN:
+        Show a single result with its basic information and all split times
+        in a table. Uses the Split model to fetch split data.
+    """
+
+    model = Result
+    template_name = "oraw_app/competitions/result_detail.html"
+    context_object_name = "result"
+
+    def get_context_data(self, **kwargs):
+        """
+        FI:
+            Lisätään templaatille:
+              - competition: kilpailu
+              - course: rata / sarja
+              - athlete: urheilija
+              - splits: väliajat järjestettynä järjestysnumeron mukaan
+
+        EN:
+            Add to the template context:
+              - competition
+              - course
+              - athlete
+              - splits ordered by sequence
+        """
+        context = super().get_context_data(**kwargs)
+
+        result: Result = self.object
+        competition = result.course.competition
+        course = result.course
+        athlete = result.athlete
+
+        # Haetaan kaikki väliajat (Split) tälle tulokselle.
+        splits = Split.objects.filter(result=result).order_by("seq")
+
+        context["competition"] = competition
+        context["course"] = course
+        context["athlete"] = athlete
+        context["splits"] = splits
+        return context
+
 
 
 

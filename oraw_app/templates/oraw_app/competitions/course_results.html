@@ -31,6 +31,7 @@
           <th>Aika / Time (s)</th>
           <th>Status</th>
           <th>Kortti / Card</th>
+          <th>Väliajat / Splits</th>
         </tr>
       </thead>
       <tbody>
@@ -59,6 +60,13 @@
               {% else %}
                 –
               {% endif %}
+                      <td>
+              <a
+                href="{% url 'oraw_app:result_detail' result.id %}"
+                class="btn btn-outline-secondary btn-sm"
+              >
+                Väliajat / Splits →
+              </a>
             </td>
           </tr>
         {% endfor %}
