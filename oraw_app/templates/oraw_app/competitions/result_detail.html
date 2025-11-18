@@ -1,5 +1,6 @@
 {# oraw_app/templates/oraw_app/competitions/result_detail.html #}
 {% extends "oraw_app/base.html" %}
+{% load time_filters %}
 
 {% block title %}
   {{ competition.name }} – {{ course.name }} – {{ athlete.display_name }}
@@ -42,7 +43,7 @@
         <dt class="col-sm-4">Aika / Time (s)</dt>
         <dd class="col-sm-8">
           {% if result.finish_time_s %}
-            {{ result.finish_time_s }} s
+            {{ result.finish_time_s|format_seconds }} 
           {% else %}
             –
           {% endif %}
@@ -84,7 +85,7 @@
             <td>{{ split.control_code|default:"-" }}</td>
             <td>
               {% if split.split_time_s is not None %}
-                {{ split.split_time_s }} s
+                {{ split.split_time_s |format_seconds }} 
               {% else %}
                 –
               {% endif %}

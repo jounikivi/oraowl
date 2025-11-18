@@ -1,6 +1,8 @@
 {# oraw_app/templates/oraw_app/athletes/detail.html #}
 {% extends "oraw_app/base.html" %}
 
+{% load time_filters %}
+
 {% block title %}{{ athlete.display_name }}{% endblock %}
 
 {% block content %}
@@ -119,7 +121,7 @@
             </td>
             <td>
               {% if result.finish_time_s %}
-                {{ result.finish_time_s }} s
+                {{ result.finish_time_s|format_seconds }}
               {% else %}
                 –
               {% endif %}

@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 # ============================================================================
-# IMPORTS / TUONNIT
+# Imports / Tuonnit
 # ============================================================================
 from django.contrib import messages
 from django.db.models import Q
@@ -12,20 +12,15 @@ from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, FormView
 from django.contrib.auth import login
 from django.contrib.auth.views import LogoutView
+from django.http import Http404
 
-from oraw_app.models import (
-    Competition,
-    Athlete,
-    Result,
-    Course,
-    Split,
-)
+from oraw_app.models import Competition, Athlete, Result, Course, Split
 from oraw_app.forms import SignupForm, IOFXMLUploadForm
 from oraw_app.utils.iofxml_importer import import_iofxml_result_list
 
 
 # ============================================================================
-# HOME VIEW / ETUSIVU
+# Home view / Etusivu
 # ============================================================================
 def home(request):
     """
@@ -36,23 +31,29 @@ def home(request):
 
 
 # ============================================================================
-# IOFXML UPLOAD (STAFF ONLY)
+# IOFXML upload view / IOFXML-latausnäkymä (staff-only)
 # ============================================================================
+
+
 class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     """
-    FI: Sallii vain staff-käyttäjät.
-    EN: Allows only staff users.
+    FI: Mixin, joka varmistaa, että käyttäjä on kirjautunut ja kuuluu henkilöstöön.
+    EN: Mixin that ensures the user is authenticated and is a staff member.
     """
 
     def test_func(self):
+        """
+        FI: Sallitaan vain staff-käyttäjät.
+        EN: Allow only staff users.
+        """
         user = self.request.user
         return bool(user and user.is_staff)
 
 
 class IOFXMLUploadView(StaffRequiredMixin, FormView):
     """
-    FI: IOFXML 3.0 ResultList -tiedoston lataus ja tuonti (vain staff).
-    EN: IOFXML 3.0 ResultList upload & import (staff only).
+    FI: IOFXML 3.0 ResultList -tiedoston lataus- ja tuontinäkymä (vain staff).
+    EN: IOFXML 3.0 ResultList upload & import view (staff only).
     """
 
     template_name = "oraw_app/iofxml/upload.html"
@@ -60,44 +61,61 @@ class IOFXMLUploadView(StaffRequiredMixin, FormView):
     success_url = reverse_lazy("oraw_app:iofxml_upload")
 
     def form_valid(self, form):
+        """
+        FI: Kun lomake on validi, luetaan XML-tiedosto, ajetaan importer ja
+            näytetään käyttäjälle yhteenveto tuonnista.
+        EN: When the form is valid, read the XML file, run the importer and
+            show a summary message to the user.
+        """
         uploaded_file = form.cleaned_data["file"]
         xml_bytes = uploaded_file.read()
 
+        # FI: Kutsutaan korkeantason importer-funktiota.
+        # EN: Call the high-level importer function.
         report = import_iofxml_result_list(
             xml_bytes,
             filename=uploaded_file.name,
             uploaded_by=self.request.user,
         )
 
-        # Kaksikielinen viesti
+        # FI: Rakennetaan kaksikielinen viesti raportin perusteella.
+        # EN: Build a bilingual message based on the report.
         msg_fi = (
             "IOFXML-tuonti valmis. "
-            f"Kilpailuja luotu: {report.competitions_created}, päivitetty: {report.competitions_updated}. "
+            f"Kilpailuja luotu: {report.competitions_created}, "
+            f"päivitetty: {report.competitions_updated}. "
             f"Ratoja luotu: {report.courses_created}. "
             f"Urheilijoita luotu: {report.athletes_created}. "
-            f"Tuloksia luotu: {report.results_created}, päivitetty: {report.results_updated}. "
+            f"Tuloksia luotu: {report.results_created}, "
+            f"päivitetty: {report.results_updated}. "
             f"Väliaikoja luotu: {report.splits_created}."
         )
         msg_en = (
             "IOFXML import completed. "
-            f"Competitions created: {report.competitions_created}, updated: {report.competitions_updated}. "
+            f"Competitions created: {report.competitions_created}, "
+            f"updated: {report.competitions_updated}. "
             f"Courses created: {report.courses_created}. "
             f"Athletes created: {report.athletes_created}. "
-            f"Results created: {report.results_created}, updated: {report.results_updated}. "
+            f"Results created: {report.results_created}, "
+            f"updated: {report.results_updated}. "
             f"Splits created: {report.splits_created}."
         )
 
-        messages.success(self.request, msg_fi + " / " + msg_en)
+        messages.success(self.request, f"{msg_fi} / {msg_en}")
         return super().form_valid(form)
 
 
 # ============================================================================
-# COMPETITIONS: LIST + DETAIL + COURSE RESULTS
+# Competitions list & detail views / Kilpailunäkymät
 # ============================================================================
+
+
 class CompetitionListView(ListView):
     """
-    FI: Listaa kaikki kilpailut aikajärjestyksessä (uusin ensin).
-    EN: List competitions ordered by date (newest first).
+    FI:
+        Listaa kaikki kilpailut aikajärjestyksessä (uusin ensin).
+    EN:
+        List all competitions ordered by date (newest first).
     """
 
     model = Competition
@@ -108,8 +126,10 @@ class CompetitionListView(ListView):
 
 class CompetitionDetailView(DetailView):
     """
-    FI: Näyttää yhden kilpailun perustiedot ja radat.
-    EN: Displays one competition and its courses.
+    FI:
+        Näyttää yhden kilpailun perustiedot ja siihen kuuluvat radat/sarjat.
+    EN:
+        Show basic information of a single competition and its courses.
     """
 
     model = Competition
@@ -117,15 +137,37 @@ class CompetitionDetailView(DetailView):
     context_object_name = "competition"
 
     def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["courses"] = Course.objects.filter(competition=self.object).order_by("name")
-        return ctx
+        """
+        FI:
+            Lisätään contextiin kilpailun radat, jotta ne voidaan näyttää
+            listana templaatissa.
+        EN:
+            Add competition's courses into the template context.
+        """
+        context = super().get_context_data(**kwargs)
+        context["courses"] = (
+            Course.objects.filter(competition=self.object).order_by("name")
+        )
+        return context
+
+
+# ============================================================
+# FI: Sarjan tulossivu
+# EN: Course results view
+# ============================================================
 
 
 class CourseResultsView(ListView):
     """
-    FI: Näyttää yhden radan kaikki tulokset.
-    EN: Shows all results for a single course.
+    FI:
+        Näyttää yhden radan (Course) kaikki tulokset taulukossa.
+        Tulokset rajataan julkisiin (is_public=True) ja ei-poistettuihin
+        (deleted_at is null) riveihin. Lisäksi piilotetaan ei-julkisten
+        urheilijoiden tulokset (GDPR).
+    EN:
+        Show all results for a single course in a table. Only public and
+        non-deleted results are listed. Also hides results for non-public
+        athletes (GDPR).
     """
 
     model = Result
@@ -133,38 +175,66 @@ class CourseResultsView(ListView):
     context_object_name = "results"
 
     def get_queryset(self):
+        """
+        FI:
+            Haetaan ensin rata (Course), johon kilpailu- ja kurssi-ID viittaavat.
+            Sen jälkeen haetaan kaikki tulokset tälle radalle.
+        EN:
+            First fetch the Course referenced by competition_id and course_id,
+            then fetch all results for that course.
+        """
         competition_id = self.kwargs["competition_id"]
         course_id = self.kwargs["course_id"]
 
+        # Haetaan rata ja samalla sen kilpailu (select_related).
         self.course = Course.objects.select_related("competition").get(
             id=course_id,
             competition__id=competition_id,
         )
 
-        return (
+        qs = (
             Result.objects.filter(
                 course=self.course,
                 is_public=True,
                 deleted_at__isnull=True,
+                athlete__is_public=True,
+                athlete__deleted_at__isnull=True,
             )
-            .select_related("athlete", "course__competition", "control_card")
+            .select_related("athlete", "course", "course__competition", "control_card")
             .order_by("position", "finish_time_s")
         )
+        return qs
 
     def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
-        ctx["course"] = self.course
-        ctx["competition"] = self.course.competition
-        return ctx
+        """
+        FI:
+            Lisätään templaatille myös kilpailu ja rata, jotta otsikot ja
+            breadcrumbit on helppo tehdä.
+        EN:
+            Add competition and course to the context for use in templates.
+        """
+        context = super().get_context_data(**kwargs)
+        context["course"] = self.course
+        context["competition"] = self.course.competition
+        return context
 
 
-# ============================================================================
-# RESULTS: DETAIL (SPLIT TIMES)
-# ============================================================================
+# ============================================================
+# FI: Yksittäisen tuloksen väliaikasivu
+# EN: Single result split times view
+# ============================================================
+
+
 class ResultDetailView(DetailView):
     """
-    FI: Näyttää yhden tuloksen tiedot ja väliajat.
-    EN: Displays a result and its split times.
+    FI:
+        Näyttää yhden tuloksen perustiedot sekä kaikki väliajat taulukossa.
+        Käyttää Result-olion lisäksi Split-mallia väliaikojen hakuun.
+        Jos tulos tai urheilija ei ole julkinen, palautetaan 404 (GDPR).
+    EN:
+        Show a single result with its basic information and all split times
+        in a table. Uses the Split model to fetch split data.
+        If the result or athlete is not public, return 404 (GDPR).
     """
 
     model = Result
@@ -172,25 +242,67 @@ class ResultDetailView(DetailView):
     context_object_name = "result"
 
     def get_context_data(self, **kwargs):
-        ctx = super().get_context_data(**kwargs)
+        """
+        FI:
+            Lisätään templaatille:
+              - competition: kilpailu
+              - course: rata / sarja
+              - athlete: urheilija
+              - splits: väliajat järjestettynä järjestysnumeron mukaan
+            Sekä tarkistetaan tietosuoja: jos tulos tai urheilija on piilotettu,
+            heitetään 404.
+        EN:
+            Add to the template context:
+              - competition
+              - course
+              - athlete
+              - splits ordered by sequence
+            Also enforce privacy: if the result or athlete is hidden,
+            raise 404.
+        """
+        context = super().get_context_data(**kwargs)
 
         result: Result = self.object
-        ctx["competition"] = result.course.competition
-        ctx["course"] = result.course
-        ctx["athlete"] = result.athlete
-        ctx["splits"] = Split.objects.filter(result=result).order_by("seq")
+        athlete = result.athlete
 
-        return ctx
+        # Tietosuoja / Privacy check
+        if (
+            not result.is_public
+            or result.deleted_at is not None
+            or not athlete.is_public
+            or athlete.deleted_at is not None
+        ):
+            raise Http404("Result is not public")
+
+        competition = result.course.competition
+        course = result.course
+
+        # Haetaan kaikki väliajat (Split) tälle tulokselle.
+        splits = Split.objects.filter(result=result).order_by("seq")
+
+        context["competition"] = competition
+        context["course"] = course
+        context["athlete"] = athlete
+        context["splits"] = splits
+        return context
 
 
 # ============================================================================
-# ATHLETES: LIST + DETAIL
+# Athlete list & detail views / Urheilijanäkymät
 # ============================================================================
+
+
 class AthleteListView(ListView):
     """
-    FI: Urheilijalista taulukkona, tukee hakua ja suodatuksia (?q, ?club, ?gender).
-    EN: Athlete list with filters (?q, ?club, ?gender).
+    FI:
+        Urheilijalista taulukkona, tukee hakua ja suodatuksia
+        (?q, ?club, ?gender). Näyttää vain julkiset (is_public=True) ja
+        ei-poistetut (deleted_at is null) urheilijat.
+    EN:
+        Athlete list with filters (?q, ?club, ?gender). Shows only public
+        and non-deleted athletes.
     """
+
     model = Athlete
     template_name = "oraw_app/athletes/index.html"
     context_object_name = "athletes"
@@ -246,6 +358,9 @@ class AthleteDetailView(DetailView):
         - paras sijoitus
         - viimeisin kilpailupäivä
 
+        Jos urheilija ei ole julkinen tai hänet on merkitty poistetuksi,
+        ei näytetä kilpailuhistoriaa (GDPR).
+
     EN:
         Displays the athlete profile and competition history.
         Also provides a small stats summary:
@@ -255,6 +370,9 @@ class AthleteDetailView(DetailView):
         - podium finishes (1–3)
         - best position
         - date of latest competition
+
+        If the athlete is not public or soft-deleted, competition
+        history is hidden (GDPR).
     """
 
     model = Athlete
@@ -264,6 +382,27 @@ class AthleteDetailView(DetailView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         athlete = self.object
+
+        # ------------------------------------------------------------
+        # FI: Jos urheilija ei ole julkinen tai merkitty poistetuksi,
+        #     ei näytetä kilpailuhistoriaa.
+        # EN: If athlete is not public or soft-deleted, do not show
+        #     competition history.
+        # ------------------------------------------------------------
+        if not athlete.is_public or athlete.deleted_at is not None:
+            ctx["is_hidden"] = True
+            ctx["results"] = Result.objects.none()
+            ctx["stats"] = {
+                "total_results": 0,
+                "competitions_count": 0,
+                "ok_results": 0,
+                "podiums": 0,
+                "best_position": None,
+                "latest_date": None,
+            }
+            return ctx
+
+        ctx["is_hidden"] = False
 
         # ------------------------------------------------------------
         # FI: Haetaan urheilijan julkiset tulokset
@@ -318,10 +457,11 @@ class AthleteDetailView(DetailView):
         return ctx
 
 
-
 # ============================================================================
 # SIGNUP + LOGOUT
 # ============================================================================
+
+
 class SignUpView(FormView):
     """
     FI: Rekisteröinti omalla SignupFormilla.
