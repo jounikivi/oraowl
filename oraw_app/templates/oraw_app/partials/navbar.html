@@ -9,7 +9,7 @@ EN: Top navigation bar displayed on all pages.
 <nav class="main-header navbar navbar-expand navbar-white navbar-light" style="background-color: #2E7D32;">
 
   <!-- ========================================================= -->
-  <!-- Left navigation section / Vasen valikko-osio             -->
+  <!-- Left navigation section / Vasen valikko-osio -->
   <!-- ========================================================= -->
   <ul class="navbar-nav">
 
@@ -34,32 +34,21 @@ EN: Top navigation bar displayed on all pages.
       </a>
     </li>
 
-    <!-- Athletes / Urheilijat -->
-    <li class="nav-item d-none d-sm-inline-block">
-      <a href="{% url 'oraw_app:athletes_index' %}" class="nav-link text-white">
-        <i class="fas fa-running"></i> Urheilijat
-      </a>
-    </li>
-
     <!-- FI: Pikalinkki IOFXML-lataukseen (vain staff).
          EN: Quick link to IOFXML upload (staff only). -->
     {% if request.user.is_staff %}
-      <li class="nav-item d-none d-sm-inline-block">
-        <a href="{% url 'oraw_app:iofxml_upload' %}" class="nav-link text-white">
-          <i class="fas fa-upload"></i> IOFXML-tuonti
-        </a>
-      </li>
+      <!-- Tänne myöhemmin linkki IOFXML-tuontiin -->
     {% endif %}
   </ul>
 
   <!-- ========================================================= -->
-  <!-- Right navigation section / Oikea valikko-osio             -->
+  <!-- Right navigation section / Oikea valikko-osio -->
   <!-- ========================================================= -->
   <ul class="navbar-nav ml-auto">
 
     {% if request.user.is_authenticated %}
-      {# FI: Näyttää kirjautuneen käyttäjän nimen ja valikon.
-         EN: Displays logged-in user's name and dropdown menu. #}
+      <!-- FI: Näyttää kirjautuneen käyttäjän nimen ja valikon.
+           EN: Displays logged-in user's name and dropdown menu. -->
       <li class="nav-item dropdown">
         <a class="nav-link text-white" data-toggle="dropdown" href="#">
           <i class="fas fa-user-circle"></i> {{ request.user.username }}
@@ -80,8 +69,8 @@ EN: Top navigation bar displayed on all pages.
         </div>
       </li>
     {% else %}
-      {% comment %} FI: Kirjautumislinkki näkyy, jos käyttäjä ei ole sisäänkirjautunut.
-      EN: Login link is shown when user is not authenticated. {% endcomment %}
+      <!-- FI: Kirjautumislinkki näkyy, jos käyttäjä ei ole sisäänkirjautunut.
+           EN: Login link is shown when user is not authenticated. -->
       <li class="nav-item">
         <a href="{% url 'oraw_app:login' %}" class="nav-link text-white">
           <i class="fas fa-sign-in-alt"></i> Kirjaudu sisään
