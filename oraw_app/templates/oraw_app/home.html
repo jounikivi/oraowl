@@ -1,150 +1,92 @@
-{# oraw_app/templates/oraw_app/home.html #}
 {% extends "oraw_app/base.html" %}
 
 {% block title %}ORAOwl – Orienteering Result Archive{% endblock %}
 
 {% block content %}
-<div class="container my-5">
+<div class="container py-5">
+  <!-- Hero header -->
+  <div class="text-center mb-5">
+    <h1 class="display-5 fw-bold">ORAOwl – Orienteering Result Archive</h1>
+    <p class="lead text-muted">
+      Suomen moderni suunnistustulosten arkisto ja analysointityökalu.
+    </p>
+  </div>
 
-  {# ------------------------------------------------------ #}
-  {# Hero / pääalue                                         #}
-  {# ------------------------------------------------------ #}
-  <section class="mb-5">
-    <div class="row justify-content-center">
-      <div class="col-12 col-lg-10">
-        <div class="card border-0 shadow-sm">
-          <div class="card-body p-4 p-md-5 text-center">
-            <p class="text-uppercase text-muted small mb-2">
-              ORAOwl – digitaalinen tulosarkisto suunnistajille
-            </p>
-            <h1 class="mb-3">
-              Löydä, seuraa ja vertaa suunnistustuloksia yhdestä paikasta.
-            </h1>
-            <p class="lead mb-1">
-              ORAOwl kokoaa IOFXML 3.0 -muotoiset tulokset yhteen moderniin arkistoon.
-              Voit selata kilpailuja, sarjoja, urheilijoita ja väliaikoja – sekä hyödyntää
-              dataa kehittymisen seurantaan ja viestijoukkueiden suunnitteluun.
-            </p>
-            <p class="text-muted mb-4">
-              ORAOwl brings IOFXML 3.0 orienteering results into a modern archive.
-              Browse competitions, classes, athletes and split times – and use the
-              data for performance tracking and team selection.
+  <!-- Main hero content -->
+  <div class="row justify-content-center mb-5">
+    <div class="col-lg-10">
+      <div class="p-4 p-lg-5 bg-white shadow-sm rounded-3 border">
+        <div class="row">
+          <div class="col-lg-7">
+            <h2 class="fw-semibold mb-3">
+              Löydä, seuraa ja vertaile suunnistustuloksia helposti
+            </h2>
+
+            <p>
+              ORAOwl kokoaa IOFXML 3.0 -muotoiset suunnistuskilpailujen tulokset
+              yhteen helppokäyttöiseen arkistoon. Voit selata kilpailuja, sarjoja ja
+              urheilijoita – sekä hyödyntää dataa kehityksen seurantaan ja
+              viestijoukkueiden valintaan.
             </p>
 
-            <div class="d-flex flex-column flex-md-row justify-content-center gap-3 mt-3">
-              <a
-                href="{% url 'oraw_app:competition_list' %}"
-                class="btn btn-primary btn-lg px-4"
-              >
+            <!-- Action buttons -->
+            <div class="d-flex flex-wrap gap-3 mt-4">
+              <a href="{% url 'oraw_app:competitions' %}"
+                 class="btn btn-success btn-lg px-4">
                 Selaa kilpailuja / Browse competitions →
               </a>
-              <a
-                href="{% url 'oraw_app:athletes_index' %}"
-                class="btn btn-outline-primary btn-lg px-4"
-              >
+              <a href="{% url 'oraw_app:athletes_index' %}"
+                 class="btn btn-outline-success btn-lg px-4">
                 Etsi urheilijoita / Search athletes →
               </a>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
-  </section>
 
-  {# ------------------------------------------------------ #}
-  {# Miksi ORAOwl? / Why ORAOwl?                            #}
-  {# ------------------------------------------------------ #}
-  <section class="mb-5">
-    <div class="row g-4 justify-content-center">
-      <div class="col-12 col-md-6 col-lg-5">
-        <div class="card h-100 shadow-sm">
-          <div class="card-body">
-            <h2 class="h5 mb-2">
-              Kilpailut ja sarjat
-            </h2>
-            <p class="text-muted mb-2">
-              Selkeä näkymä kilpailuihin, sarjoihin ja ratoihin – myös sprintit ja
-              pitkät matkat samassa arkistossa.
-            </p>
-            <ul class="small mb-0 text-muted">
-              <li>Yksityiskohtaiset tuloslistat ja sijoitukset</li>
-              <li>Ratatiedot: pituus, nousu ja rastien määrä</li>
-              <li>Mahdollisuus laajentaa analytiikkaan myöhemmin</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-12 col-md-6 col-lg-5">
-        <div class="card h-100 shadow-sm">
-          <div class="card-body">
-            <h2 class="h5 mb-2">
-              Urheilijat ja kehityksen seuranta
-            </h2>
-            <p class="text-muted mb-2">
-              Jokaiselle urheilijalle oma kilpailuhistoria, jonka avulla on helppo
-              seurata tasoa ja kehitystä kausien yli.
-            </p>
-            <ul class="small mb-0 text-muted">
-              <li>Yhteenveto kilpailumääristä ja parhaista sijoituksista</li>
-              <li>Väliaikoihin perustuva tarkempi analyysi</li>
-              <li>GDPR-yhteensopivat tietosuoja- ja anonymisointiasetukset</li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  {# ------------------------------------------------------ #}
-  {# Viimeisimmät kilpailut (vain jos dataa on)             #}
-  {# ------------------------------------------------------ #}
-  {% if latest_competitions %}
-    <section class="mb-5">
-      <div class="row mb-3">
-        <div class="col-12 col-lg-8">
-          <h2 class="h5 mb-1">
-            Viimeisimmät kilpailut / Latest competitions
-          </h2>
-          <p class="text-muted small mb-0">
-            Nopein reitti juuri tuoreimpiin tuloksiin.
-          </p>
-        </div>
-      </div>
-
-      <div class="row g-3">
-        {% for competition in latest_competitions %}
-          <div class="col-12 col-md-4">
-            <div class="card h-100 border-0 shadow-sm">
-              <div class="card-body d-flex flex-column">
-                <h3 class="h6 mb-1">
-                  {{ competition.name }}
-                </h3>
-                <p class="text-muted small mb-1">
-                  {{ competition.date }}
-                  {% if competition.location %}
-                    · {{ competition.location }}
-                  {% endif %}
-                </p>
-                <p class="text-muted small mb-3">
-                  Järjestäjä / Organizer:
-                  {{ competition.organizer|default:"tuntematon / unknown" }}
-                </p>
-                <div class="mt-auto">
-                  <a
-                    href="{% url 'oraw_app:competition_detail' competition.pk %}"
-                    class="btn btn-sm btn-outline-primary"
-                  >
-                    Avaa kilpailu / View competition →
-                  </a>
-                </div>
-              </div>
+          <div class="col-lg-5 mt-4 mt-lg-0">
+            <div class="bg-light border rounded p-3 small">
+              <strong>Miksi ORAOwl?</strong>
+              <ul class="mt-2 mb-0">
+                <li>Moderni digitaalinen tulospankki suunnistajille ja seuroille.</li>
+                <li>GDPR-yhteensopiva anonymisointimahdollisuus.</li>
+                <li>Helppo käyttää myös mobiilissa.</li>
+                <li>Data siistissä ja yhtenäisessä muodossa.</li>
+              </ul>
             </div>
           </div>
-        {% endfor %}
+        </div>
       </div>
-    </section>
-  {% endif %}
+    </div>
+  </div>
 
+  <!-- Bottom info cards -->
+  <div class="row g-4 justify-content-center">
+    <div class="col-md-5">
+      <div class="bg-white p-4 shadow-sm rounded-3 border">
+        <h4>Kilpailut ja sarjat</h4>
+        <p class="text-muted small">
+          Selaa kilpailuja, ratoja ja sarjoja – sprintistä pitkään matkaan.
+        </p>
+        <ul class="small mb-0">
+          <li>Tarkat tulokset ja sijoitukset</li>
+          <li>Reaaliaikainen sarjakohtainen tarkastelu</li>
+          <li>Laajennettu analytiikka tulossa</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="col-md-5">
+      <div class="bg-white p-4 shadow-sm rounded-3 border">
+        <h4>Urheilijat ja kehityksen seuranta</h4>
+        <p class="text-muted small">
+          Katso urheilijan kilpailuhistoria, paras sijoitus ja kehityssuunta.
+        </p>
+        <ul class="small mb-0">
+          <li>Yhteenvetoraportit ja tilastot</li>
+          <li>Kehityskäyrät ja analyysit (tulossa)</li>
+          <li>GDPR-yhteensopiva näkymien hallinta</li>
+        </ul>
+      </div>
+    </div>
+  </div>
 </div>
 {% endblock %}
