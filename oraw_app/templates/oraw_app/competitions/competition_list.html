@@ -8,82 +8,53 @@
 {% block content %}
 <div class="container my-4">
 
-  <h1 class="mb-2">Kilpailut / Competitions</h1>
+  <h1 class="mb-2">
+    Kilpailut / Competitions
+  </h1>
 
-  <p class="text-muted">
-    FI: Lista ORAOwl-järjestelmään tuoduista suunnistuskilpailuista.<br>
-    EN: List of orienteering competitions imported into ORAOwl.
-  </p>
+  
 
   {% if competitions %}
-    <div class="row g-3 mt-4">
+    <div class="row g-4 mt-2">
       {% for competition in competitions %}
-        <div class="col-md-6 col-lg-4">
-          <div class="card shadow-sm h-100 border-0">
+        <div class="col-12 col-md-6 col-xl-4">
+          <div class="card shadow-sm h-100">
             <div class="card-body d-flex flex-column">
 
-              {# ------------------------------------------------------ #}
-              {# FI: Kilpailun otsikko ja päivämäärä                   #}
-              {# EN: Competition title and date                        #}
-              {# ------------------------------------------------------ #}
-              <h5 class="card-title mb-1">
+              {# Nimi + päivämäärä #}
+              <h2 class="h5 card-title mb-1">
                 {{ competition.name }}
-              </h5>
-
-              <div class="text-muted small mb-2">
-                {% if competition.date %}
+              </h2>
+              {% if competition.date %}
+                <p class="card-subtitle text-muted small mb-3">
                   {{ competition.date }}
-                {% else %}
-                  –
-                {% endif %}
-              </div>
+                </p>
+              {% endif %}
 
-              {# ------------------------------------------------------ #}
-              {# Sijainti / Location                                    #}
-              {# ------------------------------------------------------ #}
-              <div class="small mb-1">
-                <i class="fas fa-map-marker-alt me-1"></i>
+              {# Sijainti ja järjestäjä #}
+              <div class="mb-2 small text-muted">
                 {% if competition.location %}
-                  {{ competition.location }}
-                {% else %}
-                  Sijainti tuntematon / Location unknown
-                {% endif %}
-              </div>
-
-              {# ------------------------------------------------------ #}
-              {# Järjestäjä / Organizer                                 #}
-              {# ------------------------------------------------------ #}
-              <div class="small mb-3">
-                <i class="fas fa-user-friends me-1"></i>
-                Järjestäjä / Organizer:
-                {% if competition.organizer %}
-                  {{ competition.organizer }}
-                {% else %}
-                  -
-                {% endif %}
-              </div>
-
-              {# ------------------------------------------------------ #}
-              {# Alaosa: ID (vain staff) + Näytä kilpailu -nappi        #}
-              {# EN: Footer: ID (staff only) + View competition button  #}
-              {# ------------------------------------------------------ #}
-              <div class="mt-auto pt-2">
-
-                {% if request.user.is_staff %}
-                  <div class="small text-muted mb-1">
-                    ID: {{ competition.id }}
+                  <div class="mb-1">
+                    <span class="me-1">📍</span>
+                    {{ competition.location }}
                   </div>
                 {% endif %}
+                {% if competition.organiser %}
+                  <div>
+                    <span class="me-1">👥</span>
+                    Järjestäjä / Organizer: {{ competition.organiser }}
+                  </div>
+                {% endif %}
+              </div>
 
-                <div class="text-end">
-                  <a
-                    href="{% url 'oraw_app:competition_detail' competition.pk %}"
-                    class="btn btn-sm btn-primary"
-                  >
-                    Näytä kilpailu / View competition →
-                  </a>
-                </div>
-
+              {# Nappi kortin alaosaan #}
+              <div class="mt-auto pt-2">
+                <a
+                  href="{% url 'oraw_app:competition_detail' competition.pk %}"
+                  class="btn btn-outline-primary btn-sm w-100"
+                >
+                  Näytä kilpailu / View competition →
+                </a>
               </div>
 
             </div>
@@ -92,10 +63,9 @@
       {% endfor %}
     </div>
   {% else %}
-    <div class="alert alert-info mt-4">
-      FI: Yhtään kilpailua ei ole vielä tuotu järjestelmään.<br>
-      EN: No competitions have been imported into the system yet.
-    </div>
+    <p class="text-muted mt-3">
+      Ei kilpailuja. / No competitions.
+    </p>
   {% endif %}
 
 </div>
