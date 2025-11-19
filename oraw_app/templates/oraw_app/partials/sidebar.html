@@ -1,18 +1,18 @@
 {% load static %}
 {% comment %}
-FI: Sovelluksen sivupalkki (sidebar), joka sisältää OraOwl-brändilogon,
+FI: Sovelluksen sivupalkki (sidebar), joka sisältää ORAOwl-brändilogon,
     käyttäjätiedot ja päävalikon linkit.
-EN: Application sidebar containing OraOwl branding, user info,
+EN: Application sidebar containing ORAOwl branding, user info,
     and main navigation links.
 {% endcomment %}
 
 <!-- ========================================================= -->
-<!-- Main Sidebar Container / Pääsivupalkin säilö -->
+<!-- Main Sidebar Container / Pääsivupalkin säilö              -->
 <!-- ========================================================= -->
 <aside class="main-sidebar sidebar-dark-primary elevation-4" style="background-color: #2E7D32;">
 
   <!-- ========================================================= -->
-  <!-- Brand Logo / Brändilogo -->
+  <!-- Brand Logo / Brändilogo                                  -->
   <!-- ========================================================= -->
   {# FI: Logo, joka vie etusivulle. EN: Logo that links to the home page. #}
   <a href="{% url 'oraw_app:home' %}" class="brand-link text-center">
@@ -20,18 +20,16 @@ EN: Application sidebar containing OraOwl branding, user info,
   </a>
 
   <!-- ========================================================= -->
-  <!-- Sidebar Content / Sivupalkin sisältö -->
+  <!-- Sidebar Content / Sivupalkin sisältö                      -->
   <!-- ========================================================= -->
   <div class="sidebar">
 
     <!-- ========================================================= -->
-    <!-- User Panel / Käyttäjäpaneeli -->
+    <!-- User Panel / Käyttäjäpaneeli                             -->
     <!-- ========================================================= -->
     <div class="user-panel mt-3 pb-3 mb-3 d-flex">
       <div class="image">
-        {% comment %} <img src="{% static '' %}"
-             class="img-circle elevation-2"
-             alt="User Image"> {% endcomment %}
+        {# Optional user image could go here #}
       </div>
       <div class="info">
         {% if request.user.is_authenticated %}
@@ -43,7 +41,7 @@ EN: Application sidebar containing OraOwl branding, user info,
     </div>
 
     <!-- ========================================================= -->
-    <!-- Sidebar Menu / Päävalikko -->
+    <!-- Sidebar Menu / Päävalikko                                -->
     <!-- ========================================================= -->
     <nav class="mt-2">
       <ul class="nav nav-pills nav-sidebar flex-column"
@@ -52,7 +50,7 @@ EN: Application sidebar containing OraOwl branding, user info,
           data-accordion="false">
 
         <!-- ----------------------------------------------------- -->
-        <!-- Dashboard / Yleisnäkymä -->
+        <!-- Dashboard / Yleisnäkymä                              -->
         <!-- ----------------------------------------------------- -->
         <li class="nav-item">
           <a href="{% url 'oraw_app:home' %}" class="nav-link text-white">
@@ -62,7 +60,7 @@ EN: Application sidebar containing OraOwl branding, user info,
         </li>
 
         <!-- ----------------------------------------------------- -->
-        <!-- Competitions / Kilpailut -->
+        <!-- Competitions / Kilpailut                             -->
         <!-- ----------------------------------------------------- -->
         <li class="nav-item">
           <a href="{% url 'oraw_app:competition_list' %}" class="nav-link text-white">
@@ -72,7 +70,7 @@ EN: Application sidebar containing OraOwl branding, user info,
         </li>
 
         <!-- ----------------------------------------------------- -->
-        <!-- Athletes / Urheilijat -->
+        <!-- Athletes / Urheilijat                                -->
         <!-- ----------------------------------------------------- -->
         <li class="nav-item">
           <a href="{% url 'oraw_app:athletes_index' %}" class="nav-link text-white">
@@ -85,11 +83,16 @@ EN: Application sidebar containing OraOwl branding, user info,
         <!-- IOFXML Import (staff only) / IOFXML-tuonti (vain staff) -->
         <!-- ----------------------------------------------------- -->
         {% if request.user.is_staff %}
-        
+        <li class="nav-item">
+          <a href="{% url 'oraw_app:iofxml_upload' %}" class="nav-link text-white">
+            <i class="nav-icon fas fa-upload"></i>
+            <p>IOFXML-tuonti</p>
+          </a>
+        </li>
         {% endif %}
 
         <!-- ----------------------------------------------------- -->
-        <!-- Logout / Kirjaudu ulos -->
+        <!-- Logout / Kirjaudu ulos                               -->
         <!-- ----------------------------------------------------- -->
         {% if request.user.is_authenticated %}
         <li class="nav-item">
