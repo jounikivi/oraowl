@@ -1,21 +1,3 @@
-Kiitos! 👍
-Tässä on **täydellisesti siistitty, ammattimainen ja toimeksiantajalle valmis versio** sun `README.md`-tiedostosta.
-
-Mukana ovat:
-
-* parempi rakenne
-* yhtenäinen tyyli
-* selkeä asennusohje
-* korjatut kohdat
-* yhtenäinen markdown-typografia
-* selkeä kuvaus projektista ja teknologioista
-
-**Voit kopioida tämän suoraan GitHubiin.**
-
----
-
-# ✔️ **SIIVOTTU JA PARANNETTU README.md**
-
 ````md
 # ORAOwl – Orienteering Results Archive
 
