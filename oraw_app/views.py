@@ -100,21 +100,6 @@ class IOFXMLUploadView(LoginRequiredMixin, PermissionRequiredMixin, FormView):
 # Competitions list & detail views / Kilpailunäkymät
 # ============================================================================
 
-
-class CompetitionListView(ListView):
-    """
-    FI:
-        Listaa kaikki kilpailut aikajärjestyksessä (uusin ensin).
-    EN:
-        List all competitions ordered by date (newest first).
-    """
-
-    model = Competition
-    template_name = "oraw_app/competitions/competition_list.html"
-    context_object_name = "competitions"
-    ordering = ["-date"]
-
-
 class CompetitionDetailView(DetailView):
     """
     FI:
@@ -140,6 +125,59 @@ class CompetitionDetailView(DetailView):
             Course.objects.filter(competition=self.object).order_by("name")
         )
         return context
+
+
+class CompetitionListView(ListView):
+    """
+    FI:
+        Listaa kaikki kilpailut aikajärjestyksessä (uusin ensin) ja
+        mahdollistaa haun kilpailun nimen, järjestäjän tai paikkakunnan perusteella.
+    EN:
+        List all competitions ordered by date (newest first) and
+        allow searching by competition name, organiser or location.
+    """
+
+    model = Competition
+    template_name = "oraw_app/competitions/competition_list.html"
+    context_object_name = "competitions"
+    paginate_by = 25  # tarvittaessa voit säätää tai poistaa tämän
+
+    def get_queryset(self):
+        """
+        FI:
+            Palauttaa kilpailut uusimmasta vanhimpaan. Jos 'q'-parametri on mukana
+            GET-kyselyssä, suodatetaan kilpailuja nimen, järjestäjän tai paikkakunnan
+            perusteella (osittainen haku, ei kirjainkoolla väliä).
+        EN:
+            Returns competitions ordered from newest to oldest. If 'q' parameter
+            is present in the GET request, filter competitions by name, organiser
+            or location (partial, case-insensitive match).
+        """
+        qs = Competition.objects.all().order_by("-date")
+
+        query = (self.request.GET.get("q") or "").strip()
+        if query:
+            qs = qs.filter(
+                Q(name__icontains=query)
+                | Q(organizer__icontains=query)
+                | Q(location__icontains=query)
+            )
+
+        return qs
+
+    def get_context_data(self, **kwargs):
+        """
+        FI:
+            Lisätään hakusana contextiin, jotta se voidaan näyttää hakukentässä
+            competition_list-templaatissa.
+        EN:
+            Add the current search query into the context so it can be shown
+            in the search field in the competition_list template.
+        """
+        context = super().get_context_data(**kwargs)
+        context["q"] = (self.request.GET.get("q") or "").strip()
+        return context
+
 
 
 # ============================================================
