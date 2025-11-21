@@ -46,11 +46,12 @@ urlpatterns = [
         views.CompetitionDetailView.as_view(),
         name="competition_detail",
     ),
-    path(
-        "competitions/<uuid:competition_id>/courses/<uuid:course_id>/",
-        views.CourseResultsView.as_view(),
-        name="course_results",
+   path(
+    "competitions/<uuid:competition_id>/courses/<uuid:pk>/",
+    views.CourseResultsView.as_view(),
+    name="course_results",
     ),
+
      path(
         "results/<uuid:pk>/",
         views.ResultDetailView.as_view(),

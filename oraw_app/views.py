@@ -13,7 +13,6 @@ from django.views.generic import ListView, DetailView, FormView
 from django.contrib.auth import login
 from django.contrib.auth.views import LogoutView
 from django.http import Http404
-
 from oraw_app.models import Competition, Athlete, Result, Course, Split
 from oraw_app.forms import SignupForm, IOFXMLUploadForm
 from oraw_app.utils.iofxml_importer import import_iofxml_result_list
@@ -100,12 +99,24 @@ class IOFXMLUploadView(LoginRequiredMixin, PermissionRequiredMixin, FormView):
 # Competitions list & detail views / Kilpailunäkymät
 # ============================================================================
 
+# ============================================================================
+# Competitions list & detail views / Kilpailunäkymät
+# ============================================================================
+
 class CompetitionDetailView(DetailView):
     """
     FI:
         Näyttää yhden kilpailun perustiedot ja siihen kuuluvat radat/sarjat.
+        Lisäksi lasketaan pieni yhteenveto:
+        - sarjojen määrä
+        - tulosten määrä
+        - OK-tulosten määrä
     EN:
         Show basic information of a single competition and its courses.
+        Also provides a small summary:
+        - number of courses
+        - number of results
+        - number of OK results
     """
 
     model = Competition
@@ -115,16 +126,40 @@ class CompetitionDetailView(DetailView):
     def get_context_data(self, **kwargs):
         """
         FI:
-            Lisätään contextiin kilpailun radat, jotta ne voidaan näyttää
-            listana templaatissa.
+            Lisätään contextiin:
+              - courses: kilpailun radat
+              - summary: pieni tilastoyhteenveto kilpailusta
+            Käytetään vain julkisia (GDPR) tuloksia yhteenvetoon.
         EN:
-            Add competition's courses into the template context.
+            Add to context:
+              - courses: competition courses
+              - summary: small statistics summary for the competition
+            Uses only public (GDPR-safe) results for the summary.
         """
         context = super().get_context_data(**kwargs)
-        context["courses"] = (
-            Course.objects.filter(competition=self.object).order_by("name")
+        competition: Competition = self.object
+
+        # Kilpailun radat / Courses for this competition
+        courses_qs = Course.objects.filter(competition=competition).order_by("name")
+        context["courses"] = courses_qs
+
+        # Julkiset tulokset tältä kilpailulta (GDPR-suodatus)
+        results_qs = Result.objects.filter(
+            course__competition=competition,
+            is_public=True,
+            deleted_at__isnull=True,
+            athlete__is_public=True,
+            athlete__deleted_at__isnull=True,
         )
+
+        context["summary"] = {
+            "courses_count": courses_qs.count(),
+            "results_count": results_qs.count(),
+            "ok_results_count": results_qs.filter(status="OK").count(),
+        }
+
         return context
+
 
 
 class CompetitionListView(ListView):
@@ -187,40 +222,22 @@ class CompetitionListView(ListView):
 
 
 class CourseResultsView(ListView):
-    """
-    FI:
-        Näyttää yhden radan (Course) kaikki tulokset taulukossa.
-        Tulokset rajataan julkisiin (is_public=True) ja ei-poistettuihin
-        (deleted_at is null) riveihin. Lisäksi piilotetaan ei-julkisten
-        urheilijoiden tulokset (GDPR).
-    EN:
-        Show all results for a single course in a table. Only public and
-        non-deleted results are listed. Also hides results for non-public
-        athletes (GDPR).
-    """
-
     model = Result
     template_name = "oraw_app/competitions/course_results.html"
     context_object_name = "results"
 
     def get_queryset(self):
-        """
-        FI:
-            Haetaan ensin rata (Course), johon kilpailu- ja kurssi-ID viittaavat.
-            Sen jälkeen haetaan kaikki tulokset tälle radalle.
-        EN:
-            First fetch the Course referenced by competition_id and course_id,
-            then fetch all results for that course.
-        """
+        # Poimitaan competition_id ja course_id (= pk)
         competition_id = self.kwargs["competition_id"]
-        course_id = self.kwargs["course_id"]
+        course_id = self.kwargs["pk"]
 
-        # Haetaan rata ja samalla sen kilpailu (select_related).
+        # Haetaan varsinainen rata (ja kilpailu samalla)
         self.course = Course.objects.select_related("competition").get(
             id=course_id,
             competition__id=competition_id,
         )
 
+        # Haetaan tähän rataan kuuluvat tulokset
         qs = (
             Result.objects.filter(
                 course=self.course,
@@ -229,19 +246,12 @@ class CourseResultsView(ListView):
                 athlete__is_public=True,
                 athlete__deleted_at__isnull=True,
             )
-            .select_related("athlete", "course", "course__competition", "control_card")
+            .select_related("athlete", "course", "course__competition")
             .order_by("position", "finish_time_s")
         )
         return qs
 
     def get_context_data(self, **kwargs):
-        """
-        FI:
-            Lisätään templaatille myös kilpailu ja rata, jotta otsikot ja
-            breadcrumbit on helppo tehdä.
-        EN:
-            Add competition and course to the context for use in templates.
-        """
         context = super().get_context_data(**kwargs)
         context["course"] = self.course
         context["competition"] = self.course.competition
