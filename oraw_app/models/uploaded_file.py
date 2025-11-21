@@ -47,6 +47,9 @@ class UploadedFile(models.Model):
             models.Index(fields=["uploaded_at"]),
             models.Index(fields=["sha256"]),
         ]
+        permissions = [
+            ("can_import_iofxml", "Can import IOF XML result files"),
+        ]
 
     def __str__(self) -> str:
         return f"{self.original_name} ({self.sha256[:8]}...)"

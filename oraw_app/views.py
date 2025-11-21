@@ -6,7 +6,7 @@ from __future__ import annotations
 # ============================================================================
 from django.contrib import messages
 from django.db.models import Q
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, FormView
@@ -35,30 +35,20 @@ def home(request):
 # ============================================================================
 
 
-class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+class IOFXMLUploadView(LoginRequiredMixin, PermissionRequiredMixin, FormView):
     """
-    FI: Mixin, joka varmistaa, että käyttäjä on kirjautunut ja kuuluu henkilöstöön.
-    EN: Mixin that ensures the user is authenticated and is a staff member.
-    """
-
-    def test_func(self):
-        """
-        FI: Sallitaan vain staff-käyttäjät.
-        EN: Allow only staff users.
-        """
-        user = self.request.user
-        return bool(user and user.is_staff)
-
-
-class IOFXMLUploadView(StaffRequiredMixin, FormView):
-    """
-    FI: IOFXML 3.0 ResultList -tiedoston lataus- ja tuontinäkymä (vain staff).
-    EN: IOFXML 3.0 ResultList upload & import view (staff only).
+    FI: IOFXML 3.0 ResultList -tiedoston lataus- ja tuontinäkymä.
+    EN: IOFXML 3.0 ResultList upload & import view.
     """
 
     template_name = "oraw_app/iofxml/upload.html"
     form_class = IOFXMLUploadForm
     success_url = reverse_lazy("oraw_app:iofxml_upload")
+
+    # FI: Vain käyttäjät, joilla on tämä oikeus, saavat käyttää näkymää.
+    # EN: Only users with this permission may access the view.
+    permission_required = "oraw_app.can_import_iofxml"
+    raise_exception = True  # -> 403 jos kirjautunut mutta ei lupaa
 
     def form_valid(self, form):
         """
@@ -103,6 +93,7 @@ class IOFXMLUploadView(StaffRequiredMixin, FormView):
 
         messages.success(self.request, f"{msg_fi} / {msg_en}")
         return super().form_valid(form)
+
 
 
 # ============================================================================

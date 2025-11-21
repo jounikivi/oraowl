@@ -82,12 +82,9 @@ EN: Application sidebar containing ORAOwl branding, user info,
         <!-- ----------------------------------------------------- -->
         <!-- IOFXML Import (staff only) / IOFXML-tuonti (vain staff) -->
         <!-- ----------------------------------------------------- -->
-        {% if request.user.is_staff %}
-        <li class="nav-item">
-          <a href="{% url 'oraw_app:iofxml_upload' %}" class="nav-link text-white">
-            <i class="nav-icon fas fa-upload"></i>
-            <p>IOFXML-tuonti</p>
-          </a>
+         {% if request.user.is_authenticated and perms.oraw_app.can_import_iofxml %}
+         <li class="nav-item">
+          <a href="{% url 'oraw_app:iofxml_upload' %}" class="nav-link">IOFXML-tuonti</a>
         </li>
         {% endif %}
 
