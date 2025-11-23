@@ -9,7 +9,7 @@ from django.db.models import Q
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.shortcuts import render
 from django.urls import reverse_lazy
-from django.views.generic import ListView, DetailView, FormView
+from django.views.generic import ListView, DetailView, FormView, TemplateView
 from django.contrib.auth import login
 from django.contrib.auth.views import LogoutView
 from django.http import Http404
@@ -30,7 +30,7 @@ def home(request):
 
 
 # ============================================================================
-# IOFXML upload view / IOFXML-latausnäkymä (staff-only)
+# IOFXML upload view / IOFXML-latausnäkymä (vain oikeutetuille käyttäjille)
 # ============================================================================
 
 
@@ -94,10 +94,50 @@ class IOFXMLUploadView(LoginRequiredMixin, PermissionRequiredMixin, FormView):
         return super().form_valid(form)
 
 
+# ============================================================================
+# Admin dashboard / Hallintapaneeli (vain oikeutetuille käyttäjille)
+# ============================================================================
 
-# ============================================================================
-# Competitions list & detail views / Kilpailunäkymät
-# ============================================================================
+
+class AdminDashboardView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
+    """
+    FI:
+        Yksinkertainen hallintanäkymä henkilöstölle / toimitsijoille.
+        Näyttää yhteenvedon kilpailuista, urheilijoista ja tuloksista sekä
+        pikalinkit tärkeimpiin hallintasivuihin.
+
+    EN:
+        Simple admin dashboard for staff/officials. Shows a small summary of
+        competitions, athletes and results, and provides quick links to the
+        most important admin pages.
+    """
+
+    template_name = "oraw_app/admin/dashboard.html"
+
+    # Sama permission kuin IOFXML-tuonnissa: käytännössä "kilpailun järjestäjä".
+    permission_required = "oraw_app.can_import_iofxml"
+    raise_exception = True
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        try:
+            context["competition_count"] = Competition.objects.count()
+        except Exception:
+            context["competition_count"] = None
+
+        try:
+            context["athlete_count"] = Athlete.objects.count()
+        except Exception:
+            context["athlete_count"] = None
+
+        try:
+            context["result_count"] = Result.objects.count()
+        except Exception:
+            context["result_count"] = None
+
+        return context
+
 
 # ============================================================================
 # Competitions list & detail views / Kilpailunäkymät
