@@ -1,5 +1,6 @@
-{# oraw_app/templates/oraw_app/courses/course_results.html #}
+{# oraw_app/templates/oraw_app/competitions/course_results.html #}
 {% extends "oraw_app/base.html" %}
+{% load time_filters %}
 
 {% block title %}
   {{ course.competition.name }} – {{ course.name }} – Tulokset
@@ -51,23 +52,52 @@
               <tr>
                 <th class="text-end">#</th>
                 <th>Urheilija / Athlete</th>
+                <th>Seura / Club</th>
                 <th>Status</th>
-                <th>Aika / Time</th>
+                <th class="text-end">Aika / Time</th>
               </tr>
             </thead>
             <tbody>
               {% for result in results %}
                 <tr>
-                  <td class="text-end">{{ forloop.counter }}</td>
+                  <td class="text-end">
+                    {% if result.position %}
+                      {{ result.position }}
+                    {% else %}
+                      {{ forloop.counter }}
+                    {% endif %}
+                  </td>
+
                   <td>
                     {{ result.athlete }}
                   </td>
+
                   <td>
-                    {{ result.status }}
+                    {{ result.athlete.club|default:"-" }}
                   </td>
+
                   <td>
-                    {# HUOM: säädä kentän nimi vastaamaan mallia, jos eri #}
-                    {{ result.time }}
+                    {% if result.status == "OK" %}
+                      <span class="badge bg-success">OK</span>
+                    {% elif result.status == "DNF" %}
+                      <span class="badge bg-danger">DNF</span>
+                    {% elif result.status == "DSQ" or result.status == "MP" %}
+                      <span class="badge bg-warning text-dark">
+                        {{ result.status }}
+                      </span>
+                    {% else %}
+                      <span class="badge bg-secondary">
+                        {{ result.status }}
+                      </span>
+                    {% endif %}
+                  </td>
+
+                  <td class="text-end">
+                    {% if result.finish_time_s %}
+                      {{ result.finish_time_s|format_seconds }}
+                    {% else %}
+                      –
+                    {% endif %}
                   </td>
                 </tr>
               {% endfor %}
