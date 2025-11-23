@@ -1,120 +1,148 @@
 {# oraw_app/templates/oraw_app/admin/dashboard.html #}
 {% extends "oraw_app/base.html" %}
 
-{% block title %}
-  Hallintapaneeli / Admin dashboard
-{% endblock %}
+{% block title %}Hallintapaneeli / Admin dashboard{% endblock %}
 
 {% block content %}
 <div class="container my-4">
 
-  <h1 class="h3 mb-3">
-    Hallintapaneeli / Admin dashboard
-  </h1>
-
-  <p class="text-muted">
+  <!-- Otsikko -->
+  <h1 class="mb-3">Hallintapaneeli / Admin dashboard</h1>
+  <p class="text-muted mb-4">
     Tervetuloa, {{ request.user.get_full_name|default:request.user.username }}.
-    Tämä näkymä on tarkoitettu kilpailun järjestäjille ja ORAOwl-järjestelmän ylläpidolle.
   </p>
 
-  {# Pienet yhteenvetokortit: kilpailut, urheilijat, tulokset #}
+  <!-- Tilastokortit -->
   <div class="row g-3 mb-4">
-    <div class="col-12 col-md-4">
+
+    <!-- Kilpailut -->
+    <div class="col-12 col-md-3">
       <div class="card shadow-sm h-100">
-        <div class="card-body d-flex align-items-center">
-          <div class="me-3">
-            <i class="fas fa-flag-checkered fa-2x text-primary"></i>
-          </div>
+        <div class="card-body d-flex justify-content-between align-items-center">
           <div>
-            <div class="text-muted small">Kilpailuja / Competitions</div>
-            <div class="h4 mb-0">
-              {{ competition_count|default:"–" }}
-            </div>
+            <div class="text-muted small">Kilpailut</div>
+            <div class="h4 mb-0">{{ competition_count|default:"–" }}</div>
           </div>
+          <i class="fas fa-flag-checkered fa-2x text-primary"></i>
         </div>
       </div>
     </div>
 
-    <div class="col-12 col-md-4">
+    <!-- Urheilijat -->
+    <div class="col-12 col-md-3">
       <div class="card shadow-sm h-100">
-        <div class="card-body d-flex align-items-center">
-          <div class="me-3">
-            <i class="fas fa-running fa-2x text-success"></i>
-          </div>
+        <div class="card-body d-flex justify-content-between align-items-center">
           <div>
-            <div class="text-muted small">Urheilijoita / Athletes</div>
-            <div class="h4 mb-0">
-              {{ athlete_count|default:"–" }}
-            </div>
+            <div class="text-muted small">Urheilijat</div>
+            <div class="h4 mb-0">{{ athlete_count|default:"–" }}</div>
           </div>
+          <i class="fas fa-running fa-2x text-success"></i>
         </div>
       </div>
     </div>
 
-    <div class="col-12 col-md-4">
+    <!-- Tulokset -->
+    <div class="col-12 col-md-3">
       <div class="card shadow-sm h-100">
-        <div class="card-body d-flex align-items-center">
-          <div class="me-3">
-            <i class="fas fa-list-ol fa-2x text-info"></i>
-          </div>
+        <div class="card-body d-flex justify-content-between align-items-center">
           <div>
-            <div class="text-muted small">Tuloksia / Results</div>
-            <div class="h4 mb-0">
-              {{ result_count|default:"–" }}
-            </div>
+            <div class="text-muted small">Tulokset</div>
+            <div class="h4 mb-0">{{ result_count|default:"–" }}</div>
           </div>
+          <i class="fas fa-list-ol fa-2x text-info"></i>
         </div>
       </div>
     </div>
+
+    <!-- Käyttäjät (vain ylläpitäjälle) -->
+    {% if can_manage_users %}
+    <div class="col-12 col-md-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted small">Käyttäjät</div>
+            <div class="h4 mb-0">{{ user_count|default:"–" }}</div>
+          </div>
+          <i class="fas fa-user-cog fa-2x text-secondary"></i>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
   </div>
 
-  {# Pikalinkit tärkeimpiin hallintanäkymiin #}
+  <!-- Pikalinkit -->
+  <h2 class="h5 mb-3">Pikalinkit</h2>
+
+  <div class="row g-3">
+
+    <!-- IOFXML -->
+    <div class="col-12 col-md-4">
+      <a href="{% url 'oraw_app:iofxml_upload' %}" class="text-decoration-none">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <h3 class="h6 mb-2">IOFXML-tuonti</h3>
+            <p class="text-muted small mb-2">
+              Tuo kilpailun tulokset IOFXML ResultList -tiedostosta.
+            </p>
+            <span class="btn btn-outline-primary btn-sm">Avaa</span>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <!-- Kilpailut -->
+    <div class="col-12 col-md-4">
+      <a href="{% url 'oraw_app:competition_list' %}" class="text-decoration-none">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <h3 class="h6 mb-2">Kilpailut</h3>
+            <p class="text-muted small mb-2">
+              Selaa tuotuja kilpailuja.
+            </p>
+            <span class="btn btn-outline-primary btn-sm">Avaa</span>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <!-- Urheilijat -->
+    <div class="col-12 col-md-4">
+      <a href="{% url 'oraw_app:athletes_index' %}" class="text-decoration-none">
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <h3 class="h6 mb-2">Urheilijat</h3>
+            <p class="text-muted small mb-2">
+              Katso urheilijalista ja perusprofiilit.
+            </p>
+            <span class="btn btn-outline-primary btn-sm">Avaa</span>
+          </div>
+        </div>
+      </a>
+    </div>
+
+  </div>
+
+  <!-- Ylläpitäjän työkalut -->
+  {% if can_manage_users %}
+  <h2 class="h5 mt-4 mb-3">Ylläpitäjän työkalut</h2>
+
   <div class="row g-3">
     <div class="col-12 col-md-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-body d-flex flex-column">
-          <h2 class="h5">IOFXML-tuonti</h2>
-          <p class="text-muted small flex-grow-1">
-            Lataa IOF Data Standard 3.0 ResultList -tiedosto ja tuo kilpailun tulokset
-            ORAOwl-järjestelmään.
-          </p>
-          <a href="{% url 'oraw_app:iofxml_upload' %}" class="btn btn-outline-primary mt-2">
-            Avaa IOFXML-tuonti
-          </a>
+      <a href="{% url 'admin:auth_user_changelist' %}" class="text-decoration-none">
+        <div class="card shadow-sm h-100 border-warning">
+          <div class="card-body">
+            <h3 class="h6 mb-2">Käyttäjät & käyttöoikeudet</h3>
+            <p class="text-muted small mb-2">
+              Avaa Django Admin -käyttöliittymässä käyttäjälista, roolit ja käyttöoikeudet.
+            </p>
+            <span class="btn btn-outline-warning btn-sm">Avaa Django Admin</span>
+          </div>
         </div>
-      </div>
-    </div>
-
-    <div class="col-12 col-md-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-body d-flex flex-column">
-          <h2 class="h5">Kilpailut / Competitions</h2>
-          <p class="text-muted small flex-grow-1">
-            Selaa tuotuja kilpailuja, tarkista että tiedot ja sarjat ovat oikein
-            ja siirry katsomaan tuloksia.
-          </p>
-          <a href="{% url 'oraw_app:competition_list' %}" class="btn btn-outline-primary mt-2">
-            Avaa kilpailulista
-          </a>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-12 col-md-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-body d-flex flex-column">
-          <h2 class="h5">Urheilijat / Athletes</h2>
-          <p class="text-muted small flex-grow-1">
-            Katso urheilijoiden listaa ja tarkista, että nimet ja seurat ovat oikein.
-            (Tällä hetkellä linkki vie perusnäkymään.)
-          </p>
-          <a href="{% url 'oraw_app:athletes_index' %}" class="btn btn-outline-primary mt-2">
-            Avaa urheilijalista
-          </a>
-        </div>
-      </div>
+      </a>
     </div>
   </div>
+  {% endif %}
 
 </div>
 {% endblock %}

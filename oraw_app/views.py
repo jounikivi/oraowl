@@ -13,9 +13,13 @@ from django.views.generic import ListView, DetailView, FormView, TemplateView
 from django.contrib.auth import login
 from django.contrib.auth.views import LogoutView
 from django.http import Http404
+from django.contrib.auth import get_user_model
+
 from oraw_app.models import Competition, Athlete, Result, Course, Split
 from oraw_app.forms import SignupForm, IOFXMLUploadForm
 from oraw_app.utils.iofxml_importer import import_iofxml_result_list
+
+User = get_user_model()
 
 
 # ============================================================================
@@ -106,21 +110,26 @@ class AdminDashboardView(LoginRequiredMixin, PermissionRequiredMixin, TemplateVi
         Näyttää yhteenvedon kilpailuista, urheilijoista ja tuloksista sekä
         pikalinkit tärkeimpiin hallintasivuihin.
 
+        Jos käyttäjä on superuser (ylläpitäjä), näytetään lisäksi
+        käyttäjien lukumäärä ja linkki Django Adminin käyttäjähallintaan.
+
     EN:
         Simple admin dashboard for staff/officials. Shows a small summary of
         competitions, athletes and results, and provides quick links to the
         most important admin pages.
+
+        If the current user is a superuser, also show the number of users
+        and a link to Django Admin user management.
     """
 
     template_name = "oraw_app/admin/dashboard.html"
-
-    # Sama permission kuin IOFXML-tuonnissa: käytännössä "kilpailun järjestäjä".
     permission_required = "oraw_app.can_import_iofxml"
     raise_exception = True
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
+        # Perustilastot
         try:
             context["competition_count"] = Competition.objects.count()
         except Exception:
@@ -136,12 +145,24 @@ class AdminDashboardView(LoginRequiredMixin, PermissionRequiredMixin, TemplateVi
         except Exception:
             context["result_count"] = None
 
+        # Ylläpitäjän lisätiedot (käyttäjät ja oikeudet)
+        if self.request.user.is_superuser:
+            context["can_manage_users"] = True
+            try:
+                context["user_count"] = User.objects.count()
+            except Exception:
+                context["user_count"] = None
+        else:
+            context["can_manage_users"] = False
+            context["user_count"] = None
+
         return context
 
 
 # ============================================================================
 # Competitions list & detail views / Kilpailunäkymät
 # ============================================================================
+
 
 class CompetitionDetailView(DetailView):
     """
@@ -201,7 +222,6 @@ class CompetitionDetailView(DetailView):
         return context
 
 
-
 class CompetitionListView(ListView):
     """
     FI:
@@ -252,7 +272,6 @@ class CompetitionListView(ListView):
         context = super().get_context_data(**kwargs)
         context["q"] = (self.request.GET.get("q") or "").strip()
         return context
-
 
 
 # ============================================================
@@ -390,7 +409,6 @@ class CourseResultsView(ListView):
         context["competition"] = self.course.competition
         context["winner_time_s"] = getattr(self, "winner_time_s", None)
         return context
-
 
 
 # ============================================================
