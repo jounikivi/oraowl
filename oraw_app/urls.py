@@ -147,4 +147,14 @@ urlpatterns = [
         ),
         name="password_change_done",
     ),
+    
+    # ------------------------------------------------------------------------# 
+    # Admin dashboard / Hallinta
+    # # ------------------------------------------------------------------------
+    path(
+        "admin-dashboard/",
+        views.AdminDashboardView.as_view(),
+        name="admin_dashboard",
+    ),
+
 ]
