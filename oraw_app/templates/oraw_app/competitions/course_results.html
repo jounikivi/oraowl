@@ -1,6 +1,5 @@
 {# oraw_app/templates/oraw_app/competitions/course_results.html #}
 {% extends "oraw_app/base.html" %}
-{% load time_filters %}
 
 {% block title %}
   {{ course.competition.name }} – {{ course.name }} – Tulokset
@@ -9,7 +8,7 @@
 {% block content %}
 <div class="container my-4">
 
-  <!-- Takaisin kilpailuun -->
+  {# Takaisin kilpailuun #}
   <div class="mb-3">
     <a href="{% url 'oraw_app:competition_detail' course.competition.id %}"
        class="btn btn-sm btn-outline-secondary">
@@ -17,7 +16,7 @@
     </a>
   </div>
 
-  <!-- Otsikko -->
+  {# Otsikko #}
   <h1 class="h3 mb-1">
     {{ course.name }}
   </h1>
@@ -27,19 +26,42 @@
     {% if course.competition.location %} · {{ course.competition.location }}{% endif %}
   </p>
 
-  <!-- Yhteenveto -->
+  {# Yhteenvetokortti: kilpailu + sarja #}
   <div class="card mb-3 shadow-sm">
-    <div class="card-body d-flex flex-wrap align-items-center justify-content-between">
-      <div class="mb-2 mb-md-0">
-        <strong>Rata / Course:</strong> {{ course.name }}
-      </div>
-      <div class="text-muted small">
-        Tuloksia yhteensä (julkisia): {{ results|length }}
+    <div class="card-body">
+      <div class="row">
+        <div class="col-md-8">
+          <div class="fw-semibold mb-1">
+            Rata / Course: {{ course.name }}
+          </div>
+          <div class="text-muted small">
+            Kilpailu: {{ course.competition.name }}
+            {% if course.competition.date %} · {{ course.competition.date }}{% endif %}
+            {% if course.competition.location %} · {{ course.competition.location }}{% endif %}
+          </div>
+          {% if course.competition.organizer %}
+            <div class="text-muted small mt-1">
+              Järjestäjä / Organizer: {{ course.competition.organizer }}
+            </div>
+          {% endif %}
+        </div>
+
+        <div class="col-md-4 text-md-end mt-2 mt-md-0">
+          <div class="small">
+            <strong>Tuloksia:</strong> {{ results|length }}
+          </div>
+          {# Matka näytetään vain jos kenttä on olemassa ja ei-tyhjä #}
+          {% if course.length_m %}
+            <div class="small text-muted">
+              Matka / Length: {{ course.length_m }} m
+            </div>
+          {% endif %}
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- Tulostaulukko -->
+  {# Tulostaulukko #}
   <div class="card shadow-sm">
     <div class="card-header">
       <h2 class="h5 mb-0">Tulokset / Results</h2>
@@ -73,28 +95,31 @@
                   </td>
 
                   <td>
-                    {{ result.athlete.club|default:"-" }}
+                    {# Seura. Jos kenttää ei ole, tämä jää tyhjäksi eikä riko mitään #}
+                    {{ result.athlete.club|default:"" }}
                   </td>
 
                   <td>
+                    {# Status värikoodattuna, mutta ilman backend-muutoksia #}
                     {% if result.status == "OK" %}
                       <span class="badge bg-success">OK</span>
                     {% elif result.status == "DNF" %}
                       <span class="badge bg-danger">DNF</span>
-                    {% elif result.status == "DSQ" or result.status == "MP" %}
-                      <span class="badge bg-warning text-dark">
-                        {{ result.status }}
-                      </span>
+                    {% elif result.status == "DNS" %}
+                      <span class="badge bg-warning text-dark">DNS</span>
+                    {% elif result.status == "MP" or result.status == "DSQ" %}
+                      <span class="badge bg-secondary">{{ result.status }}</span>
                     {% else %}
-                      <span class="badge bg-secondary">
-                        {{ result.status }}
-                      </span>
+                      <span class="badge bg-light text-muted">{{ result.status }}</span>
                     {% endif %}
                   </td>
 
                   <td class="text-end">
+                    {# Näytä mieluummin finish_time_s, mutta jos sitä ei ole, käytä time-kenttää #}
                     {% if result.finish_time_s %}
-                      {{ result.finish_time_s|format_seconds }}
+                      {{ result.finish_time_s }} s
+                    {% elif result.time %}
+                      {{ result.time }}
                     {% else %}
                       –
                     {% endif %}
