@@ -44,10 +44,12 @@ EN: Application sidebar containing ORAOwl branding, user info,
     <!-- Sidebar Menu / Päävalikko                                -->
     <!-- ========================================================= -->
     <nav class="mt-2">
-      <ul class="nav nav-pills nav-sidebar flex-column"
-          data-widget="treeview"
-          role="menu"
-          data-accordion="false">
+      <ul
+        class="nav nav-pills nav-sidebar flex-column"
+        data-widget="treeview"
+        role="menu"
+        data-accordion="false"
+      >
 
         <!-- ----------------------------------------------------- -->
         <!-- Dashboard / Yleisnäkymä                              -->
@@ -80,13 +82,20 @@ EN: Application sidebar containing ORAOwl branding, user info,
         </li>
 
         <!-- ----------------------------------------------------- -->
-        <!-- IOFXML Import (staff only) / IOFXML-tuonti (vain staff) -->
+        <!-- IOFXML Import + Admin (vain oikeutetut käyttäjät)     -->
         <!-- ----------------------------------------------------- -->
-         {% if request.user.is_authenticated and perms.oraw_app.can_import_iofxml %}
-         <li class="nav-item">
+        {% if request.user.is_authenticated and perms.oraw_app.can_import_iofxml %}
+        <li class="nav-item">
           <a href="{% url 'oraw_app:iofxml_upload' %}" class="nav-link text-white">
             <i class="nav-icon fas fa-file-import"></i>
             <p>IOFXML-tuonti</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="{% url 'oraw_app:admin_dashboard' %}" class="nav-link text-white">
+            <i class="nav-icon fas fa-tools"></i>
+            <p>Hallinta / Admin</p>
           </a>
         </li>
         {% endif %}
