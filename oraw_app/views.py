@@ -222,22 +222,71 @@ class CompetitionListView(ListView):
 
 
 class CourseResultsView(ListView):
+    """
+    FI:
+        Näyttää yhden radan (Course) kaikki tulokset taulukossa.
+        Tulokset rajataan julkisiin (is_public=True) ja ei-poistettuihin
+        (deleted_at is null) riveihin. Lisäksi piilotetaan ei-julkisten
+        urheilijoiden tulokset (GDPR).
+
+        Tässä versiossa lasketaan myös voittajan aika ja
+        "ero voittajaan" jokaiselle OK-tulokselle.
+    EN:
+        Show all results for a single course in a table. Only public and
+        non-deleted results are listed and results for non-public athletes
+        are hidden (GDPR).
+
+        This version also computes the winner time and the time difference
+        to the winner for each OK result.
+    """
+
     model = Result
     template_name = "oraw_app/competitions/course_results.html"
     context_object_name = "results"
 
-    def get_queryset(self):
-        # Poimitaan competition_id ja course_id (= pk)
-        competition_id = self.kwargs["competition_id"]
-        course_id = self.kwargs["pk"]
+    @staticmethod
+    def _format_diff_to_winner(seconds: int) -> str:
+        """
+        FI: Muuntaa sekunnit muotoon +M:SS tai +H:MM:SS.
+        EN: Convert seconds to +M:SS or +H:MM:SS format.
+        """
+        if seconds is None:
+            return ""
+        # varmuuden vuoksi int ja positiivinen arvo
+        total = int(seconds)
+        sign = "+" if total >= 0 else "-"
+        total = abs(total)
+        hours, rem = divmod(total, 3600)
+        minutes, secs = divmod(rem, 60)
+        if hours:
+            base = f"{hours}:{minutes:02d}:{secs:02d}"
+        else:
+            base = f"{minutes}:{secs:02d}"
+        return f"{sign}{base}"
 
-        # Haetaan varsinainen rata (ja kilpailu samalla)
+    def get_queryset(self):
+        """
+        FI:
+            Haetaan rata (Course) URL-parametrien perusteella ja sen julkiset
+            tulokset. Samalla alustetaan self.course ja self.winner_time_s
+            sekä lisätään jokaiselle Result-instanssille attribuutit
+            diff_to_winner_s ja diff_to_winner_display.
+
+        EN:
+            Fetch the Course based on URL kwargs and then all public results
+            for that course. Also sets self.course and self.winner_time_s
+            and attaches diff_to_winner_s and diff_to_winner_display
+            attributes to each Result instance.
+        """
+        competition_id = self.kwargs["competition_id"]
+        course_id = self.kwargs["pk"]  # <uuid:pk> from URL
+
+        # Haetaan rata ja varmistetaan, että se kuuluu tälle kilpailulle.
         self.course = Course.objects.select_related("competition").get(
             id=course_id,
-            competition__id=competition_id,
+            competition_id=competition_id,
         )
 
-        # Haetaan tähän rataan kuuluvat tulokset
         qs = (
             Result.objects.filter(
                 course=self.course,
@@ -246,16 +295,62 @@ class CourseResultsView(ListView):
                 athlete__is_public=True,
                 athlete__deleted_at__isnull=True,
             )
-            .select_related("athlete", "course", "course__competition")
+            .select_related(
+                "athlete",
+                "course",
+                "course__competition",
+                "control_card",
+            )
             .order_by("position", "finish_time_s")
         )
+
+        # Selvitetään voittajan aika (nopein OK-tulos, jolla on aika).
+        winner = (
+            qs.filter(
+                status=Result.STATUS_OK,
+                finish_time_s__isnull=False,
+            )
+            .order_by("finish_time_s")
+            .first()
+        )
+        self.winner_time_s = winner.finish_time_s if winner else None
+
+        # Lisätään jokaiselle Result-oliolle diff-attribuutit.
+        if self.winner_time_s is not None:
+            for result in qs:
+                if (
+                    result.finish_time_s is not None
+                    and result.status == Result.STATUS_OK
+                ):
+                    diff = result.finish_time_s - self.winner_time_s
+                    result.diff_to_winner_s = diff
+                    result.diff_to_winner_display = self._format_diff_to_winner(diff)
+                else:
+                    result.diff_to_winner_s = None
+                    result.diff_to_winner_display = ""
+        else:
+            for result in qs:
+                result.diff_to_winner_s = None
+                result.diff_to_winner_display = ""
+
         return qs
 
     def get_context_data(self, **kwargs):
+        """
+        FI:
+            Lisätään templaatille myös kilpailu, rata ja voittajan aika,
+            jotta otsikot ja breadcrumbit on helppo tehdä ja voittajan
+            aika voidaan haluttaessa näyttää.
+
+        EN:
+            Add competition, course and winner time into template context.
+        """
         context = super().get_context_data(**kwargs)
         context["course"] = self.course
         context["competition"] = self.course.competition
+        context["winner_time_s"] = getattr(self, "winner_time_s", None)
         return context
+
 
 
 # ============================================================
