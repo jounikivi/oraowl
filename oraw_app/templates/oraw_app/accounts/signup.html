@@ -1,89 +1,97 @@
-{% extends "oraw_app/accounts/_auth_base.html" %}
-{% comment %}
-FI: Rekisteröintisivu (oma SignupForm-luokka). Sisältää pakollisen sähköpostikentän.
-EN: Signup page using the custom SignupForm. Includes required email field.
-{% endcomment %}
+{# oraw_app/templates/oraw_app/accounts/signup.html #}
+{% extends "oraw_app/base.html" %}
 
-{% block title %}Luo käyttäjätili{% endblock %}
-{% block auth_title %}Luo uusi käyttäjätili{% endblock %}
-
-{% block auth_intro %}
-<p class="text-muted small mb-4 field-width">
-  Täytä alla oleva lomake luodaksesi käyttäjätilin palveluun ORAOwl.
-</p>
+{% block title %}
+  Luo tili / Create Account
 {% endblock %}
 
-{% block auth_body %}
-<form method="post" novalidate>
-  {% csrf_token %}
-  {{ form.non_field_errors }}
+{% block content %}
+<div class="container my-4">
 
-  <!-- Username / Käyttäjätunnus -->
-  <div class="mb-3">
-    <label class="form-label" for="id_username">Käyttäjätunnus</label>
-    <div class="field-width">{{ form.username }}</div>
-    {% if form.username.errors %}
-      <div class="text-danger small field-errors">{{ form.username.errors }}</div>
-    {% endif %}
+  {# ---------------------------------------------------------- #}
+  {# Breadcrumb / Sivupolku                                      #}
+  {# ---------------------------------------------------------- #}
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small mb-0">
+      <li class="breadcrumb-item">
+        <a href="{% url 'oraw_app:home' %}">Etusivu</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        Rekisteröidy / Sign up
+      </li>
+    </ol>
+  </nav>
+
+  {# ---------------------------------------------------------- #}
+  {# Otsikko                                                     #}
+  {# ---------------------------------------------------------- #}
+  <h1 class="h3 mb-3">
+    Luo tili / Create Account
+  </h1>
+
+  <p class="text-muted mb-3">
+    Täytä alla oleva lomake luodaksesi uuden käyttäjätilin ORAOwl-järjestelmään.
+  </p>
+
+  {# ---------------------------------------------------------- #}
+  {# Ilmoitukset (messages)                                      #}
+  {# ---------------------------------------------------------- #}
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show mt-2">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  {# ---------------------------------------------------------- #}
+  {# Rekisteröintilomake                                         #}
+  {# ---------------------------------------------------------- #}
+  <div class="card shadow-sm">
+    <div class="card-body">
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <label class="form-label">Käyttäjätunnus / Username</label>
+          {{ form.username }}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Sähköposti / Email</label>
+          {{ form.email }}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Salasana / Password</label>
+          {{ form.password1 }}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Vahvista salasana / Confirm Password</label>
+          {{ form.password2 }}
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">
+          Luo tili / Create account
+        </button>
+      </form>
+
+      <hr>
+
+      <div class="text-center small">
+        <p class="mb-1">
+          Onko sinulla jo tili?
+          <a href="{% url 'oraw_app:login' %}">
+            Kirjaudu sisään →
+          </a>
+        </p>
+      </div>
+
+    </div>
   </div>
 
-  <!-- Email / Sähköpostiosoite -->
-  <div class="mb-3">
-    <label class="form-label" for="id_email">Sähköpostiosoite</label>
-    <div class="field-width">{{ form.email }}</div>
-    {% if form.email.errors %}
-      <div class="text-danger small field-errors">{{ form.email.errors }}</div>
-    {% endif %}
-  </div>
-
-  <!-- Password / Salasana -->
-  <div class="mb-3">
-    <label class="form-label" for="id_password1">Salasana</label>
-    <div class="field-width">{{ form.password1 }}</div>
-    {% if form.password1.errors %}
-      <div class="text-danger small field-errors">{{ form.password1.errors }}</div>
-    {% endif %}
-    {% if form.password1.help_text %}
-      <div class="form-text small field-help">{{ form.password1.help_text|safe }}</div>
-    {% endif %}
-  </div>
-
-  <!-- Password confirm / Vahvista salasana -->
-  <div class="mb-2">
-    <label class="form-label" for="id_password2">Vahvista salasana</label>
-    <div class="field-width">{{ form.password2 }}</div>
-    {% if form.password2.errors %}
-      <div class="text-danger small field-errors">{{ form.password2.errors }}</div>
-    {% endif %}
-  </div>
-
-  <!-- Toggle passwords / Näytä/piilota salasanat -->
-  <div class="field-width d-flex justify-content-end mb-3">
-    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="togglePasswords()">
-      Näytä / piilota salasanat
-    </button>
-  </div>
-
-  <!-- Submit -->
-  <div class="field-width">
-    <button class="btn btn-success w-100" type="submit">Luo käyttäjätili</button>
-  </div>
-</form>
-{% endblock %}
-
-{% block auth_footer %}
-<p class="mt-3 mb-0 field-width">
-  Onko sinulla jo tili?
-  <a href="{% url 'oraw_app:login' %}">Kirjaudu sisään</a>
-</p>
-
-<script>
-function togglePasswords() {
-  const a = document.getElementById("id_password1");
-  const b = document.getElementById("id_password2");
-  if (!a || !b) return;
-  const t = a.type === "password" ? "text" : "password";
-  a.type = t; b.type = t;
-}
-</script>
+</div>
 {% endblock %}

@@ -1,64 +1,89 @@
-{% extends "oraw_app/accounts/_auth_base.html" %}
-{% comment %}
-FI: Kirjautumissivu (Djangon LoginView käyttää AuthenticationFormia).
-    Käyttäjä syöttää tunnuksen ja salasanan, ja tarvittaessa
-    voi siirtyä salasanan palautukseen tai rekisteröitymiseen.
-EN: Login page (Django LoginView using AuthenticationForm).
-    The user enters their username and password, and can
-    navigate to password reset or signup if needed.
-{% endcomment %}
+{# oraw_app/templates/oraw_app/accounts/login.html #}
+{% extends "oraw_app/base.html" %}
 
-{% block title %}Kirjaudu sisään{% endblock %}
-{% block auth_title %}Kirjaudu sisään{% endblock %}
-
-{% block auth_intro %}
-<p class="text-muted small mb-4 field-width">
-  Syötä käyttäjätunnuksesi ja salasanasi jatkaaksesi.
-</p>
+{% block title %}
+  Kirjaudu sisään / Login
 {% endblock %}
 
-{% block auth_body %}
-<form method="post" novalidate>
-  {% csrf_token %}
-  {{ form.non_field_errors }}
+{% block content %}
+<div class="container my-4">
 
-  <!-- Username field / Käyttäjätunnus -->
-  <div class="mb-3">
-    <label class="form-label" for="id_username">Käyttäjätunnus</label>
-    <div class="field-width">{{ form.username }}</div>
-    {% if form.username.errors %}
-      <div class="text-danger small field-errors">{{ form.username.errors }}</div>
-    {% endif %}
+  {# ---------------------------------------------------------- #}
+  {# Breadcrumb / Sivupolku                                      #}
+  {# ---------------------------------------------------------- #}
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small mb-0">
+      <li class="breadcrumb-item">
+        <a href="{% url 'oraw_app:home' %}">Etusivu</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        Kirjaudu sisään
+      </li>
+    </ol>
+  </nav>
+
+  {# ---------------------------------------------------------- #}
+  {# Otsikko                                                     #}
+  {# ---------------------------------------------------------- #}
+  <h1 class="h3 mb-3">
+    Kirjaudu sisään / Login
+  </h1>
+
+  {# ---------------------------------------------------------- #}
+  {# Ilmoitukset (messages)                                      #}
+  {# ---------------------------------------------------------- #}
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show mt-2">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  {# ---------------------------------------------------------- #}
+  {# Kirjautumislomake                                           #}
+  {# ---------------------------------------------------------- #}
+  <div class="card shadow-sm">
+    <div class="card-body">
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <label class="form-label">Sähköposti tai käyttäjätunnus</label>
+          {{ form.username }}
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Salasana / Password</label>
+          {{ form.password }}
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100">
+          Kirjaudu / Log in
+        </button>
+      </form>
+
+      <hr>
+
+      <div class="text-center small">
+        <p class="mb-1">
+          <a href="{% url 'oraw_app:password_reset' %}">
+            Unohditko salasanan? / Forgot your password?
+          </a>
+        </p>
+
+        <p>
+          Uusi käyttäjä?
+          <a href="{% url 'oraw_app:signup' %}">
+            Luo tili / Create account →
+          </a>
+        </p>
+      </div>
+
+    </div>
   </div>
 
-  <!-- Password field / Salasana -->
-  <div class="mb-3">
-    <label class="form-label" for="id_password">Salasana</label>
-    <div class="field-width">{{ form.password }}</div>
-    {% if form.password.errors %}
-      <div class="text-danger small field-errors">{{ form.password.errors }}</div>
-    {% endif %}
-  </div>
-
-  <!-- Forgot password / Unohtuiko salasana -->
-  <div class="field-width d-flex justify-content-between align-items-center mb-3">
-    <a class="small" href="{% url 'oraw_app:password_reset' %}">
-      Unohtuiko salasana?
-    </a>
-  </div>
-
-  <!-- Submit button / Lähetä -->
-  <div class="field-width">
-    <button class="btn btn-success w-100" type="submit">
-      Kirjaudu sisään
-    </button>
-  </div>
-</form>
-{% endblock %}
-
-{% block auth_footer %}
-<p class="mt-3 mb-0 field-width">
-  Eikö sinulla ole vielä tiliä?
-  <a href="{% url 'oraw_app:signup' %}">Luo käyttäjätili</a>
-</p>
+</div>
 {% endblock %}

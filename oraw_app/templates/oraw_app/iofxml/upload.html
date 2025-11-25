@@ -1,70 +1,65 @@
+{# oraw_app/templates/oraw_app/iofxml/upload.html #}
 {% extends "oraw_app/base.html" %}
-{% load static %}
 
-{% block title %}IOFXML-tuonti{% endblock %}
+{% block title %}
+  IOFXML-tuonti / IOFXML import
+{% endblock %}
 
 {% block content %}
-<div class="content p-3">
-  <div class="container-fluid">
+<div class="container my-4">
 
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h1 class="h3 mb-0">IOFXML-tuonti</h1>
-      <a href="{% url 'oraw_app:competition_list' %} " class="btn btn-outline-secondary">
-        ← Takaisin kilpailuihin
-      </a>
-    </div>
+  {# ---------------------------------------------------------- #}
+  {# Breadcrumb / Sivupolku                                      #}
+  {# ---------------------------------------------------------- #}
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small mb-0">
+      <li class="breadcrumb-item">
+        <a href="{% url 'oraw_app:home' %}">Etusivu</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'oraw_app:admin_dashboard' %}">Hallintapaneeli</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        IOFXML-tuonti
+      </li>
+    </ol>
+  </nav>
 
-    <p class="text-muted mb-4">
-      Lataa IOF Data Standard 3.0 <code>ResultList</code> -tiedosto ja tuo kilpailun tulokset ORAOwl-järjestelmään.
-    </p>
+  {# ---------------------------------------------------------- #}
+  {# Otsikko                                                     #}
+  {# ---------------------------------------------------------- #}
+  <h1 class="h3 mb-3">
+    IOFXML-tuonti / IOFXML Import
+  </h1>
 
-    {% if messages %}
-      {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  <p class="text-muted mb-4">
+    Lataa IOF Data Standard 3.0 <strong>ResultList</strong> -muotoinen XML-tiedosto
+    ja tuo kilpailun tulokset ORAOwl-järjestelmään.
+  </p>
+
+  {# ---------------------------------------------------------- #}
+  {# Lomake                                                      #}
+  {# ---------------------------------------------------------- #}
+  <div class="card shadow-sm">
+    <div class="card-body">
+
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <label for="fileInput" class="form-label">
+            Valitse IOFXML ResultList -tiedosto (.xml)
+          </label>
+          {{ form.file }}
         </div>
-      {% endfor %}
-    {% endif %}
 
-    <div class="card shadow-sm">
-      <div class="card-body">
+        <button type="submit" class="btn btn-primary">
+          Tuo tiedosto / Import file
+        </button>
+      </form>
 
-        <form method="post" enctype="multipart/form-data">
-          {% csrf_token %}
-
-          {{ form.non_field_errors }}
-
-          <!-- Tiedosto -->
-          <div class="mb-3">
-            <label for="{{ form.file.id_for_label }}" class="form-label">Tiedosto</label>
-            {{ form.file }}
-            {% if form.file.errors %}
-              <div class="text-danger small">{{ form.file.errors.0 }}</div>
-            {% endif %}
-            <div class="form-text">
-              Valitse IOFXML (ResultList XML) -tiedosto.
-            </div>
-          </div>
-
-          <!-- Muistiinpano -->
-          <div class="mb-3">
-            <label for="{{ form.note.id_for_label }}" class="form-label">Muistiinpano (valinnainen)</label>
-            {{ form.note }}
-            {% if form.note.errors %}
-              <div class="text-danger small">{{ form.note.errors.0 }}</div>
-            {% endif %}
-            <div class="form-text">
-              Lisää halutessasi lyhyt kuvaus latauksesta.
-            </div>
-          </div>
-
-          <button type="submit" class="btn btn-primary">Tuo IOFXML</button>
-        </form>
-
-      </div>
     </div>
-
   </div>
+
 </div>
 {% endblock %}
