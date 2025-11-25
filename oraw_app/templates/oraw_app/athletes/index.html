@@ -8,138 +8,160 @@
 {% block content %}
 <div class="container my-4">
 
-  {% comment %}
-  FI: Otsikko + lyhyt kuvaus
-  EN: Header + short description
-  {% endcomment %}
-  <h1 class="mb-2">Urheilijat / Athletes</h1>
+  {# ---------------------------------------------------------- #}
+  {# Breadcrumb / Sivupolku                                      #}
+  {# ---------------------------------------------------------- #}
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small mb-0">
+      <li class="breadcrumb-item">
+        <a href="{% url 'oraw_app:home' %}">Etusivu</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        Urheilijat
+      </li>
+    </ol>
+  </nav>
 
-  {% comment %} <p class="text-muted">
-    FI: Lista urheilijoista, joille on tuotu tuloksia ORAOwl-järjestelmään.<br>
-    EN: List of athletes with results imported into ORAOwl.
-  </p> {% endcomment %}
+  {# ---------------------------------------------------------- #}
+  {# Otsikko                                                     #}
+  {# ---------------------------------------------------------- #}
+  <h1 class="h3 mb-3">
+    Urheilijat / Athletes
+  </h1>
 
-  {% comment %}
-  FI: Hakulomake urheilijoiden suodattamiseen
-  EN: Search form for filtering athletes
-  {% endcomment %}
-  <div class="card shadow-sm mb-4">
+  {# ---------------------------------------------------------- #}
+  {# Hakusuodattimet (q, club)                                   #}
+  {# Ei riko mitään vaikka parametreja ei anneta, koska        #}
+  {# request.GET.* vain tyhjenee.                               #}
+  {# ---------------------------------------------------------- #}
+  <div class="card mb-3">
     <div class="card-body">
-      <form method="get" class="row g-3 align-items-end">
-
-        <div class="col-md-4">
-          <label for="id_q" class="form-label mb-1">Nimi / Name</label>
+      <form method="get" class="row g-2 align-items-end">
+        <div class="col-12 col-md-5">
+          <label class="form-label small">Haku / Search</label>
           <input
             type="text"
-            id="id_q"
             name="q"
-            class="form-control form-control-sm"
-            placeholder="Etsi nimellä / Search by name"
-            value="{{ request.GET.q|default_if_none:'' }}"
+            value="{{ request.GET.q }}"
+            class="form-control"
+            placeholder="Hae nimellä tai nimimerkillä..."
           >
         </div>
 
-        <div class="col-md-4">
-          <label for="id_club" class="form-label mb-1">Seura / Club</label>
+        <div class="col-12 col-md-5">
+          <label class="form-label small">Seura / Club</label>
           <input
             type="text"
-            id="id_club"
             name="club"
-            class="form-control form-control-sm"
-            placeholder="Esim. Turun Suunnistajat"
-            value="{{ request.GET.club|default_if_none:'' }}"
+            value="{{ request.GET.club }}"
+            class="form-control"
+            placeholder="Esim. Angelniemen Ankkuri"
           >
         </div>
 
-        <div class="col-md-2">
-          <label for="id_gender" class="form-label mb-1">Sukupuoli / Gender</label>
-          <select
-            id="id_gender"
-            name="gender"
-            class="form-select form-select-sm"
-          >
-            <option value="">Kaikki / All</option>
-            <option value="M" {% if request.GET.gender == "M" %}selected{% endif %}>Mies / Male</option>
-            <option value="F" {% if request.GET.gender == "F" %}selected{% endif %}>Nainen / Female</option>
-            <option value="X" {% if request.GET.gender == "X" %}selected{% endif %}>Muu / Other</option>
-          </select>
+        <div class="col-6 col-md-1">
+          <button type="submit" class="btn btn-primary w-100">
+            Hae
+          </button>
         </div>
 
-        <div class="col-md-2 d-flex justify-content-md-end">
-          <div class="d-flex w-100 gap-2">
-            <button type="submit" class="btn btn-primary btn-sm flex-fill">
-              Hae / Search
-            </button>
-            <a href="{% url 'oraw_app:athletes_index' %}" class="btn btn-outline-secondary btn-sm">
-              Tyhjennä / Reset
-            </a>
-          </div>
+        <div class="col-6 col-md-1">
+          <a href="{% url 'oraw_app:athletes_index' %}" class="btn btn-outline-secondary w-100">
+            Tyhjennä
+          </a>
         </div>
-
       </form>
     </div>
   </div>
 
-  {% if athletes %}
-    <div class="table-responsive">
-      <table class="table table-hover align-middle">
-        <thead class="table-light">
-          <tr>
-            <th>Nimi / Name</th>
-            <th>Seura / Club</th>
-            <th class="text-center">Sukupuoli / Gender</th>
-            <th class="text-center">Syntymävuosi / Birth year</th>
-            <th></th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for athlete in athletes %}
-            <tr>
-              <td>
-                <a href="{% url 'oraw_app:athletes_detail' athlete.pk %}">
-                  {{ athlete.display_name }}
-                </a>
-              </td>
-
-              <td>{{ athlete.club|default:"-" }}</td>
-
-              <td class="text-center">
-                {% if athlete.gender == "M" %}
-                  M
-                {% elif athlete.gender == "F" %}
-                  F
-                {% elif athlete.gender == "X" %}
-                  X
-                {% else %}
-                  –
-                {% endif %}
-              </td>
-
-              <td class="text-center">
-                {% if athlete.year_of_birth %}
-                  {{ athlete.year_of_birth }}
-                {% else %}
-                  –
-                {% endif %}
-              </td>
-
-              <td class="text-end">
-                <a
-                  href="{% url 'oraw_app:athletes_detail' athlete.pk %}"
-                  class="btn btn-sm btn-outline-primary"
-                >
-                  Näytä tulokset / View results →
-                </a>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+  {# ---------------------------------------------------------- #}
+  {# Urheilijataulukko                                           #}
+  {# ---------------------------------------------------------- #}
+  <div class="card shadow-sm">
+    <div class="card-header">
+      <h2 class="h5 mb-0">Urheilijalista / Athletes</h2>
     </div>
-  {% else %}
-    <p class="text-muted">
-      Ei urheilijoita löytynyt annetuilla hakuehdoilla. / No athletes found.
-    </p>
+    <div class="card-body p-0">
+      {% if athletes %}
+        <div class="table-responsive">
+          <table class="table table-striped table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>#</th>
+                <th>Nimi / Name</th>
+                <th>Nimimerkki / Alias</th>
+                <th>Seura / Club</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for athlete in athletes %}
+                <tr>
+                  <td>{{ forloop.counter }}</td>
+                  <td>
+                    <a href="{% url 'oraw_app:athletes_detail' athlete.pk %}">
+                      {{ athlete.first_name }} {{ athlete.last_name }}
+                    </a>
+                  </td>
+                  <td>
+                    {{ athlete.public_alias|default:"–" }}
+                  </td>
+                  <td>
+                    {{ athlete.club|default:"–" }}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="text-muted m-3">
+          {% if request.GET.q or request.GET.club %}
+            Ei urheilijoita annetuilla hakuehdoilla.
+          {% else %}
+            ei vielä urheilijoita. / No athletes yet.
+          {% endif %}
+        </p>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ---------------------------------------------------------- #}
+  {# Sivutus (jos paginate_by käytössä)                         #}
+  {# ---------------------------------------------------------- #}
+  {% if is_paginated %}
+    <nav aria-label="Urheilijat sivutus" class="mt-3">
+      <ul class="pagination pagination-sm">
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ request.GET.q }}&club={{ request.GET.club }}">
+              « Edellinen
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled">
+            <span class="page-link">« Edellinen</span>
+          </li>
+        {% endif %}
+
+        <li class="page-item disabled">
+          <span class="page-link">
+            Sivu {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
+          </span>
+        </li>
+
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ request.GET.q }}&club={{ request.GET.club }}">
+              Seuraava »
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled">
+            <span class="page-link">Seuraava »</span>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
   {% endif %}
 
 </div>
