@@ -1,129 +1,141 @@
-
-{# oraw_app/templates/oraw_app/competitions/course_results.html #}
+{# oraw_app/templates/oraw_app/competitions/competition_detail.html #}
 {% extends "oraw_app/base.html" %}
 
 {% block title %}
-  {{ course.name }} – {{ competition.name }}
+  {{ competition.name }} – Kilpailu / Competition
 {% endblock %}
 
 {% block content %}
 <div class="container my-4">
 
   {# ----------------------------------------------------------- #}
-  {# Header: kilpailu + sarja                                   #}
+  {# Breadcrumb / Sivupolku                                      #}
+  {# ----------------------------------------------------------- #}
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb mb-3">
+      <li class="breadcrumb-item">
+        <a href="{% url 'oraw_app:home' %}">Etusivu</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'oraw_app:competition_list' %}">Kilpailut</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        {{ competition.name }}
+      </li>
+    </ol>
+  </nav>
+
+  {# ----------------------------------------------------------- #}
+  {# Kilpailun perustiedot                                      #}
   {# ----------------------------------------------------------- #}
   <div class="mb-3">
     <h1 class="h3 mb-1">
-      {{ course.name }}
+      {{ competition.name }}
     </h1>
+
     <div class="text-muted small">
       <div>
-        <strong>{{ competition.name }}</strong>
+        {% if competition.date %}
+          {{ competition.date }}
+        {% endif %}
+        {% if competition.location %}
+          – {{ competition.location }}
+        {% endif %}
       </div>
-      <div>
-        {% if competition.date %}{{ competition.date }}{% endif %}
-        {% if competition.location %} – {{ competition.location }}{% endif %}
-      </div>
+      {% if competition.organizer %}
+        <div>
+          Järjestäjä / Organizer:
+          {{ competition.organizer }}
+        </div>
+      {% endif %}
     </div>
   </div>
 
   {# ----------------------------------------------------------- #}
-  {# Tulostaulukko                                              #}
+  {# Yhteenvetokortit (sarjat, tulokset, OK-tulokset)           #}
   {# ----------------------------------------------------------- #}
+  {% if summary %}
+  <div class="row g-3 mb-4">
+    <div class="col-12 col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted small">Sarjoja / Courses</div>
+            <div class="h4 mb-0">
+              {{ summary.courses_count|default:"–" }}
+            </div>
+          </div>
+          <i class="fas fa-list-ul fa-2x text-primary"></i>
+        </div>
+      </div>
+    </div>
 
-  {% if results %}
-    <div class="table-responsive">
-      <table class="table table-sm table-striped align-middle">
-        <thead>
-          <tr>
-            <th scope="col" class="text-end" style="width: 3rem;">#</th>
-            <th scope="col">Urheilija / Athlete</th>
-            <th scope="col">Seura / Club</th>
-            <th scope="col" class="text-nowrap">Aika / Time</th>
-            <th scope="col" class="text-nowrap">Ero / Diff</th>
-            <th scope="col" class="text-nowrap">Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for result in results %}
-          <tr>
-            {# Sijoitus #}
-            <td class="text-end">
-              {% if result.position %}
-                {{ result.position }}
-              {% else %}
-                –
-              {% endif %}
-            </td>
+    <div class="col-12 col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted small">Tuloksia / Results</div>
+            <div class="h4 mb-0">
+              {{ summary.results_count|default:"–" }}
+            </div>
+          </div>
+          <i class="fas fa-list-ol fa-2x text-info"></i>
+        </div>
+      </div>
+    </div>
 
-            {# Urheilijan nimi #}
-            <td>
-              {% with a=result.athlete %}
-                {% if a.public_alias %}
-                  {{ a.public_alias }}
-                {% else %}
-                  {{ a.first_name }} {{ a.last_name }}
-                {% endif %}
-              {% endwith %}
-            </td>
+    <div class="col-12 col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body d-flex justify-content-between align-items-center">
+          <div>
+            <div class="text-muted small">OK-tuloksia / OK results</div>
+            <div class="h4 mb-0">
+              {{ summary.ok_results_count|default:"–" }}
+            </div>
+          </div>
+          <i class="fas fa-check-circle fa-2x text-success"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
-            {# Seura / club #}
-            <td>
-              {% with a=result.athlete %}
-                {% if a.club %}
-                  {{ a.club }}
-                {% else %}
-                  <span class="text-muted small">–</span>
-                {% endif %}
-              {% endwith %}
-            </td>
+  {# ----------------------------------------------------------- #}
+  {# Sarjat / Courses                                           #}
+  {# ----------------------------------------------------------- #}
+  <h2 class="h5 mb-3">Sarjat / Courses</h2>
 
-            {# Aika #}
-            <td class="text-nowrap">
-              {% if result.formatted_time %}
-                {{ result.formatted_time }}
-              {% elif result.finish_time %}
-                {{ result.finish_time }}
-              {% elif result.finish_time_s %}
-                {{ result.finish_time_s }} s
-              {% else %}
-                –
-              {% endif %}
-            </td>
+  {% if courses %}
+    <div class="row g-3">
+      {% for course in courses %}
+      <div class="col-12 col-md-6 col-xl-4">
+        <div class="card shadow-sm h-100">
+          <div class="card-body d-flex flex-column">
+            <h3 class="h6 mb-1">
+              {{ course.name }}
+            </h3>
 
-            {# Ero voittajaan (diff_to_winner_display tulee viewistä) #}
-            <td class="text-nowrap">
-              {% if result.diff_to_winner_display %}
-                {{ result.diff_to_winner_display }}
-              {% else %}
-                <span class="text-muted small">–</span>
-              {% endif %}
-            </td>
+            {# Lisäinfoa sarjasta voi näyttää myöhemmin, jos löytyy pituus/rastit #}
+            <p class="text-muted small mb-2">
+              Kilpailun sarja / Course in this competition.
+            </p>
 
-            {# Status värikoodattuna badge-tyyliin #}
-            <td class="text-nowrap">
-              {% with raw_status=result.status %}
-                {% with status_display=result.get_status_display|default:raw_status %}
-                  {% if raw_status == "OK" %}
-                    <span class="badge bg-success">{{ status_display }}</span>
-                  {% elif raw_status in "DNF,DSQ,MP" %}
-                    <span class="badge bg-danger">{{ status_display }}</span>
-                  {% elif raw_status == "DNS" %}
-                    <span class="badge bg-warning text-dark">{{ status_display }}</span>
-                  {% else %}
-                    <span class="badge bg-secondary">{{ status_display }}</span>
-                  {% endif %}
-                {% endwith %}
-              {% endwith %}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+            <div class="mt-auto pt-2">
+              <a
+                href="{% url 'oraw_app:course_results' competition.id course.id %}"
+                class="btn btn-outline-primary btn-sm w-100"
+              >
+                Näytä tulokset / View results →
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
     </div>
   {% else %}
     <p class="text-muted">
-      Ei tuloksia tälle sarjalle. / No results for this course.
+      Ei sarjoja tälle kilpailulle. / No courses for this competition.
     </p>
   {% endif %}
 
