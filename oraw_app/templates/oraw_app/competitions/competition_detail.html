@@ -8,103 +8,142 @@
 {% block content %}
 <div class="container my-4">
 
-  {# Pieni "takaisin" -linkki #}
-  <div class="mb-3">
-    <a href="{% url 'oraw_app:competition_list' %}" class="btn btn-sm btn-outline-secondary">
+  {# -------------------------------------------------------- #}
+  {# Breadcrumb / Sivupolku                                 #}
+  {# -------------------------------------------------------- #}
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small bg-transparent px-0 mb-0">
+      <li class="breadcrumb-item">
+        <a href="{% url 'oraw_app:home' %}">Etusivu</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'oraw_app:competition_list' %}">Kilpailut</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        {{ competition.name }}
+      </li>
+    </ol>
+  </nav>
+
+  {# -------------------------------------------------------- #}
+  {# Otsikko + takaisin-nappi                               #}
+  {# -------------------------------------------------------- #}
+  <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap">
+    <h1 class="h3 mb-2">
+      {{ competition.name }}
+    </h1>
+
+    <a href="{% url 'oraw_app:competition_list' %}"
+       class="btn btn-sm btn-outline-secondary mb-2">
       ← Takaisin kilpailulistaan
     </a>
   </div>
 
-  {# Otsikko #}
-  <div class="d-flex flex-column flex-md-row align-items-md-center mb-3">
-    <div class="flex-grow-1">
-      <h1 class="h3 mb-1">{{ competition.name }}</h1>
-      <p class="text-muted mb-0">
-        {% if competition.date %}
-          🗓 {{ competition.date }}
-        {% endif %}
-        {% if competition.location %}
-          · 📍 {{ competition.location }}
-        {% endif %}
-        {% if competition.organizer %}
-          · 👥 {{ competition.organizer }}
-        {% endif %}
-      </p>
-    </div>
-  </div>
+  {# Kilpailun perustiedot                                  #}
+  <p class="text-muted mb-1">
+    {% if competition.date %}
+      {{ competition.date }}
+    {% endif %}
+    {% if competition.location %}
+      • {{ competition.location }}
+    {% endif %}
+  </p>
+  <p class="text-muted mb-3">
+    {% if competition.organiser %}
+      Järjestäjä / Organizer: {{ competition.organiser }}
+    {% endif %}
+  </p>
 
-  {# =========================================================== #}
-  {# YHTEENVETOKORTTI (B-tyyli, AdminLTE-henkinen)              #}
-  {# =========================================================== #}
-  <div class="card mb-4 shadow-sm">
-    <div class="card-body">
-      <div class="row text-center">
-
-        <div class="col-12 col-md-4 mb-3 mb-md-0">
-          <div class="d-flex flex-column align-items-center">
-            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center mb-2"
-                 style="width: 42px; height: 42px;">
-              <i class="fas fa-layer-group"></i>
-            </div>
-            <div class="h4 mb-0">{{ summary.courses_count }}</div>
+  {# -------------------------------------------------------- #}
+  {# Yhteenvetokortit (jos arvot olemassa)                  #}
+  {# Nämä ovat turvallisia: jos muuttujaa ei ole, tulos on  #}
+  {# tyhjä merkkijono eikä tule virhettä.                   #}
+  {# -------------------------------------------------------- #}
+  <div class="row g-3 mb-4">
+    <div class="col-12 col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body d-flex align-items-center">
+          <div class="me-3">
+            <i class="fas fa-layer-group fa-2x text-primary"></i>
+          </div>
+          <div>
             <div class="text-muted small">Ratoja / Courses</div>
+            <div class="h4 mb-0">
+              {{ course_count|default:courses|length }}
+            </div>
           </div>
         </div>
+      </div>
+    </div>
 
-        <div class="col-12 col-md-4 mb-3 mb-md-0">
-          <div class="d-flex flex-column align-items-center">
-            <div class="rounded-circle bg-info text-white d-flex align-items-center justify-content-center mb-2"
-                 style="width: 42px; height: 42px;">
-              <i class="fas fa-list-ol"></i>
-            </div>
-            <div class="h4 mb-0">{{ summary.results_count }}</div>
+    <div class="col-12 col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body d-flex align-items-center">
+          <div class="me-3">
+            <i class="fas fa-list-ol fa-2x text-success"></i>
+          </div>
+          <div>
             <div class="text-muted small">Tuloksia / Results</div>
-          </div>
-        </div>
-
-        <div class="col-12 col-md-4">
-          <div class="d-flex flex-column align-items-center">
-            <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center mb-2"
-                 style="width: 42px; height: 42px;">
-              <i class="fas fa-check-circle"></i>
+            <div class="h4 mb-0">
+              {{ result_count|default:"" }}
             </div>
-            <div class="h4 mb-0">{{ summary.ok_results_count }}</div>
-            <div class="text-muted small">OK-tuloksia / OK results</div>
           </div>
         </div>
+      </div>
+    </div>
 
+    <div class="col-12 col-md-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body d-flex align-items-center">
+          <div class="me-3">
+            <i class="fas fa-check-circle fa-2x text-info"></i>
+          </div>
+          <div>
+            <div class="text-muted small">OK-tuloksia / OK results</div>
+            <div class="h4 mb-0">
+              {{ ok_result_count|default:"" }}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 
-  {# =========================================================== #}
-  {# RATALISTA / COURSE LIST                                    #}
-  {# =========================================================== #}
+  {# -------------------------------------------------------- #}
+  {# Sarjat ja radat                                         #}
+  {# -------------------------------------------------------- #}
   <div class="card shadow-sm">
-    <div class="card-header">
-      <h2 class="h5 mb-0">Sarjat ja radat / Courses</h2>
-    </div>
     <div class="card-body p-0">
+      <h2 class="h5 px-3 pt-3 mb-0">
+        Sarjat ja radat / Courses
+      </h2>
+
       {% if courses %}
-        <div class="table-responsive">
-          <table class="table table-hover mb-0">
+        <div class="table-responsive mt-2">
+          <table class="table table-hover table-sm mb-0">
             <thead class="table-light">
               <tr>
                 <th>Nimi / Name</th>
-                <th class="text-end">Tulokset / Results</th>
-                <th class="text-end">Toiminnot / Actions</th>
+                <th class="text-end" style="width: 8rem;">
+                  Tulokset / Results
+                </th>
+                <th class="text-end" style="width: 10rem;">
+                  Toiminnot / Actions
+                </th>
               </tr>
             </thead>
             <tbody>
               {% for course in courses %}
                 <tr>
-                  <td>{{ course.name }}</td>
+                  <td>
+                    {{ course.name }}
+                  </td>
                   <td class="text-end">
-                    {{ course.results.count }}
+                    {{ course.results_count|default:"" }}
                   </td>
                   <td class="text-end">
                     <a href="{% url 'oraw_app:course_results' competition.id course.id %}"
-                       class="btn btn-sm btn-outline-primary">
+                       class="btn btn-outline-primary btn-sm">
                       Näytä tulokset
                     </a>
                   </td>
