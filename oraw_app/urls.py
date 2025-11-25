@@ -1,13 +1,6 @@
 """
-FI: ORAOwl-sovelluksen URL-reitit.
-    Tämä tiedosto määrittelee sovelluksen pääreitit:
-    - Etusivu, IOFXML-tuonti, kilpailut ja urheilijat
-    - Käyttäjäautentikointi (kirjautuminen, rekisteröinti, salasanan palautus)
-
-EN: URL configuration for the ORAOwl application.
-    Defines all main routes:
-    - Home, IOFXML import, competitions and athletes
-    - Authentication (login, signup, password reset)
+FI: ORAOwl-sovelluksen URL-reitit (suomenkieliset ja siistit polut).
+EN: ORAOwl URL routes (now clean, Finnish-friendly paths).
 """
 
 from django.urls import path, reverse_lazy
@@ -15,89 +8,88 @@ from django.contrib.auth import views as auth_views
 from django.contrib.auth.views import LoginView
 from . import views
 
-# Namespace for template references
 app_name = "oraw_app"
 
 urlpatterns = [
     # ------------------------------------------------------------------------
-    # Home / Etusivu
+    # Etusivu
     # ------------------------------------------------------------------------
     path("", views.home, name="home"),
 
     # ------------------------------------------------------------------------
-    # IOFXML upload / IOFXML-tiedoston lataus
+    # IOFXML tuonti
     # ------------------------------------------------------------------------
     path(
-        "iofxml/upload/",
+        "tuonti/iofxml/",
         views.IOFXMLUploadView.as_view(),
         name="iofxml_upload",
     ),
 
     # ------------------------------------------------------------------------
-    # Competitions / Kilpailut
+    # Kilpailut
     # ------------------------------------------------------------------------
     path(
-        "competitions/",
+        "kilpailut/",
         views.CompetitionListView.as_view(),
         name="competition_list",
     ),
     path(
-        "competitions/<uuid:pk>/",
+        "kilpailut/<uuid:pk>/",
         views.CompetitionDetailView.as_view(),
         name="competition_detail",
     ),
-   path(
-    "competitions/<uuid:competition_id>/courses/<uuid:pk>/",
-    views.CourseResultsView.as_view(),
-    name="course_results",
+    path(
+        "kilpailut/<uuid:competition_id>/sarjat/<uuid:pk>/",
+        views.CourseResultsView.as_view(),
+        name="course_results",
     ),
 
-     path(
-        "results/<uuid:pk>/",
+    path(
+        "tulos/<uuid:pk>/",
         views.ResultDetailView.as_view(),
         name="result_detail",
     ),
 
-    
     # ------------------------------------------------------------------------
-    # Athletes / Urheilijat
+    # Urheilijat
     # ------------------------------------------------------------------------
-    path("athletes/", views.AthleteListView.as_view(), name="athletes_index"),
     path(
-        "athletes/<uuid:pk>/",
+        "urheilijat/",
+        views.AthleteListView.as_view(),
+        name="athletes_index",
+    ),
+    path(
+        "urheilijat/<uuid:pk>/",
         views.AthleteDetailView.as_view(),
         name="athletes_detail",
     ),
 
     # ------------------------------------------------------------------------
-    # Authentication / Käyttäjähallinta
+    # Tili / Käyttäjä (Login, Logout, Signup)
     # ------------------------------------------------------------------------
-    # Login / Kirjautuminen
     path(
-        "accounts/login/",
+        "tili/kirjaudu/",
         LoginView.as_view(template_name="oraw_app/accounts/login.html"),
         name="login",
     ),
 
-    # Logout / Uloskirjautuminen (POST)
     path(
-        "accounts/logout/",
-        views.CustomLogoutView.as_view(),  # oma view views.py:ssä
+        "tili/ulos/",
+        views.CustomLogoutView.as_view(),
         name="logout",
     ),
 
-    # Signup / Rekisteröityminen
     path(
-        "accounts/signup/",
+        "tili/rekisteroidy/",
         views.SignUpView.as_view(),
         name="signup",
     ),
 
     # ------------------------------------------------------------------------
-    # Password reset (4 steps) / Salasanan palautus (4 vaihetta)
+    # Salasanan palautus
     # ------------------------------------------------------------------------
     path(
-        "accounts/password-reset/",
+        "tili/salasana/palauta/",
         auth_views.PasswordResetView.as_view(
             template_name="oraw_app/accounts/password_reset_form.html",
             email_template_name="oraw_app/accounts/password_reset_email.txt",
@@ -107,14 +99,14 @@ urlpatterns = [
         name="password_reset",
     ),
     path(
-        "accounts/password-reset/done/",
+        "tili/salasana/palauta/valmis/",
         auth_views.PasswordResetDoneView.as_view(
             template_name="oraw_app/accounts/password_reset_done.html"
         ),
         name="password_reset_done",
     ),
     path(
-        "accounts/reset/<uidb64>/<token>/",
+        "tili/salasana/uusi/<uidb64>/<token>/",
         auth_views.PasswordResetConfirmView.as_view(
             template_name="oraw_app/accounts/password_reset_confirm.html",
             success_url=reverse_lazy("oraw_app:password_reset_complete"),
@@ -122,7 +114,7 @@ urlpatterns = [
         name="password_reset_confirm",
     ),
     path(
-        "accounts/reset/complete/",
+        "tili/salasana/uusi/valmis/",
         auth_views.PasswordResetCompleteView.as_view(
             template_name="oraw_app/accounts/password_reset_complete.html"
         ),
@@ -130,10 +122,10 @@ urlpatterns = [
     ),
 
     # ------------------------------------------------------------------------
-    # Password change (logged-in users) / Salasanan vaihto (kirjautuneet)
+    # Salasanan vaihto
     # ------------------------------------------------------------------------
     path(
-        "accounts/password-change/",
+        "tili/salasana/vaihda/",
         auth_views.PasswordChangeView.as_view(
             template_name="oraw_app/accounts/password_change_form.html",
             success_url=reverse_lazy("oraw_app:password_change_done"),
@@ -141,20 +133,19 @@ urlpatterns = [
         name="password_change",
     ),
     path(
-        "accounts/password-change/done/",
+        "tili/salasana/vaihda/valmis/",
         auth_views.PasswordChangeDoneView.as_view(
             template_name="oraw_app/accounts/password_change_done.html"
         ),
         name="password_change_done",
     ),
-    
-    # ------------------------------------------------------------------------# 
-    # Admin dashboard / Hallinta
-    # # ------------------------------------------------------------------------
+
+    # ------------------------------------------------------------------------
+    # Hallintapaneeli
+    # ------------------------------------------------------------------------
     path(
-        "admin-dashboard/",
+        "hallinta/",
         views.AdminDashboardView.as_view(),
         name="admin_dashboard",
     ),
-
 ]
