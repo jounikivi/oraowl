@@ -9,18 +9,27 @@
 {% block content %}
 <div class="container my-4">
 
-  {% comment %}
-  FI: Takaisin-linkki urheilijalistaan
-  EN: Back link to athletes index
-  {% endcomment %}
-  <a href="{% url 'oraw_app:athletes_index' %}" class="btn btn-secondary btn-sm mb-3">
-    ← Takaisin urheilijalistaan / Back to athletes
-  </a>
+  {# ---------------------------------------------------------- #}
+  {# Breadcrumb / Sivupolku                                      #}
+  {# ---------------------------------------------------------- #}
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small mb-0">
+      <li class="breadcrumb-item">
+        <a href="{% url 'oraw_app:home' %}">Etusivu</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'oraw_app:athletes_index' %}">Urheilijat</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        {{ athlete.display_name }}
+      </li>
+    </ol>
+  </nav>
 
-  {% comment %}
-  FI: Otsikko ja perustiedot urheilijasta
-  EN: Heading and basic athlete information
-  {% endcomment %}
+  {# ---------------------------------------------------------- #}
+  {# Otsikko ja perustiedot                                      #}
+  {# ---------------------------------------------------------- #}
+
   <h1 class="mb-2">
     {{ athlete.display_name }}
   </h1>
@@ -66,8 +75,6 @@
       Yhteenveto / Summary
     </h2>
 
-    {% comment %} {# FI: Yhteenveto yksinkertaisena taulukkona, ei isoina kortteina
-       EN: Summary as a compact table instead of big cards #} {% endcomment %}
     <div class="row mb-4">
       <div class="col-lg-6">
         <table class="table table-sm mb-3">
@@ -183,10 +190,8 @@
               </td>
               <td>{{ result.status }}</td>
               <td class="text-end">
-                <a
-                  href="{% url 'oraw_app:result_detail' result.pk %}"
-                  class="btn btn-sm btn-outline-primary"
-                >
+                <a href="{% url 'oraw_app:result_detail' result.pk %}"
+                   class="btn btn-sm btn-outline-primary">
                   Väliajat / Splits →
                 </a>
               </td>
