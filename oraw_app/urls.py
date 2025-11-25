@@ -24,31 +24,28 @@ urlpatterns = [
         views.IOFXMLUploadView.as_view(),
         name="iofxml_upload",
     ),
-
+    
     # ------------------------------------------------------------------------
-    # Kilpailut
-    # ------------------------------------------------------------------------
+    # # Kilpailut / Competitions
+    # # ------------------------------------------------------------------------
     path(
         "kilpailut/",
         views.CompetitionListView.as_view(),
         name="competition_list",
-    ),
-    path(
-        "kilpailut/<uuid:pk>/",
-        views.CompetitionDetailView.as_view(),
-        name="competition_detail",
-    ),
+        ),
+    # Radan tulossivu: /kilpailut/<kilpailu_id>/sarjat/<rata_id>/
     path(
         "kilpailut/<uuid:competition_id>/sarjat/<uuid:pk>/",
         views.CourseResultsView.as_view(),
         name="course_results",
-    ),
-
+        ),
+    # Kilpailun perusnäkymä: /kilpailut/<kilpailu_id>/
     path(
-        "tulos/<uuid:pk>/",
-        views.ResultDetailView.as_view(),
-        name="result_detail",
-    ),
+        "kilpailut/<uuid:pk>/",
+        views.CompetitionDetailView.as_view(),
+        name="competition_detail",
+        ),
+
 
     # ------------------------------------------------------------------------
     # Urheilijat

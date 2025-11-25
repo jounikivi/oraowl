@@ -142,11 +142,13 @@
                     {{ course.results_count|default:"" }}
                   </td>
                   <td class="text-end">
-                    <a href="{% url 'oraw_app:course_results' competition.id course.id %}"
-                       class="btn btn-outline-primary btn-sm">
-                      Näytä tulokset
-                    </a>
-                  </td>
+                    <a href="{% url 'oraw_app:course_results' competition_id=competition.pk pk=course.pk %}"
+                    class="btn btn-outline-primary btn-sm"
+                    >
+                    Näytä tulokset / View results →
+                  </a>
+                </td>
+
                 </tr>
               {% endfor %}
             </tbody>
