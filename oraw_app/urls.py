@@ -40,11 +40,18 @@ urlpatterns = [
         name="course_results",
         ),
     # Kilpailun perusnäkymä: /kilpailut/<kilpailu_id>/
+    # path(
+    #     "kilpailut/<uuid:pk>/",
+    #     views.CompetitionDetailView.as_view(),
+    #     name="competition_detail",
+    #     ),
+    
     path(
-        "kilpailut/<uuid:pk>/",
-        views.CompetitionDetailView.as_view(),
-        name="competition_detail",
-        ),
+    "kilpailut/<uuid:competition_id>/sarjat/<uuid:course_id>/",
+    views.CourseResultsView.as_view(),
+    name="course_results",
+),
+    
 
 
     # ------------------------------------------------------------------------
