@@ -1,6 +1,6 @@
 """
 FI: ORAOwl-sovelluksen URL-reitit (suomenkieliset ja siistit polut).
-EN: ORAOwl URL routes (now clean, Finnish-friendly paths).
+EN: ORAOwl URL routes (clean, Finnish-friendly paths).
 """
 
 from django.urls import path, reverse_lazy
@@ -17,45 +17,47 @@ urlpatterns = [
     path("", views.home, name="home"),
 
     # ------------------------------------------------------------------------
-    # IOFXML tuonti
+    # IOFXML-tuonti
     # ------------------------------------------------------------------------
     path(
         "tuonti/iofxml/",
         views.IOFXMLUploadView.as_view(),
         name="iofxml_upload",
     ),
-    
+
     # ------------------------------------------------------------------------
-    # # Kilpailut / Competitions
-    # # ------------------------------------------------------------------------
+    # Kilpailut / Competitions
+    # ------------------------------------------------------------------------
+    # Kilpailulista: /kilpailut/
     path(
         "kilpailut/",
         views.CompetitionListView.as_view(),
         name="competition_list",
-        ),
-    # Radan tulossivu: /kilpailut/<kilpailu_id>/sarjat/<rata_id>/
+    ),
+
+    # Kilpailun perusnäkymä: /kilpailut/<kilpailu_id>/
     path(
-        "kilpailut/<uuid:competition_id>/sarjat/<uuid:pk>/",
+        "kilpailut/<uuid:pk>/",
+        views.CompetitionDetailView.as_view(),
+        name="competition_detail",
+    ),
+
+    # Radan tulossivu: /kilpailut/<kilpailu_id>/sarjat/<course_id>/
+    path(
+        "kilpailut/<uuid:competition_id>/sarjat/<uuid:course_id>/",
         views.CourseResultsView.as_view(),
         name="course_results",
-        ),
-    # Kilpailun perusnäkymä: /kilpailut/<kilpailu_id>/
-    # path(
-    #     "kilpailut/<uuid:pk>/",
-    #     views.CompetitionDetailView.as_view(),
-    #     name="competition_detail",
-    #     ),
-    
-    path(
-    "kilpailut/<uuid:competition_id>/sarjat/<uuid:course_id>/",
-    views.CourseResultsView.as_view(),
-    name="course_results",
-),
-    
+    ),
 
+    # Yksittäisen tulosrivin näkymä (jos tarvitset):
+    path(
+        "tulokset/<uuid:pk>/",
+        views.ResultDetailView.as_view(),
+        name="result_detail",
+    ),
 
     # ------------------------------------------------------------------------
-    # Urheilijat
+    # Urheilijat / Athletes
     # ------------------------------------------------------------------------
     path(
         "urheilijat/",
@@ -76,13 +78,11 @@ urlpatterns = [
         LoginView.as_view(template_name="oraw_app/accounts/login.html"),
         name="login",
     ),
-
     path(
         "tili/ulos/",
         views.CustomLogoutView.as_view(),
         name="logout",
     ),
-
     path(
         "tili/rekisteroidy/",
         views.SignUpView.as_view(),
