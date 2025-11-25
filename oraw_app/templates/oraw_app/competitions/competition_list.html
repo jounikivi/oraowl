@@ -39,7 +39,7 @@
             name="q"
             value="{{ q }}"
             class="form-control"
-            placeholder="Hae kilpailuja nimellä, järjestäjällä tai paikkakunnalla..."
+            placeholder="Hae kilpailuja nimellä, järjestäjällä tai paikkakunnalla."
           >
         </div>
         <div class="col-6 col-md-2">
@@ -67,31 +67,39 @@
           <div class="card shadow-sm h-100">
             <div class="card-body d-flex flex-column">
 
+              {# Nimi + päivämäärä #}
               <h2 class="h5 card-title mb-1">
                 {{ competition.name }}
               </h2>
-
               {% if competition.date %}
                 <p class="card-subtitle text-muted small mb-3">
                   {{ competition.date }}
                 </p>
               {% endif %}
 
-              <div class="small text-muted mb-3">
+              {# Sijainti ja järjestäjä #}
+              <div class="mb-2 small text-muted">
                 {% if competition.location %}
-                  <div><span class="me-1">📍</span>{{ competition.location }}</div>
+                  <div class="mb-1">
+                    <span class="me-1">📍</span>
+                    {{ competition.location }}
+                  </div>
                 {% endif %}
                 {% if competition.organiser %}
-                  <div><span class="me-1">👥</span> {{ competition.organiser }}</div>
+                  <div>
+                    <span class="me-1">👥</span>
+                    Järjestäjä / Organizer: {{ competition.organiser }}
+                  </div>
                 {% endif %}
               </div>
 
+              {# Nappi kortin alaosaan #}
               <div class="mt-auto pt-2">
                 <a
                   href="{% url 'oraw_app:competition_detail' competition.pk %}"
                   class="btn btn-outline-primary btn-sm w-100"
                 >
-                  Näytä kilpailu →
+                  Näytä kilpailu / View competition →
                 </a>
               </div>
 
