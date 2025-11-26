@@ -153,8 +153,54 @@ class CompetitionListView(ListView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["q"] = (self.request.GET.get("q") or "").strip()
+        athlete: Athlete = self.object
+
+        # Haetaan kaikki näkyvät tulokset
+        results = (
+            Result.objects.filter(
+                athlete=athlete,
+                is_public=True,
+                deleted_at__isnull=True,
+                course__competition__isnull=False,
+            )
+            .select_related("course", "course__competition")
+            .order_by("-course__competition__date")
+        )
+
+        context["results"] = results
+
+        # --- SUMMARY / STATS ---
+        total_results = results.count()
+        competitions = {r.course.competition_id for r in results}
+        competitions_count = len(competitions)
+        ok_results = results.filter(status="OK").count()
+
+        # Paras sijoitus
+        best_position = (
+            results.filter(position__isnull=False)
+            .order_by("position")
+            .values_list("position", flat=True)
+            .first()
+        )
+
+        # Viimeisin kilpailupäivä
+        latest_date = (
+            results.values_list("course__competition__date", flat=True).first()
+            if total_results > 0
+            else None
+        )
+
+        context["stats"] = {
+            "competitions_count": competitions_count,
+            "total_results": total_results,
+            "ok_results": ok_results,
+            "podiums": results.filter(position__in=[1, 2, 3]).count(),
+            "best_position": best_position,
+            "latest_date": latest_date,
+        }
+
         return context
+
 
 
 # =====================================================================
