@@ -223,8 +223,13 @@ class IOFXMLUploadView(LoginRequiredMixin, FormView):
     success_url = reverse_lazy("oraw_app:iofxml_upload")
 
     def form_valid(self, form):
-        file = form.cleaned_data["file"]
-        created, updated, errors = import_iofxml_result_list(file, self.request.user)
+        uploaded_file = form.cleaned_data["file"]
+
+        # Read file content as bytes for the importer
+        xml_bytes = uploaded_file.read()
+
+        # Call importer with a single positional argument
+        created, updated, errors = import_iofxml_result_list(xml_bytes)
 
         messages.success(
             self.request,
@@ -237,6 +242,7 @@ class IOFXMLUploadView(LoginRequiredMixin, FormView):
             )
 
         return super().form_valid(form)
+
 
 
 # ========================================================================
