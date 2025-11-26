@@ -55,17 +55,14 @@ class CompetitionDetailView(DetailView):
     model = Competition
     template_name = "oraw_app/competitions/competition_detail.html"
     context_object_name = "competition"
-
+    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        competition = self.object
-
-        # Courses directly from DB (release-haaran tapa)
-        context["courses"] = Course.objects.filter(
-            competition=competition,
-            deleted_at__isnull=True
-        ).order_by("name")
-
+        context["courses"] = (
+            self.object.courses.all()          # <--- ei deleted_at-suodatusta
+            .prefetch_related("results")
+            .order_by("name")
+        )
         return context
 
 
