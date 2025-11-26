@@ -44,9 +44,9 @@ urlpatterns = [
 
     # Radan tulossivu: /kilpailut/<kilpailu_id>/sarjat/<course_id>/
     path(
-        "kilpailut/<uuid:competition_id>/sarjat/<uuid:course_id>/",
-        views.CourseResultsView.as_view(),
-        name="course_results",
+    "kilpailut/<uuid:competition_id>/sarjat/<uuid:course_id>/",
+    views.CourseResultsView.as_view(),
+    name="course_results",
     ),
 
     # Yksittäisen tulosrivin näkymä (jos tarvitset):

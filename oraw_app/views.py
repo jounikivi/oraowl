@@ -157,42 +157,63 @@ class CompetitionListView(ListView):
         return context
 
 
+# =====================================================================
+# Competition detail / Kilpailun sivu
+# =====================================================================
 class CompetitionDetailView(DetailView):
-    """
-    FI:
-        Näyttää yhden kilpailun perustiedot ja siihen kuuluvat radat/sarjat.
-    EN:
-        Show basic information of a single competition and its courses.
-    """
-
     model = Competition
     template_name = "oraw_app/competitions/competition_detail.html"
     context_object_name = "competition"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        competition: Competition = self.object
+        competition = self.object
 
-        # Kaikki radat tälle kilpailulle
-        courses = Course.objects.filter(competition=competition).order_by("name")
-        context["courses"] = courses
+        # Haetaan radat varmasti tälle kilpailulle
+        courses_qs = Course.objects.filter(competition=competition).order_by("name")
+        context["courses"] = courses_qs
+        context["course_count"] = courses_qs.count()
 
-        # Yksinkertainen yhteenveto kortteja varten
+        # Yhteenveto tuloksista (ei pakollinen, mutta hyödyllinen)
         results_qs = Result.objects.filter(course__competition=competition)
-        summary = {
-            "courses_count": courses.count(),
-            "results_count": results_qs.count(),
-        }
+        context["result_count"] = results_qs.count()
+        context["ok_result_count"] = results_qs.filter(status="OK").count()
 
-        if hasattr(Result, "STATUS_OK"):
-            summary["ok_results_count"] = results_qs.filter(
-                status=Result.STATUS_OK
-            ).count()
-        else:
-            summary["ok_results_count"] = 0
-
-        context["summary"] = summary
         return context
+
+
+# =====================================================================
+# Course results / Radan tulokset
+# =====================================================================
+class CourseResultsView(DetailView):
+    """
+    Näyttää yhden radan (Course) tulokset.
+    URL: /kilpailut/<competition_id>/sarjat/<course_id>/
+    """
+    model = Course
+    template_name = "oraw_app/competitions/course_results.html"
+    pk_url_kwarg = "course_id"
+    context_object_name = "course"
+
+    def get_queryset(self):
+        # Rajoitetaan lookup vain kyseisen kilpailun ratoihin,
+        # jotta URL-parametrit varmasti sopivat yhteen.
+        competition_id = self.kwargs["competition_id"]
+        return Course.objects.filter(competition__pk=competition_id)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        course = self.object
+
+        results = (
+            Result.objects.filter(course=course)
+            .select_related("athlete")
+            .order_by("position", "time")
+        )
+        context["results"] = results
+        context["result_count"] = results.count()
+        return context
+
 
 
 # ============================================================================

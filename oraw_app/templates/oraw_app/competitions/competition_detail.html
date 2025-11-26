@@ -1,4 +1,3 @@
-{# oraw_app/templates/oraw_app/competitions/competition_detail.html #}
 {% extends "oraw_app/base.html" %}
 
 {% block title %}
@@ -6,12 +5,10 @@
 {% endblock %}
 
 {% block content %}
-<div class="container my-4">
+<div class="container mt-3">
 
-  {# ------------------------------------------------------------------ #}
-  {#  Breadcrumb / Sivupolku                                            #}
-  {# ------------------------------------------------------------------ #}
-  <nav aria-label="breadcrumb" class="mb-3">
+  <!-- BREADCRUMB / SIVUPOLKU -->
+  <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
       <li class="breadcrumb-item">
         <a href="{% url 'oraw_app:home' %}">Etusivu</a>
@@ -25,128 +22,63 @@
     </ol>
   </nav>
 
-  {# ------------------------------------------------------------------ #}
-  {#  Otsikko                                                            #}
-  {# ------------------------------------------------------------------ #}
-  <h1 class="h3 mb-1">
-    {{ competition.name }}
-  </h1>
-
-  <p class="text-muted mb-3">
-    {{ competition.date }} ·
-    Järjestäjä / Organizer: {{ competition.organiser }}
+  <h1 class="h4 mb-1">{{ competition.name }}</h1>
+  <p class="text-muted mb-4">
+    {{ competition.date }}
+    {% if competition.organiser %}
+      · Järjestäjä / Organizer: {{ competition.organiser }}
+    {% endif %}
   </p>
 
-  {# ------------------------------------------------------------------ #}
-  {#  Yläosan “tilastokortit”                                           #}
-  {# ------------------------------------------------------------------ #}
-  <div class="row g-3 mb-4">
-    <div class="col-12 col-md-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-body d-flex align-items-center">
-          <div class="me-3">
-            <i class="fas fa-route fa-2x text-primary"></i>
-          </div>
-          <div>
-            <div class="text-muted small">Ratoja / Courses</div>
-            <div class="h4 mb-0">
-              {% with competition.course_set.all as course_list %}
-                {{ course_list|length }}
-              {% endwith %}
-            </div>
-          </div>
-        </div>
-      </div>
+  <!-- Sarjat ja radat -->
+  <div class="card mb-4">
+    <div class="card-header">
+      Sarjat ja radat / Courses
     </div>
 
-    <div class="col-12 col-md-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-body d-flex align-items-center">
-          <div class="me-3">
-            <i class="fas fa-list-ol fa-2x text-success"></i>
-          </div>
-          <div>
-            <div class="text-muted small">Tuloksia / Results</div>
-            <div class="h4 mb-0">
-              {{ competition.results.count|default:"–" }}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-12 col-md-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-body d-flex align-items-center">
-          <div class="me-3">
-            <i class="fas fa-check-circle fa-2x text-info"></i>
-          </div>
-          <div>
-            <div class="text-muted small">OK-tuloksia / OK results</div>
-            <div class="h4 mb-0">
-              {{ competition.ok_results_count|default:"–" }}
-            </div>
-          </div>
-        </div>
-      </div>
+    <div class="table-responsive">
+      <table class="table table-sm mb-0">
+        <thead>
+          <tr>
+            <th>Nimi / Name</th>
+            <th class="text-end">Tulokset / Results</th>
+            <th class="text-end">Toiminnot / Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if courses %}
+            {% for course in courses %}
+              <tr>
+                <td>{{ course.name }}</td>
+                <td class="text-end">
+                  {{ course.results.count }}
+                </td>
+                <td class="text-end">
+                  <a
+                    href="{% url 'oraw_app:course_results'
+                             competition_id=competition.pk
+                             course_id=course.pk %}"
+                    class="btn btn-outline-primary btn-sm"
+                  >
+                    Näytä tulokset
+                  </a>
+                </td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr>
+              <td colspan="3" class="text-muted">
+                Ei sarjoja tälle kilpailulle. / No courses for this competition.
+              </td>
+            </tr>
+          {% endif %}
+        </tbody>
+      </table>
     </div>
   </div>
 
-  {# ------------------------------------------------------------------ #}
-  {#  Sarjat ja radat                                                   #}
-  {# ------------------------------------------------------------------ #}
-  <div class="card shadow-sm">
-    <div class="card-header bg-white">
-      <h2 class="h5 mb-0">Sarjat ja radat / Courses</h2>
-    </div>
-    <div class="card-body">
-
-      {# Ratalista taulukkona #}
-      {% with competition.course_set.all as courses %}
-        {% if courses %}
-          <div class="table-responsive">
-            <table class="table table-sm align-middle mb-0">
-              <thead>
-                <tr>
-                  <th scope="col">Nimi / Name</th>
-                  <th scope="col">Tulokset / Results</th>
-                  <th scope="col">Toiminnot / Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for course in courses %}
-                  <tr>
-                    <td>{{ course.name }}</td>
-                    <td>{{ course.results_count|default:"0" }}</td>
-                    <td>
-                      <a
-                        href="{% url 'oraw_app:course_results' competition_id=competition.pk course_id=course.pk %}"
-                        class="btn btn-outline-primary btn-sm"
-                      >
-                        Näytä tulokset
-                      </a>
-                    </td>
-                  </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        {% else %}
-          <p class="text-muted mb-0">
-            Ei sarjoja tälle kilpailulle. / No courses for this competition.
-          </p>
-        {% endif %}
-      {% endwith %}
-
-    </div>
-  </div>
-
-  {# Takaisin-listaan nappi #}
-  <div class="mt-3">
-    <a href="{% url 'oraw_app:competition_list' %}" class="btn btn-outline-secondary btn-sm">
-      ← Takaisin kilpailulistaan
-    </a>
-  </div>
-
+  <a href="{% url 'oraw_app:competition_list' %}" class="btn btn-outline-secondary">
+    ← Takaisin kilpailulistaan
+  </a>
 </div>
 {% endblock %}
