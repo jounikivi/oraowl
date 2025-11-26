@@ -1,16 +1,12 @@
 {# oraw_app/templates/oraw_app/competitions/competition_list.html #}
 {% extends "oraw_app/base.html" %}
 
-{% block title %}
-  Kilpailut / Competitions
-{% endblock %}
+{% block title %}Kilpailut{% endblock %}
 
 {% block content %}
 <div class="container my-4">
 
-  {# -------------------------------------------------------- #}
-  {# Breadcrumb / Sivupolku                                 #}
-  {# -------------------------------------------------------- #}
+  <!-- Breadcrumb / Sivupolku -->
   <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb small bg-transparent px-0 mb-0">
       <li class="breadcrumb-item">
@@ -22,15 +18,12 @@
     </ol>
   </nav>
 
-  {# -------------------------------------------------------- #}
-  {# Otsikko                                                #}
-  {# -------------------------------------------------------- #}
-  <h1 class="h3 mb-3">Kilpailut / Competitions</h1>
+  <h1 class="h3 mb-3">
+    Kilpailut / Competitions
+  </h1>
 
-  {# -------------------------------------------------------- #}
-  {# Hakukenttä                                             #}
-  {# -------------------------------------------------------- #}
-  <div class="card mb-3 shadow-sm">
+  <!-- Hakulomake -->
+  <div class="card mb-3">
     <div class="card-body">
       <form method="get" class="row g-2">
         <div class="col-12 col-md-9">
@@ -39,7 +32,7 @@
             name="q"
             value="{{ q }}"
             class="form-control"
-            placeholder="Hae kilpailuja nimellä, järjestäjällä tai paikkakunnalla."
+            placeholder="Hae kilpailuja nimellä, järjestäjällä tai paikkakunnalla..."
           >
         </div>
         <div class="col-6 col-md-2">
@@ -48,8 +41,7 @@
           </button>
         </div>
         <div class="col-6 col-md-1">
-          <a href="{% url 'oraw_app:competition_list' %}"
-             class="btn btn-outline-secondary w-100">
+          <a href="{% url 'oraw_app:competition_list' %}" class="btn btn-outline-secondary w-100">
             Tyhjennä
           </a>
         </div>
@@ -57,43 +49,30 @@
     </div>
   </div>
 
-  {# -------------------------------------------------------- #}
-  {# Kilpailukortit (lista)                                 #}
-  {# -------------------------------------------------------- #}
   {% if competitions %}
-    <div class="row g-4 mt-2">
+    <div class="row g-3">
       {% for competition in competitions %}
-        <div class="col-12 col-md-6 col-xl-4">
+        <div class="col-12 col-md-6 col-lg-4">
           <div class="card shadow-sm h-100">
             <div class="card-body d-flex flex-column">
 
-              {# Nimi + päivämäärä #}
               <h2 class="h5 card-title mb-1">
                 {{ competition.name }}
               </h2>
-              {% if competition.date %}
-                <p class="card-subtitle text-muted small mb-3">
-                  {{ competition.date }}
+
+              {% if competition.date or competition.location %}
+                <p class="card-subtitle text-muted small mb-2">
+                  {% if competition.date %}{{ competition.date }}{% endif %}
+                  {% if competition.location %} · {{ competition.location }}{% endif %}
                 </p>
               {% endif %}
 
-              {# Sijainti ja järjestäjä #}
-              <div class="mb-2 small text-muted">
-                {% if competition.location %}
-                  <div class="mb-1">
-                    <span class="me-1">📍</span>
-                    {{ competition.location }}
-                  </div>
-                {% endif %}
-                {% if competition.organiser %}
-                  <div>
-                    <span class="me-1">👥</span>
-                    Järjestäjä / Organizer: {{ competition.organiser }}
-                  </div>
-                {% endif %}
-              </div>
+              {% if competition.organiser %}
+                <p class="small text-muted mb-3">
+                  Järjestäjä / Organizer: {{ competition.organiser }}
+                </p>
+              {% endif %}
 
-              {# Nappi kortin alaosaan #}
               <div class="mt-auto pt-2">
                 <a
                   href="{% url 'oraw_app:competition_detail' competition.pk %}"
@@ -102,13 +81,11 @@
                   Näytä kilpailu / View competition →
                 </a>
               </div>
-
             </div>
           </div>
         </div>
       {% endfor %}
     </div>
-
   {% else %}
     <p class="text-muted mt-3">
       {% if q %}

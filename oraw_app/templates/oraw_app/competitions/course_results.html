@@ -1,143 +1,111 @@
-{# oraw_app/templates/oraw_app/competitions/competition_detail.html #}
+{# oraw_app/templates/oraw_app/competitions/course_results.html #}
 {% extends "oraw_app/base.html" %}
 
-{% block title %}
-  {{ competition.name }} – Kilpailu / Competition
-{% endblock %}
+{% block title %}{{ course.name }} – {{ competition.name }}{% endblock %}
 
 {% block content %}
 <div class="container my-4">
 
-  {# ----------------------------------------------------------- #}
-  {# Breadcrumb / Sivupolku                                      #}
-  {# ----------------------------------------------------------- #}
-  <nav aria-label="breadcrumb">
-    <ol class="breadcrumb mb-3">
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small bg-transparent px-0 mb-0">
       <li class="breadcrumb-item">
         <a href="{% url 'oraw_app:home' %}">Etusivu</a>
       </li>
       <li class="breadcrumb-item">
         <a href="{% url 'oraw_app:competition_list' %}">Kilpailut</a>
       </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'oraw_app:competition_detail' competition.pk %}">
+          {{ competition.name }}
+        </a>
+      </li>
       <li class="breadcrumb-item active" aria-current="page">
-        {{ competition.name }}
+        {{ course.name }}
       </li>
     </ol>
   </nav>
 
-  {# ----------------------------------------------------------- #}
-  {# Kilpailun perustiedot                                      #}
-  {# ----------------------------------------------------------- #}
-  <div class="mb-3">
-    <h1 class="h3 mb-1">
-      {{ competition.name }}
-    </h1>
+  <!-- Otsikko -->
+  <h1 class="h4 mb-1">
+    {{ course.name }}
+  </h1>
+  <p class="text-muted mb-3">
+    {{ competition.name }}
+    {% if competition.date %} · {{ competition.date }}{% endif %}
+  </p>
 
-    <div class="text-muted small">
-      <div>
-        {% if competition.date %}
-          {{ competition.date }}
-        {% endif %}
-        {% if competition.location %}
-          – {{ competition.location }}
-        {% endif %}
-      </div>
-      {% if competition.organizer %}
-        <div>
-          Järjestäjä / Organizer:
-          {{ competition.organizer }}
-        </div>
-      {% endif %}
+  <!-- Tulostaulukko -->
+  <div class="card shadow-sm">
+    <div class="card-header">
+      Tulokset / Results
     </div>
+    {% if results %}
+      <div class="table-responsive m-0">
+        <table class="table table-sm align-middle mb-0">
+          <thead>
+            <tr>
+              <th style="width: 60px;">#</th>
+              <th>Urheilija / Athlete</th>
+              <th style="width: 80px;">Status</th>
+              <th style="width: 120px;">Aika (s)</th>
+              <th style="width: 100px;">Ero</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for result in results %}
+              <tr>
+                <td>
+                  {% if result.position %}
+                    {{ result.position }}
+                  {% else %}
+                    –
+                  {% endif %}
+                </td>
+                <td>
+                  {% if result.athlete %}
+                    <a href="{% url 'oraw_app:athletes_detail' result.athlete.pk %}">
+                      {{ result.athlete }}
+                    </a>
+                  {% else %}
+                    (Tuntematon)
+                  {% endif %}
+                </td>
+                <td>
+                  {{ result.status }}
+                </td>
+                <td>
+                  {% if result.finish_time_s %}
+                    {{ result.finish_time_s }}
+                  {% else %}
+                    –
+                  {% endif %}
+                </td>
+                <td>
+                  {{ result.diff_to_winner_display }}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="card-body text-muted">
+        Ei tuloksia tälle sarjalle. / No results for this course.
+      </div>
+    {% endif %}
   </div>
 
-  {# ----------------------------------------------------------- #}
-  {# Yhteenvetokortit (sarjat, tulokset, OK-tulokset)           #}
-  {# ----------------------------------------------------------- #}
-  {% if summary %}
-  <div class="row g-3 mb-4">
-    <div class="col-12 col-md-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-body d-flex justify-content-between align-items-center">
-          <div>
-            <div class="text-muted small">Sarjoja / Courses</div>
-            <div class="h4 mb-0">
-              {{ summary.courses_count|default:"–" }}
-            </div>
-          </div>
-          <i class="fas fa-list-ul fa-2x text-primary"></i>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-12 col-md-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-body d-flex justify-content-between align-items-center">
-          <div>
-            <div class="text-muted small">Tuloksia / Results</div>
-            <div class="h4 mb-0">
-              {{ summary.results_count|default:"–" }}
-            </div>
-          </div>
-          <i class="fas fa-list-ol fa-2x text-info"></i>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-12 col-md-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-body d-flex justify-content-between align-items-center">
-          <div>
-            <div class="text-muted small">OK-tuloksia / OK results</div>
-            <div class="h4 mb-0">
-              {{ summary.ok_results_count|default:"–" }}
-            </div>
-          </div>
-          <i class="fas fa-check-circle fa-2x text-success"></i>
-        </div>
-      </div>
-    </div>
+  <div class="mt-3 d-flex gap-2">
+    <a href="{% url 'oraw_app:competition_detail' competition.pk %}"
+       class="btn btn-outline-secondary btn-sm">
+      ← Takaisin kilpailuun
+    </a>
+    <a href="{% url 'oraw_app:competition_list' %}"
+       class="btn btn-outline-secondary btn-sm">
+      ← Kilpailulista
+    </a>
   </div>
-  {% endif %}
-
-  {# ----------------------------------------------------------- #}
-  {# Sarjat / Courses                                           #}
-  {# ----------------------------------------------------------- #}
-  <h2 class="h5 mb-3">Sarjat / Courses</h2>
-
-  {% if courses %}
-    <div class="row g-3">
-      {% for course in courses %}
-      <div class="col-12 col-md-6 col-xl-4">
-        <div class="card shadow-sm h-100">
-          <div class="card-body d-flex flex-column">
-            <h3 class="h6 mb-1">
-              {{ course.name }}
-            </h3>
-
-            {# Lisäinfoa sarjasta voi näyttää myöhemmin, jos löytyy pituus/rastit #}
-            <p class="text-muted small mb-2">
-              Kilpailun sarja / Course in this competition.
-            </p>
-
-            <div class="mt-auto pt-2">
-              <a
-                href="{% url 'oraw_app:course_results' competition.id course.id %}"
-                class="btn btn-outline-primary btn-sm w-100"
-              >
-                Näytä tulokset / View results →
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <p class="text-muted">
-      Ei sarjoja tälle kilpailulle. / No courses for this competition.
-    </p>
-  {% endif %}
 
 </div>
 {% endblock %}
