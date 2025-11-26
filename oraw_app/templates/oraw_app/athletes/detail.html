@@ -1,166 +1,202 @@
-{# oraw_app/templates/oraw_app/athletes/detail.html #}
 {% extends "oraw_app/base.html" %}
+{% load i18n %}
+{% load oraw_filters %}
 
-{% block title %}Urheilija – {{ athlete }}{% endblock %}
+{% block title %}
+  {{ athlete.full_name|default:athlete }} – Urheilijaprofiili / Athlete profile
+{% endblock %}
 
 {% block content %}
 <div class="container my-4">
 
-  {# -------------------------------------------------------- #}
-  {# Breadcrumb / Sivupolku                                   #}
-  {# -------------------------------------------------------- #}
+  {# Breadcrumb / Sivupolku #}
   <nav aria-label="breadcrumb" class="mb-3">
-    <ol class="breadcrumb small bg-transparent px-0 mb-0">
+    <ol class="breadcrumb small mb-0">
       <li class="breadcrumb-item">
         <a href="{% url 'oraw_app:home' %}">Etusivu</a>
       </li>
       <li class="breadcrumb-item">
-        <a href="{% url 'oraw_app:athletes_index' %}">Urheilijat</a>
+        <a href="{% url 'oraw_app:athletes_index' %}">Urheilijat / Athletes</a>
       </li>
       <li class="breadcrumb-item active" aria-current="page">
-        {{ athlete }}
+        {{ athlete.full_name|default:athlete }}
       </li>
     </ol>
   </nav>
 
-  {# -------------------------------------------------------- #}
-  {# Yläosa: urheilijan perustiedot                           #}
-  {# -------------------------------------------------------- #}
+  <a href="{% url 'oraw_app:athletes_index' %}"
+     class="btn btn-outline-secondary btn-sm mb-3">
+    ← Takaisin urheilijalistaan / Back to athletes
+  </a>
+
+  {# Otsikko #}
+  <h1 class="h3 mb-3">
+    {{ athlete.full_name|default:athlete }}
+  </h1>
+
+  {# Perustiedot / Basic info #}
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <div class="row">
+        <div class="col-12 col-md-4 mb-2">
+          <div class="text-muted small">Seura / Club</div>
+          <div>{{ athlete.club|default:"–" }}</div>
+        </div>
+        <div class="col-12 col-md-4 mb-2">
+          <div class="text-muted small">Sukupuoli / Gender</div>
+          <div>{{ athlete.gender_display|default:"–" }}</div>
+        </div>
+        <div class="col-12 col-md-4 mb-2">
+          <div class="text-muted small">Syntymävuosi / Birth year</div>
+          <div>{{ athlete.birth_year|default:"–" }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Yhteenveto-kortit #}
+  <h2 class="h5 mb-3">Yhteenveto / Summary</h2>
+
   <div class="row g-3 mb-4">
-    <div class="col-12 col-lg-8">
-      <div class="card shadow-sm h-100">
+    <div class="col-12 col-md-3">
+      <div class="card h-100 shadow-sm">
         <div class="card-body">
-          <h1 class="h4 mb-2">
-            {{ athlete }}
-          </h1>
-
-          <dl class="row mb-0 small text-muted">
-            {# Seura / club – näytetään vain jos kenttä on olemassa ja ei tyhjä #}
-            {% if athlete.club %}
-              <dt class="col-sm-4">Seura / Club</dt>
-              <dd class="col-sm-8">{{ athlete.club }}</dd>
-            {% endif %}
-
-            {# Syntymävuosi / Year of birth (jos tällainen kenttä on) #}
-            {% if athlete.year_of_birth %}
-              <dt class="col-sm-4">Syntymävuosi</dt>
-              <dd class="col-sm-8">{{ athlete.year_of_birth }}</dd>
-            {% endif %}
-
-            {# Mahdollinen lisätieto-kenttä (esim. note / comment) #}
-            {% if athlete.note %}
-              <dt class="col-sm-4">Lisätiedot</dt>
-              <dd class="col-sm-8">{{ athlete.note }}</dd>
-            {% endif %}
-          </dl>
+          <div class="text-muted small">Kilpailuja / Competitions</div>
+          <div class="display-6">
+            {{ summary.competitions_count|default:"0" }}
+          </div>
         </div>
       </div>
     </div>
 
-    {# Pieni yhteenvetokortti tuloksista #}
-    <div class="col-12 col-lg-4">
-      <div class="card shadow-sm h-100">
-        <div class="card-body d-flex flex-column justify-content-between">
-          <div>
-            <div class="text-muted small mb-1">
-              Tulosyhteenveto / Result summary
+    <div class="col-12 col-md-3">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">Tuloksia / Results</div>
+          <div class="display-6">
+            {{ summary.results_count|default:"0" }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-3">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">OK-tuloksia / OK results</div>
+          <div class="display-6">
+            {{ summary.ok_results_count|default:"0" }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-3">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">Podium (1–3)</div>
+          <div class="display-6">
+            {{ summary.podium_count|default:"0" }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# Paras sija & viimeisin kilpailu samassa rivissä #}
+  <div class="row g-3 mb-4">
+    <div class="col-12 col-md-6">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">Paras sijoitus / Best position</div>
+          <div class="h4 mb-0">
+            {{ summary.best_position|default:"–" }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-6">
+      <div class="card h-100 shadow-sm">
+        <div class="card-body">
+          <div class="text-muted small">Viimeisin kilpailu / Latest competition</div>
+          {% if summary.latest_competition %}
+            <div>
+              {{ summary.latest_competition.date|date:"j. F Y" }} – 
+              {{ summary.latest_competition.name }}
             </div>
-            <p class="mb-2">
-              Tuloksia yhteensä:
-              <strong>{{ results|length }}</strong>
-            </p>
-          </div>
-          <div class="small text-muted">
-            Historialista alla perustuu tuoduista kilpailuista löytyviin tuloksiin.
-          </div>
+          {% else %}
+            <div class="text-muted">Ei kilpailuja. / No competitions.</div>
+          {% endif %}
         </div>
       </div>
     </div>
   </div>
 
-  {# -------------------------------------------------------- #}
-  {# Tuloshistoria                                             #}
-  {# -------------------------------------------------------- #}
-  <div class="card shadow-sm">
-    <div class="card-header bg-white d-flex justify-content-between align-items-center">
-      <span><strong>Tuloshistoria / Results history</strong></span>
-      <span class="small text-muted">
-        {{ results|length }} tulosta
-      </span>
-    </div>
+  {# Kilpailuhistoria #}
+  <h2 class="h5 mt-4 mb-3">
+    Kilpailuhistoria / Competition history
+  </h2>
 
-    {% if results %}
-      <div class="table-responsive m-0">
-        <table class="table table-sm align-middle mb-0">
-          <thead class="table-light">
+  <div class="table-responsive mb-5">
+    <table class="table table-sm table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th scope="col">Päivä / Date</th>
+          <th scope="col">Kilpailu / Competition</th>
+          <th scope="col">Sarja / Course</th>
+          <th scope="col">Sijoitus / Position</th>
+          <th scope="col">Aika / Time</th>
+          <th scope="col">Status</th>
+          <th scope="col" class="text-end">Toiminnot / Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if results %}
+          {% for result in results %}
             <tr>
-              <th style="width: 15%;">Päivä</th>
-              <th style="width: 30%;">Kilpailu / Competition</th>
-              <th style="width: 20%;">Sarja / Course</th>
-              <th style="width: 10%;">Sija</th>
-              <th style="width: 15%;">Aika (s)</th>
-              <th style="width: 10%;">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for result in results %}
-              <tr>
-                <td>
-                  {% if result.competition and result.competition.date %}
-                    {{ result.competition.date }}
-                  {% else %}
-                    –
-                  {% endif %}
-                </td>
-                <td>
-                  {% if result.competition %}
-                    <a href="{% url 'oraw_app:competition_detail' result.competition.pk %}">
-                      {{ result.competition.name }}
-                    </a>
-                  {% else %}
-                    –
-                  {% endif %}
-                </td>
-                <td>
-                  {% if result.course %}
-                    {{ result.course.name }}
-                  {% else %}
-                    –
-                  {% endif %}
-                </td>
-                <td>
-                  {% if result.position %}
-                    {{ result.position }}
-                  {% else %}
-                    –
-                  {% endif %}
-                </td>
-                <td>
-                  {% if result.finish_time_s %}
-                    {{ result.finish_time_s }}
-                  {% else %}
-                    –
-                  {% endif %}
-                </td>
-                <td>
-                  {{ result.status }}
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% else %}
-      <div class="card-body text-muted">
-        Ei tallennettuja tuloksia tälle urheilijalle. / No results for this athlete.
-      </div>
-    {% endif %}
-  </div>
+              <td>
+                {% if result.competition_date %}
+                  {{ result.competition_date|date:"j. F Y" }}
+                {% elif result.competition.date %}
+                  {{ result.competition.date|date:"j. F Y" }}
+                {% else %}
+                  –
+                {% endif %}
+              </td>
+              <td>{{ result.competition.name|default:"–" }}</td>
+              <td>{{ result.course.name|default:"–" }}</td>
+              <td>{{ result.position|default:"–" }}</td>
 
-  <div class="mt-3">
-    <a href="{% url 'oraw_app:athletes_index' %}" class="btn btn-outline-secondary btn-sm">
-      ← Takaisin urheilijalistaan
-    </a>
+              {# Aika / Time – sama logiikka kuin tulossivulla #}
+              <td>
+                {% if result.finish_time_s %}
+                  {{ result.finish_time_s|format_seconds }}
+                {% else %}
+                  –
+                {% endif %}
+              </td>
+
+              <td>{{ result.status|default:"–" }}</td>
+              <td class="text-end">
+                {% if result.pk %}
+                  <a href="{% url 'oraw_app:result_detail' result.pk %}"
+                     class="btn btn-outline-primary btn-sm">
+                    Väliajat / Splits →
+                  </a>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="7" class="text-muted text-center py-4">
+              Ei tuloksia tälle urheilijalle. / No results for this athlete.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
   </div>
 
 </div>

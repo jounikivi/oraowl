@@ -1,146 +1,85 @@
-{# oraw_app/templates/oraw_app/athletes/index.html #}
 {% extends "oraw_app/base.html" %}
 
-{% block title %}
-  Urheilijat / Athletes
-{% endblock %}
+{% block title %}Urheilijat / Athletes{% endblock %}
 
 {% block content %}
-<div class="container my-4">
+<div class="container mt-4">
 
-  {% comment %}
-  FI: Otsikko + lyhyt kuvaus
-  EN: Header + short description
-  {% endcomment %}
-  <h1 class="mb-2">Urheilijat / Athletes</h1>
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item"><a href="{% url 'oraw_app:home' %}">Etusivu</a></li>
+      <li class="breadcrumb-item active" aria-current="page">Urheilijat</li>
+    </ol>
+  </nav>
 
-  {% comment %} <p class="text-muted">
-    FI: Lista urheilijoista, joille on tuotu tuloksia ORAOwl-järjestelmään.<br>
-    EN: List of athletes with results imported into ORAOwl.
-  </p> {% endcomment %}
+  <h2 class="mb-3">Urheilijat / Athletes</h2>
 
-  {% comment %}
-  FI: Hakulomake urheilijoiden suodattamiseen
-  EN: Search form for filtering athletes
-  {% endcomment %}
-  <div class="card shadow-sm mb-4">
-    <div class="card-body">
-      <form method="get" class="row g-3 align-items-end">
-
-        <div class="col-md-4">
-          <label for="id_q" class="form-label mb-1">Nimi / Name</label>
-          <input
-            type="text"
-            id="id_q"
-            name="q"
-            class="form-control form-control-sm"
-            placeholder="Etsi nimellä / Search by name"
-            value="{{ request.GET.q|default_if_none:'' }}"
-          >
-        </div>
-
-        <div class="col-md-4">
-          <label for="id_club" class="form-label mb-1">Seura / Club</label>
-          <input
-            type="text"
-            id="id_club"
-            name="club"
-            class="form-control form-control-sm"
-            placeholder="Esim. Turun Suunnistajat"
-            value="{{ request.GET.club|default_if_none:'' }}"
-          >
-        </div>
-
-        <div class="col-md-2">
-          <label for="id_gender" class="form-label mb-1">Sukupuoli / Gender</label>
-          <select
-            id="id_gender"
-            name="gender"
-            class="form-select form-select-sm"
-          >
-            <option value="">Kaikki / All</option>
-            <option value="M" {% if request.GET.gender == "M" %}selected{% endif %}>Mies / Male</option>
-            <option value="F" {% if request.GET.gender == "F" %}selected{% endif %}>Nainen / Female</option>
-            <option value="X" {% if request.GET.gender == "X" %}selected{% endif %}>Muu / Other</option>
-          </select>
-        </div>
-
-        <div class="col-md-2 d-flex justify-content-md-end">
-          <div class="d-flex w-100 gap-2">
-            <button type="submit" class="btn btn-primary btn-sm flex-fill">
-              Hae / Search
-            </button>
-            <a href="{% url 'oraw_app:athletes_index' %}" class="btn btn-outline-secondary btn-sm">
-              Tyhjennä / Reset
-            </a>
-          </div>
-        </div>
-
-      </form>
+  <!-- Search Bar -->
+  <form method="get" class="row g-3 mb-4">
+    <div class="col-md-4">
+      <input type="text" name="name" value="{{ request.GET.name }}" class="form-control"
+             placeholder="Etsi nimellä / Search by name">
     </div>
-  </div>
 
-  {% if athletes %}
-    <div class="table-responsive">
-      <table class="table table-hover align-middle">
-        <thead class="table-light">
+    <div class="col-md-4">
+      <input type="text" name="club" value="{{ request.GET.club }}" class="form-control"
+             placeholder="Seura / Club">
+    </div>
+
+    <div class="col-md-2 d-grid">
+      <button type="submit" class="btn btn-primary">Hae / Search</button>
+    </div>
+
+    <div class="col-md-2 d-grid">
+      <a href="{% url 'oraw_app:athletes_index' %}" class="btn btn-outline-secondary">Tyhjennä / Reset</a>
+    </div>
+  </form>
+
+  <!-- Table -->
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>#</th>
+          <th>Nimi / Name</th>
+          <th>Seura / Club</th>
+          <th>Sukupuoli / Gender</th>
+          <th>Syntymävuosi / Birth year</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for athlete in athletes %}
           <tr>
-            <th>Nimi / Name</th>
-            <th>Seura / Club</th>
-            <th class="text-center">Sukupuoli / Gender</th>
-            <th class="text-center">Syntymävuosi / Birth year</th>
-            <th></th>
+            <td>{{ forloop.counter }}</td>
+
+            <td>
+              <a class="text-success fw-semibold"
+                 href="{% url 'oraw_app:athletes_detail' athlete.pk %}">
+                {{ athlete.full_name|default:athlete }}
+              </a>
+            </td>
+
+            <td>{{ athlete.club|default:"–" }}</td>
+            <td>{{ athlete.gender|default:"–" }}</td>
+            <td>{{ athlete.birth_year|default:"–" }}</td>
+
+            <td>
+              <a href="{% url 'oraw_app:athletes_detail' athlete.pk %}"
+                 class="btn btn-outline-primary btn-sm">
+                Näytä tiedot →
+              </a>
+            </td>
           </tr>
-        </thead>
-        <tbody>
-          {% for athlete in athletes %}
-            <tr>
-              <td>
-                <a href="{% url 'oraw_app:athletes_detail' athlete.pk %}">
-                  {{ athlete.display_name }}
-                </a>
-              </td>
-
-              <td>{{ athlete.club|default:"-" }}</td>
-
-              <td class="text-center">
-                {% if athlete.gender == "M" %}
-                  M
-                {% elif athlete.gender == "F" %}
-                  F
-                {% elif athlete.gender == "X" %}
-                  X
-                {% else %}
-                  –
-                {% endif %}
-              </td>
-
-              <td class="text-center">
-                {% if athlete.year_of_birth %}
-                  {{ athlete.year_of_birth }}
-                {% else %}
-                  –
-                {% endif %}
-              </td>
-
-              <td class="text-end">
-                <a
-                  href="{% url 'oraw_app:athletes_detail' athlete.pk %}"
-                  class="btn btn-sm btn-outline-primary"
-                >
-                  Näytä tulokset / View results →
-                </a>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-  {% else %}
-    <p class="text-muted">
-      Ei urheilijoita löytynyt annetuilla hakuehdoilla. / No athletes found.
-    </p>
-  {% endif %}
+        {% empty %}
+          <tr><td colspan="6" class="text-muted text-center py-4">
+            Ei urheilijoita. / No athletes found.
+          </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 
 </div>
 {% endblock %}
