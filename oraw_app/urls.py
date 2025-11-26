@@ -6,7 +6,8 @@ EN: ORAOwl URL routes (clean, Finnish-friendly paths).
 from django.urls import path, reverse_lazy
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.views import LoginView
-from . import views
+from . import views 
+from .views import HomeView
 
 app_name = "oraw_app"
 
@@ -14,7 +15,8 @@ urlpatterns = [
     # ------------------------------------------------------------------------
     # Etusivu
     # ------------------------------------------------------------------------
-    path('', views.homewiew, name='home'),
+    path("", HomeView.as_view(), name="home"),
+
 
     # ------------------------------------------------------------------------
     # IOFXML-tuonti
