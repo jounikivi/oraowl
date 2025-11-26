@@ -224,17 +224,22 @@ class IOFXMLUploadView(LoginRequiredMixin, FormView):
 
     def form_valid(self, form):
         uploaded_file = form.cleaned_data["file"]
-
-        # Read file content as bytes for the importer
         xml_bytes = uploaded_file.read()
 
-        # Call importer with a single positional argument
-        created, updated, errors = import_iofxml_result_list(xml_bytes)
+        # Saa yhden ImportReport-olion, ei tuplaa
+        report = import_iofxml_result_list(xml_bytes)
+
+        # HUOM: kenttien nimet voivat olla hieman erilaisia,
+        # mutta idea on tämä – säädä nimet ImportReport-luokan mukaan
+        created = getattr(report, "created_results", 0)
+        updated = getattr(report, "updated_results", 0)
+        errors = getattr(report, "errors", [])
 
         messages.success(
             self.request,
             f"Tuonti valmis: {created} uutta tulosta, {updated} päivitettyä."
         )
+
         if errors:
             messages.warning(
                 self.request,
@@ -242,8 +247,6 @@ class IOFXMLUploadView(LoginRequiredMixin, FormView):
             )
 
         return super().form_valid(form)
-
-
 
 # ========================================================================
 # Signup, Logout, Admin dashboard
