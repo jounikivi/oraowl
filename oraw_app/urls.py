@@ -7,7 +7,7 @@ from django.urls import path, reverse_lazy
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.views import LoginView
 from . import views 
-from .views import HomeView
+
 
 app_name = "oraw_app"
 
