@@ -6,7 +6,9 @@
 {% block content %}
 <div class="container my-4">
 
-  <!-- Breadcrumb -->
+  {# -------------------------------------------------------- #}
+  {# Breadcrumb / Sivupolku                                   #}
+  {# -------------------------------------------------------- #}
   <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb small bg-transparent px-0 mb-0">
       <li class="breadcrumb-item">
@@ -21,31 +23,58 @@
     </ol>
   </nav>
 
-  <!-- Otsikko -->
-  <h1 class="h3 mb-1">
-    {{ competition.name }}
-  </h1>
+  {# -------------------------------------------------------- #}
+  {# Otsikko + perusinfo                                       #}
+  {# -------------------------------------------------------- #}
+  <div class="row g-3 mb-3">
+    <div class="col-12 col-lg-8">
+      <h1 class="h3 mb-2">
+        {{ competition.name }}
+      </h1>
 
-  <p class="text-muted mb-3">
-    {% if competition.date %}
-      📅 {{ competition.date }}
-    {% endif %}
-    {% if competition.location %}
-      · 📍 {{ competition.location }}
-    {% endif %}
-    {% if competition.organiser %}
-      · 👥 {{ competition.organiser }}
-    {% endif %}
-  </p>
+      <p class="text-muted mb-2">
+        {% if competition.date %}
+          📅 {{ competition.date }}
+        {% endif %}
+        {% if competition.location %}
+          · 📍 {{ competition.location }}
+        {% endif %}
+        {% if competition.organiser %}
+          · 👥 {{ competition.organiser }}
+        {% endif %}
+      </p>
+    </div>
 
-  <!-- Tilastokortit -->
+    <div class="col-12 col-lg-4">
+      <div class="card shadow-sm">
+        <div class="card-body p-3">
+          <div class="small text-muted mb-1">
+            Kilpailun tiedot / Event info
+          </div>
+          <ul class="list-unstyled mb-0 small">
+            {% if competition.date %}
+              <li>📅 Päivämäärä: {{ competition.date }}</li>
+            {% endif %}
+            {% if competition.location %}
+              <li>📍 Paikka: {{ competition.location }}</li>
+            {% endif %}
+            {% if competition.organiser %}
+              <li>👥 Järjestäjä: {{ competition.organiser }}</li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# -------------------------------------------------------- #}
+  {# Tilastokortit                                             #}
+  {# -------------------------------------------------------- #}
   <div class="row g-3 mb-4">
     <div class="col-12 col-md-4">
       <div class="card shadow-sm h-100">
         <div class="card-body d-flex align-items-center">
-          <div class="me-3">
-            <i class="fas fa-layer-group fa-2x text-primary"></i>
-          </div>
+          <div class="me-3 fs-3">📚</div>
           <div>
             <div class="text-muted small">Ratoja / Courses</div>
             <div class="h4 mb-0">{{ course_count|default:0 }}</div>
@@ -57,9 +86,7 @@
     <div class="col-12 col-md-4">
       <div class="card shadow-sm h-100">
         <div class="card-body d-flex align-items-center">
-          <div class="me-3">
-            <i class="fas fa-list-ol fa-2x text-success"></i>
-          </div>
+          <div class="me-3 fs-3">📊</div>
           <div>
             <div class="text-muted small">Tuloksia / Results</div>
             <div class="h4 mb-0">{{ result_count|default:0 }}</div>
@@ -71,9 +98,7 @@
     <div class="col-12 col-md-4">
       <div class="card shadow-sm h-100">
         <div class="card-body d-flex align-items-center">
-          <div class="me-3">
-            <i class="fas fa-check-circle fa-2x text-info"></i>
-          </div>
+          <div class="me-3 fs-3">✅</div>
           <div>
             <div class="text-muted small">OK-tuloksia / OK results</div>
             <div class="h4 mb-0">{{ ok_result_count|default:0 }}</div>
@@ -83,19 +108,22 @@
     </div>
   </div>
 
-  <!-- Sarjat ja radat -->
+  {# -------------------------------------------------------- #}
+  {# Sarjat ja radat                                           #}
+  {# -------------------------------------------------------- #}
   <div class="card shadow-sm">
-    <div class="card-header">
-      Sarjat ja radat / Courses
+    <div class="card-header bg-white">
+      <strong>Sarjat ja radat / Courses</strong>
     </div>
+
     {% if courses %}
       <div class="table-responsive m-0">
         <table class="table table-sm align-middle mb-0">
-          <thead>
+          <thead class="table-light">
             <tr>
-              <th>Nimi / Name</th>
-              <th class="text-end" style="width: 140px;">Tuloksia</th>
-              <th class="text-end" style="width: 180px;">Toiminto</th>
+              <th style="width: 40%;">Nimi / Name</th>
+              <th class="text-end" style="width: 20%;">Tuloksia / Results</th>
+              <th class="text-end" style="width: 20%;">Toiminto / Action</th>
             </tr>
           </thead>
           <tbody>
@@ -125,6 +153,7 @@
     {% endif %}
   </div>
 
+  {# Takaisin-nappi #}
   <div class="mt-3">
     <a href="{% url 'oraw_app:competition_list' %}" class="btn btn-outline-secondary btn-sm">
       ← Takaisin kilpailulistaan
