@@ -68,8 +68,8 @@ class CompetitionDetailView(DetailView):
         )
 
         # Kaikki tulokset tälle kilpailulle
-        results_qs = Result.objects.filter(course__competition=competition)
-
+        context["ok_result_count"] = results_qs.filter(status="OK").count()
+        
         context["courses"] = courses_qs
         context["course_count"] = courses_qs.count()
         context["result_count"] = results_qs.count()
