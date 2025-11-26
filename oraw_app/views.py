@@ -3,136 +3,53 @@
 # ============================================================================
 # Imports / Tuonnit
 # ============================================================================
+
 from django.contrib import messages
-from django.db.models import Q
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.shortcuts import render, get_object_or_404
+from django.db.models import Q, Min, Max
+from django.contrib.auth import get_user_model
+from django.contrib.auth import login
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.auth.views import LogoutView
+from django.http import Http404
+from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import (
     ListView,
     DetailView,
     FormView,
     TemplateView,
-    CreateView,
 )
-from django.contrib.auth import login, get_user_model
-from django.contrib.auth.views import LogoutView
-from django.http import Http404
 
-from oraw_app.models import Competition, Athlete, Result, Course, Split
 from oraw_app.forms import SignupForm, IOFXMLUploadForm
+from oraw_app.models import Competition, Athlete, Result, Course, Split
 from oraw_app.utils.iofxml_importer import import_iofxml_result_list
 
 User = get_user_model()
 
 
 # ============================================================================
-# Perusnäkymät / Basic views
+# Home view / Etusivu
 # ============================================================================
 
 
-def home(request):
+class HomeView(TemplateView):
     """
-    FI:
-        Etusivu. Täällä voidaan näyttää esim. lyhyt kuvaus ORAOwlista
-        ja muutama nosto kilpailuista.
-    EN:
-        Home page. You can later add small statistics or a description here.
+    FI: Yksinkertainen etusivu.
+    EN: Simple home page.
     """
-    return render(request, "oraw_app/home.html")
+
+    template_name = "oraw_app/home.html"
 
 
 # ============================================================================
-# Staff mixin (vain henkilöstölle) / Staff-only mixin
-# ============================================================================
-
-
-class StaffRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
-    """
-    FI:
-        Mixin, joka varmistaa että käyttäjä on kirjautunut ja on staff (is_staff=True).
-    EN:
-        Mixin that ensures the user is authenticated and marked as staff.
-    """
-
-    def test_func(self):
-        user = self.request.user
-        return bool(user and user.is_staff)
-
-
-# ============================================================================
-# IOFXML upload view / IOFXML-latausnäkymä
-# ============================================================================
-
-
-class IOFXMLUploadView(StaffRequiredMixin, FormView):
-    """
-    FI:
-        IOFXML 3.0 ResultList -tiedoston lataus- ja tuontinäkymä (vain staff).
-    EN:
-        IOFXML 3.0 ResultList upload & import view (staff only).
-    """
-
-    template_name = "oraw_app/iofxml/upload.html"
-    form_class = IOFXMLUploadForm
-    success_url = reverse_lazy("oraw_app:iofxml_upload")
-
-    def form_valid(self, form):
-        """
-        FI:
-            Kun lomake on validi, luetaan XML-tiedosto, ajetaan importer ja
-            näytetään käyttäjälle yhteenveto tuonnista.
-        EN:
-            When the form is valid, read the XML file, run the importer and
-            show a summary message to the user.
-        """
-        uploaded_file = form.cleaned_data["file"]
-        xml_bytes = uploaded_file.read()
-
-        report = import_iofxml_result_list(
-            xml_bytes,
-            filename=uploaded_file.name,
-            uploaded_by=self.request.user,
-        )
-
-        msg_fi = (
-            "IOFXML-tuonti valmis. "
-            f"Kilpailuja luotu: {report.competitions_created}, "
-            f"päivitetty: {report.competitions_updated}. "
-            f"Ratoja luotu: {report.courses_created}. "
-            f"Urheilijoita luotu: {report.athletes_created}. "
-            f"Tuloksia luotu: {report.results_created}, "
-            f"päivitetty: {report.results_updated}. "
-            f"Väliaikoja luotu: {report.splits_created}."
-        )
-        msg_en = (
-            "IOFXML import completed. "
-            f"Competitions created: {report.competitions_created}, "
-            f"updated: {report.competitions_updated}. "
-            f"Courses created: {report.courses_created}. "
-            f"Athletes created: {report.athletes_created}. "
-            f"Results created: {report.results_created}, "
-            f"updated: {report.results_updated}. "
-            f"Splits created: {report.splits_created}."
-        )
-
-        messages.success(self.request, f"{msg_fi} / {msg_en}")
-        return super().form_valid(form)
-
-
-# ============================================================================
-# Competitions list & detail views / Kilpailulista ja -detail
+# Competition list & detail views / Kilpailunäkymät
 # ============================================================================
 
 
 class CompetitionListView(ListView):
     """
-    FI:
-        Listaa kaikki kilpailut aikajärjestyksessä (uusin ensin) ja
-        mahdollistaa haun kilpailun nimen, järjestäjän tai paikkakunnan perusteella.
-    EN:
-        List all competitions ordered by date (newest first) and
-        allow searching by competition name, organiser or location.
+    FI: Julkisten kilpailujen listaus.
+    EN: List public competitions.
     """
 
     model = Competition
@@ -141,270 +58,165 @@ class CompetitionListView(ListView):
     paginate_by = 25
 
     def get_queryset(self):
-        qs = Competition.objects.all().order_by("-date")
-        query = (self.request.GET.get("q") or "").strip()
-        if query:
+        qs = (
+            Competition.objects.filter(is_public=True, deleted_at__isnull=True)
+            .order_by("-date", "name")
+            .select_related()
+        )
+
+        search = self.request.GET.get("q", "").strip()
+        if search:
             qs = qs.filter(
-                Q(name__icontains=query)
-                | Q(organiser__icontains=query)
-                | Q(location__icontains=query)
+                Q(name__icontains=search)
+                | Q(city__icontains=search)
+                | Q(organiser__icontains=search)
             )
+
         return qs
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        athlete: Athlete = self.object
-
-        # Haetaan kaikki näkyvät tulokset
-        results = (
-            Result.objects.filter(
-                athlete=athlete,
-                is_public=True,
-                deleted_at__isnull=True,
-                course__competition__isnull=False,
-            )
-            .select_related("course", "course__competition")
-            .order_by("-course__competition__date")
-        )
-
-        context["results"] = results
-
-        # --- SUMMARY / STATS ---
-        total_results = results.count()
-        competitions = {r.course.competition_id for r in results}
-        competitions_count = len(competitions)
-        ok_results = results.filter(status="OK").count()
-
-        # Paras sijoitus
-        best_position = (
-            results.filter(position__isnull=False)
-            .order_by("position")
-            .values_list("position", flat=True)
-            .first()
-        )
-
-        # Viimeisin kilpailupäivä
-        latest_date = (
-            results.values_list("course__competition__date", flat=True).first()
-            if total_results > 0
-            else None
-        )
-
-        context["stats"] = {
-            "competitions_count": competitions_count,
-            "total_results": total_results,
-            "ok_results": ok_results,
-            "podiums": results.filter(position__in=[1, 2, 3]).count(),
-            "best_position": best_position,
-            "latest_date": latest_date,
-        }
-
-        return context
+        ctx = super().get_context_data(**kwargs)
+        ctx["search_query"] = self.request.GET.get("q", "").strip()
+        return ctx
 
 
-
-# =====================================================================
-# Competition detail / Kilpailun sivu
-# =====================================================================
 class CompetitionDetailView(DetailView):
+    """
+    FI: Yhden kilpailun näkymä.
+    EN: Single competition view.
+    """
+
     model = Competition
     template_name = "oraw_app/competitions/competition_detail.html"
     context_object_name = "competition"
 
+    def get_queryset(self):
+        return Competition.objects.filter(is_public=True, deleted_at__isnull=True)
+
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
+        ctx = super().get_context_data(**kwargs)
         competition = self.object
 
-        # Haetaan radat varmasti tälle kilpailulle
-        courses_qs = Course.objects.filter(competition=competition).order_by("name")
-        context["courses"] = courses_qs
-        context["course_count"] = courses_qs.count()
+        # Haetaan kurssit/radat tälle kilpailulle
+        courses = Course.objects.filter(
+            competition=competition, is_public=True, deleted_at__isnull=True
+        ).order_by("name")
 
-        # Yhteenveto tuloksista (ei pakollinen, mutta hyödyllinen)
-        results_qs = Result.objects.filter(course__competition=competition)
-        context["result_count"] = results_qs.count()
-        context["ok_result_count"] = results_qs.filter(status="OK").count()
-
-        return context
-
-
-# =====================================================================
-# Course results / Radan tulokset
-# =====================================================================
-class CourseResultsView(DetailView):
-    """
-    Näyttää yhden radan (Course) tulokset.
-    URL: /kilpailut/<competition_id>/sarjat/<course_id>/
-    """
-    model = Course
-    template_name = "oraw_app/competitions/course_results.html"
-    pk_url_kwarg = "course_id"
-    context_object_name = "course"
-
-    def get_queryset(self):
-        # Rajoitetaan lookup vain kyseisen kilpailun ratoihin,
-        # jotta URL-parametrit varmasti sopivat yhteen.
-        competition_id = self.kwargs["competition_id"]
-        return Course.objects.filter(competition__pk=competition_id)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        course = self.object
-
-        results = (
-            Result.objects.filter(course=course)
-            .select_related("athlete")
-            .order_by("position", "time")
+        # Tulosten määrät per rata
+        course_stats = (
+            Result.objects.filter(
+                course__competition=competition,
+                is_public=True,
+                deleted_at__isnull=True,
+            )
+            .values("course")
+            .order_by("course")
+            .annotate(total_results_count=Q("course"))
         )
-        context["results"] = results
-        context["result_count"] = results.count()
-        return context
 
+        # Tehdään helppo dict course_id -> stats
+        stats_by_course = {row["course"]: row["total_results_count"] for row in course_stats}
 
-
-# ============================================================================
-# Course results / Sarjan tulokset
-# ============================================================================
+        ctx["courses"] = courses
+        ctx["stats_by_course"] = stats_by_course
+        return ctx
 
 
 class CourseResultsView(ListView):
     """
-    FI:
-        Näyttää yksittäisen sarjan/radan tulokset valitussa kilpailussa.
-    EN:
-        Shows results for a single course in a given competition.
+    FI: Yhden radan tuloslista.
+    EN: Results for a single course.
     """
 
     model = Result
     template_name = "oraw_app/competitions/course_results.html"
     context_object_name = "results"
 
-    @staticmethod
-    def _format_diff_to_winner(seconds: int | None) -> str:
-        """
-        FI: Muotoilee ajan erotuksen (+mm:ss).
-        EN: Format time difference as (+mm:ss).
-        """
-        if seconds is None:
-            return ""
-        sign = "+" if seconds >= 0 else "-"
-        seconds = abs(seconds)
-        minutes = seconds // 60
-        secs = seconds % 60
-        return f"{sign}{minutes:d}:{secs:02d}"
-
     def get_queryset(self):
-        competition_id = self.kwargs["competition_id"]
-        course_id = self.kwargs["course_id"]
+        competition_id = self.kwargs.get("competition_id")
+        course_id = self.kwargs.get("course_id")
 
-        # Haetaan rata ja varmistetaan että se kuuluu tähän kilpailuun
-        self.course = get_object_or_404(
-            Course,
-            pk=course_id,
-            competition_id=competition_id,
-        )
+        # Varmistetaan, että kilpailu ja rata ovat julkisia ja olemassa
+        try:
+            self.competition = Competition.objects.get(
+                pk=competition_id, is_public=True, deleted_at__isnull=True
+            )
+        except Competition.DoesNotExist:
+            raise Http404("Competition not found")
+
+        try:
+            self.course = Course.objects.get(
+                pk=course_id,
+                competition=self.competition,
+                is_public=True,
+                deleted_at__isnull=True,
+            )
+        except Course.DoesNotExist:
+            raise Http404("Course not found")
 
         qs = (
             Result.objects.filter(
                 course=self.course,
                 is_public=True,
                 deleted_at__isnull=True,
-                athlete__is_public=True,
-                athlete__deleted_at__isnull=True,
             )
-            .select_related("athlete", "course", "course__competition")
-            .order_by("position", "finish_time_s")
+            .select_related("athlete", "course__competition")
+            .order_by("position", "finish_time_s", "bib")
         )
-
-        # Voittajan aika (vain OK-tulokset, jos malli tukee tätä)
-        if hasattr(Result, "STATUS_OK"):
-            winner = (
-                qs.filter(
-                    status=Result.STATUS_OK,
-                    finish_time_s__isnull=False,
-                )
-                .order_by("finish_time_s")
-                .first()
-            )
-        else:
-            winner = (
-                qs.filter(
-                    finish_time_s__isnull=False,
-                )
-                .order_by("finish_time_s")
-                .first()
-            )
-
-        self.winner_time_s = winner.finish_time_s if winner else None
-
-        # Ero voittajaan
-        if self.winner_time_s is not None:
-            for result in qs:
-                if getattr(result, "finish_time_s", None) is not None and (
-                    not hasattr(Result, "STATUS_OK")
-                    or result.status == Result.STATUS_OK
-                ):
-                    diff = result.finish_time_s - self.winner_time_s
-                    result.diff_to_winner_s = diff
-                    result.diff_to_winner_display = self._format_diff_to_winner(diff)
-                else:
-                    result.diff_to_winner_s = None
-                    result.diff_to_winner_display = ""
-        else:
-            for result in qs:
-                result.diff_to_winner_s = None
-                result.diff_to_winner_display = ""
 
         return qs
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["course"] = self.course
-        context["competition"] = self.course.competition
-        context["winner_time_s"] = getattr(self, "winner_time_s", None)
-        return context
-
-
-# ============================================================================
-# Result detail / Yksittäinen tulos
-# ============================================================================
+        ctx = super().get_context_data(**kwargs)
+        ctx["competition"] = self.competition
+        ctx["course"] = self.course
+        return ctx
 
 
 class ResultDetailView(DetailView):
     """
-    FI:
-        Yksittäisen tuloksen tarkempi näkymä (voidaan näyttää esim. väliajat).
-    EN:
-        Detail view for a single result.
+    FI: Yhden tuloksen ja väliaikojen näkymä.
+    EN: Single result + splits.
     """
 
     model = Result
     template_name = "oraw_app/competitions/result_detail.html"
     context_object_name = "result"
 
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        result: Result = self.object
-        context["competition"] = (
-            result.course.competition if result.course_id else None
+    def get_queryset(self):
+        return Result.objects.filter(
+            is_public=True,
+            deleted_at__isnull=True,
+        ).select_related(
+            "athlete",
+            "course__competition",
         )
-        context["course"] = result.course
-        # Jos haluat myöhemmin väliajat:
-        # context["splits"] = Split.objects.filter(result=result).order_by("control_code")
-        return context
+
+    def get_context_data(self, **kwargs):
+        ctx = super().get_context_data(**kwargs)
+        result = self.object
+        course = result.course
+        competition = course.competition
+        athlete = result.athlete
+
+        splits = Split.objects.filter(result=result).order_by("seq")
+
+        ctx["competition"] = competition
+        ctx["course"] = course
+        ctx["athlete"] = athlete
+        ctx["splits"] = splits
+        return ctx
 
 
 # ============================================================================
-# Athletes views / Urheilijalista ja -detail
+# Athlete list & detail views / Urheilijanäkymät
 # ============================================================================
 
 
 class AthleteListView(ListView):
     """
-    FI:
-        Urheilijalista hakuominaisuuksilla (nimi, seura, sukupuoli).
-    EN:
-        Athlete list with simple search filters.
+    FI: Urheilijalistaus.
+    EN: Athletes index page.
     """
 
     model = Athlete
@@ -418,142 +230,162 @@ class AthleteListView(ListView):
             deleted_at__isnull=True,
         ).order_by("last_name", "first_name")
 
-        name = (self.request.GET.get("name") or "").strip()
-        club = (self.request.GET.get("club") or "").strip()
-        gender = (self.request.GET.get("gender") or "").strip().upper()
+        search = self.request.GET.get("q", "").strip()
+        club = self.request.GET.get("club", "").strip()
 
-        if name:
+        if search:
             qs = qs.filter(
-                Q(first_name__icontains=name)
-                | Q(last_name__icontains=name)
-                | Q(full_name__icontains=name)
+                Q(first_name__icontains=search)
+                | Q(last_name__icontains=search)
+                | Q(nickname__icontains=search)
             )
 
         if club:
             qs = qs.filter(club__icontains=club)
 
-        if gender in {"M", "F"}:
-            qs = qs.filter(gender=gender)
-
         return qs
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["name"] = (self.request.GET.get("name") or "").strip()
-        context["club"] = (self.request.GET.get("club") or "").strip()
-        context["gender"] = (self.request.GET.get("gender") or "").strip().upper()
-        return context
+        ctx = super().get_context_data(**kwargs)
+        ctx["search_query"] = self.request.GET.get("q", "").strip()
+        ctx["club_query"] = self.request.GET.get("club", "").strip()
+        return ctx
 
 
 class AthleteDetailView(DetailView):
     """
-    FI:
-        Yksittäisen urheilijan perustiedot ja tuloshistoria.
-    EN:
-        Single athlete detail with result history.
+    FI: Yksittäisen urheilijan profiilisivu + kilpailuhistoria.
+    EN: Single athlete profile page + competition history.
     """
 
     model = Athlete
     template_name = "oraw_app/athletes/detail.html"
     context_object_name = "athlete"
 
-    def get_object(self, queryset=None):
-        athlete: Athlete = super().get_object(queryset)
-        if not athlete.is_public or athlete.deleted_at is not None:
-            raise Http404("Athlete not available")
-        return athlete
+    def get_queryset(self):
+        return Athlete.objects.filter(
+            is_public=True,
+            deleted_at__isnull=True,
+        )
 
     def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        athlete: Athlete = self.object
+        ctx = super().get_context_data(**kwargs)
+        athlete = self.object
 
-        results = (
+        # ------------------------------------------------------------
+        # FI: Haetaan urheilijan julkiset tulokset
+        # EN: Fetch public (non-deleted) results for this athlete
+        # ------------------------------------------------------------
+        results_qs = (
             Result.objects.filter(
                 athlete=athlete,
                 is_public=True,
                 deleted_at__isnull=True,
-                course__competition__isnull=False,
             )
-            .select_related("course", "course__competition")
-            .order_by("-course__competition__date")
+            .select_related("course__competition")
+            .order_by("-course__competition__date", "course__name")
         )
 
-        context["results"] = results
-        return context
+        ctx["results"] = results_qs
+
+        # ------------------------------------------------------------
+        # FI: Lasketaan yhteenvedon tilastot
+        # EN: Compute summary statistics
+        # ------------------------------------------------------------
+        total_results = results_qs.count()
+        competitions_count = (
+            results_qs.values("course__competition").distinct().count()
+            if total_results
+            else 0
+        )
+
+        ok_results_qs = results_qs.filter(status="OK")
+        ok_results = ok_results_qs.count()
+        podiums = ok_results_qs.filter(position__in=[1, 2, 3]).count()
+
+        if results_qs.exists():
+            best_result = ok_results_qs.order_by("position").first()
+            best_position = best_result.position if best_result and best_result.position else None
+
+            date_range = results_qs.aggregate(
+                first_date=Min("course__competition__date"),
+                latest_date=Max("course__competition__date"),
+            )
+            latest_date = date_range["latest_date"]
+        else:
+            best_position = None
+            latest_date = None
+
+        ctx["stats"] = {
+            "total_results": total_results,
+            "competitions_count": competitions_count,
+            "ok_results": ok_results,
+            "podiums": podiums,
+            "best_position": best_position,
+            "latest_date": latest_date,
+        }
+
+        return ctx
 
 
 # ============================================================================
-# Signup view / Rekisteröityminen
+# IOF XML upload / IOFXML-tuonti
 # ============================================================================
 
 
-class SignUpView(CreateView):
+class IOFXMLUploadView(PermissionRequiredMixin, FormView):
     """
-    FI:
-        Käyttäjän rekisteröityminen ORAOwl-palveluun.
-    EN:
-        User signup view for ORAOwl.
+    FI: IOF XML 3.0 tuloslistan tuonti.
+    EN: Import IOF XML 3.0 result list.
     """
 
-    form_class = SignupForm
+    template_name = "oraw_app/iofxml_upload.html"
+    form_class = IOFXMLUploadForm
+    success_url = reverse_lazy("oraw_app:iofxml_upload")
+    permission_required = "oraw_app.can_import_results"
+
+    def form_valid(self, form):
+        xml_file = form.cleaned_data["xml_file"]
+
+        try:
+            imported_competition = import_iofxml_result_list(xml_file)
+        except Exception as exc:  # noqa: BLE001
+            messages.error(self.request, f"Tiedoston tuonti epäonnistui: {exc}")
+            return self.form_invalid(form)
+
+        messages.success(
+            self.request,
+            f"Tiedoston tuonti onnistui. Kilpailu: {imported_competition}",
+        )
+        return super().form_valid(form)
+
+
+# ============================================================================
+# Signup / Login / Logout
+# ============================================================================
+
+
+class SignupView(FormView):
+    """
+    FI: Uuden käyttäjän rekisteröinti.
+    EN: User signup view.
+    """
+
     template_name = "oraw_app/accounts/signup.html"
+    form_class = SignupForm
     success_url = reverse_lazy("oraw_app:home")
 
     def form_valid(self, form):
-        response = super().form_valid(form)
-        user = self.object
+        user = form.save()
         login(self.request, user)
         messages.success(self.request, "Tervetuloa ORAOwl-palveluun!")
-        return response
-
-
-# ============================================================================
-# Admin dashboard / Hallintapaneeli
-# ============================================================================
-
-
-class AdminDashboardView(StaffRequiredMixin, TemplateView):
-    """
-    FI:
-        Yksinkertainen hallintapaneeli kilpailun järjestäjille ja ylläpidolle.
-    EN:
-        Simple admin dashboard for organisers and admins.
-    """
-
-    template_name = "oraw_app/admin/dashboard.html"
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-
-        context["competition_count"] = Competition.objects.count()
-        context["athlete_count"] = Athlete.objects.filter(
-            is_public=True,
-            deleted_at__isnull=True,
-        ).count()
-        context["result_count"] = Result.objects.filter(
-            is_public=True,
-            deleted_at__isnull=True,
-        ).count()
-
-        context["user_count"] = User.objects.count()
-        context["staff_count"] = User.objects.filter(is_staff=True).count()
-
-        context["latest_competitions"] = Competition.objects.order_by("-date")[:5]
-
-        return context
-
-
-# ============================================================================
-# Logout view / Uloskirjautuminen
-# ============================================================================
+        return super().form_valid(form)
 
 
 class CustomLogoutView(LogoutView):
     """
-    FI:
-        Uloskirjautuminen, joka näyttää pienen onnistumisviestin.
-    EN:
-        Logout view that shows a small success message.
+    FI: Uloskirjautuminen POST-metodilla + viesti.
+    EN: Logout with POST + message.
     """
 
     next_page = "oraw_app:home"
