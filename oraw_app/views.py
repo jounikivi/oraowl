@@ -53,16 +53,30 @@ class CompetitionListView(ListView):
 
 class CompetitionDetailView(DetailView):
     model = Competition
-    template_name = "oraw_app/competitions/competition_detail.html"
+    template_name = "oraw_app/competition_detail.html"
     context_object_name = "competition"
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["courses"] = (
-            self.object.courses.all()          # <--- ei deleted_at-suodatusta
+        competition = self.object
+
+        # Kaikki radat tälle kilpailulle
+        courses_qs = (
+            competition.courses
             .prefetch_related("results")
             .order_by("name")
         )
+
+        # Kaikki tulokset tälle kilpailulle
+        results_qs = Result.objects.filter(course__competition=competition)
+
+        context["courses"] = courses_qs
+        context["course_count"] = courses_qs.count()
+        context["result_count"] = results_qs.count()
+        context["ok_result_count"] = results_qs.filter(
+            status=Result.Status.OK
+        ).count()
+
         return context
 
 
