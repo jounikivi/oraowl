@@ -15,8 +15,7 @@ urlpatterns = [
     # ------------------------------------------------------------------------
     # Etusivu
     # ------------------------------------------------------------------------
-    path("", HomeView.as_view(), name="home"),
-
+    path("", views.HomeView.as_view(), name="home"),
 
     # ------------------------------------------------------------------------
     # IOFXML-tuonti
@@ -82,12 +81,12 @@ urlpatterns = [
     ),
     path(
         "tili/ulos/",
-        views.CustomLogoutView.as_view(),
+        views.UserLogoutView.as_view(),
         name="logout",
     ),
     path(
         "tili/rekisteroidy/",
-        views.SignUpView.as_view(),
+        views.SignupView.as_view(),
         name="signup",
     ),
 
