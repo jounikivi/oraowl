@@ -38,10 +38,17 @@ class CompetitionListView(ListView):
     context_object_name = "competitions"
 
     def get_queryset(self):
-        return Competition.objects.filter(
-            is_public=True,
-            deleted_at__isnull=True
-        ).order_by("-date")
+        queryset = Competition.objects.all().order_by("-date")
+
+        query = self.request.GET.get("q")
+        if query:
+            queryset = queryset.filter(
+                Q(name__icontains=query)
+                | Q(location__icontains=query)
+                | Q(organizer__icontains=query)
+            )
+
+        return queryset
 
 
 class CompetitionDetailView(DetailView):
@@ -214,7 +221,7 @@ class AthleteDetailView(DetailView):
 # ========================================================================
 
 class IOFXMLUploadView(LoginRequiredMixin, FormView):
-    template_name = "oraw_app/iofxml_upload.html"
+    template_name = "oraw_app/iofxml/upload.html"
     form_class = IOFXMLUploadForm
     success_url = reverse_lazy("oraw_app:iofxml_upload")
 
