@@ -194,6 +194,8 @@ class AthleteListView(ListView):
     model = Athlete
     template_name = "oraw_app/athletes/index.html"
     context_object_name = "athletes"
+    
+    paginate_by = 50
 
     def get_queryset(self):
         qs = Athlete.objects.filter(

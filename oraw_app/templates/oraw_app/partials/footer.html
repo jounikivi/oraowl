@@ -12,23 +12,17 @@ EN: Global footer displayed on all pages.
 <!-- ========================================================= -->
 <footer class="main-footer text-sm text-center" style="background-color:#1b5e20; color:#f1f1f1; padding:10px 0;">
 
-  <!-- FI: Vasemman puolen teksti – lyhyt kuvaus sovelluksesta -->
-  <!-- EN: Left-aligned text – short description of the app -->
   <strong>ORAOwl Orienteering Result Archive</strong> – digitaalinen tulosarkisto suunnistuksen harrastajille.
 
   <br>
 
-  <!-- FI: Linkit tietosuojaan ja käyttöehtoihin (voit lisätä sivut myöhemmin). -->
-  <!-- EN: Links to privacy and terms pages (add actual pages later). -->
   <a href="{% url 'oraw_app:home' %}" class="text-light mx-1">Etusivu</a> |
   {% comment %} <a href="{% url 'oraw_app:competitions_index' %}" class="text-light mx-1">Kilpailut</a> | {% endcomment %}
-  <a href="#" class="text-light mx-1">Tietosuoja</a> |
-  <a href="#" class="text-light mx-1">Käyttöehdot</a>
+  <a href="{% url 'oraw_app:privacy' %}" class="text-light mx-1">Tietosuoja</a> |
+  <a href="{% url 'oraw_app:terms' %}" class="text-light mx-1">Käyttöehdot</a>
 
   <br>
 
-  <!-- FI: Sovelluksen versio ja tekijätiedot -->
-  <!-- EN: App version and author credits -->
   <small>
     Versio 1.0 &nbsp; | &nbsp; © 2025 ORAOwl-projekti – Jouni Kiviperä & Atte Stenroos
   </small>
