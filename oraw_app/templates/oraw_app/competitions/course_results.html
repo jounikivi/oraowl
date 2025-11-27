@@ -43,42 +43,64 @@
   {# Tulostaulukko                                                #}
   {# ------------------------------------------------------------ #}
   <div class="card shadow-sm">
-    <div class="card-header">
-      Tulokset / Results
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h2 class="h5 mb-0">Tulokset / Results</h2>
+      <span class="small text-muted">
+        {{ results|length }} tulosta
+      </span>
     </div>
 
     {% if results %}
       <div class="table-responsive m-0">
-        <table class="table table-sm table-hover align-middle mb-0">
-          <thead>
+        <table class="table table-sm table-striped table-hover align-middle mb-0">
+          <thead class="thead-light">
             <tr>
-              <th style="width: 60px;">#</th>
+              <th style="width: 70px;" class="text-center">Sija</th>
               <th>Urheilija / Athlete</th>
-              <th style="width: 80px;">Status</th>
-              <th style="width: 120px;">Aika (s)</th>
-              <th style="width: 100px;">Ero</th>
+              <th style="width: 140px;">Seura / Club</th>
+              <th style="width: 90px;" class="text-center">Status</th>
+              <th style="width: 120px;" class="text-right">Aika (s)</th>
+              <th style="width: 100px;" class="text-right">Ero</th>
             </tr>
           </thead>
           <tbody>
             {% for result in results %}
               <tr
                 class="
-                  {% if result.status == 'OK' %}
+                  {% if result.position == 1 and result.status == 'OK' %}
                     table-success
-                  {% endif %}
-                  {% if result.status == 'DNF' or result.status == 'DSQ' %}
+                  {% elif result.status == 'DNF' or result.status == 'DSQ' %}
                     table-danger
                   {% endif %}
                 "
               >
-                <td>
+                {# Sija + mitalit #}
+                <td class="text-center">
                   {% if result.position %}
-                    {{ result.position }}
+                    {% if result.position == 1 %}
+                      <span title="Voittaja">
+                        <i class="fas fa-medal text-warning"></i>
+                        {{ result.position }}
+                      </span>
+                    {% elif result.position == 2 %}
+                      <span title="2. sija">
+                        <i class="fas fa-medal text-secondary"></i>
+                        {{ result.position }}
+                      </span>
+                    {% elif result.position == 3 %}
+                      <span title="3. sija">
+                        <i class="fas fa-medal" style="color:#cd7f32;"></i>
+                        {{ result.position }}
+                      </span>
+                    {% else %}
+                      {{ result.position }}
+                    {% endif %}
                   {% else %}
                     –
                   {% endif %}
                 </td>
 
+                {# Urheilija #}
                 <td>
                   {% if result.athlete %}
                     <a href="{% url 'oraw_app:athletes_detail' result.athlete.pk %}">
@@ -89,23 +111,49 @@
                   {% endif %}
                 </td>
 
+                {# Seura / Club (näytetään vain jos löytyy) #}
                 <td>
-                  {{ result.status }}
-                </td>
-
-                <td>
-                  {% if result.finish_time_s %}
-                    {{ result.finish_time_s }}
+                  {% if result.athlete and result.athlete.club %}
+                    {{ result.athlete.club }}
                   {% else %}
-                    –
+                    <span class="text-muted small">–</span>
                   {% endif %}
                 </td>
 
-                <td>
-                  {% if result.diff_to_winner_display %}
-                    {{ result.diff_to_winner_display }}
+                {# Status badge #}
+                <td class="text-center">
+                  {% if result.status == 'OK' %}
+                    <span class="badge badge-success">OK</span>
+                  {% elif result.status == 'DNF' or result.status == 'DSQ' %}
+                    <span class="badge badge-danger">{{ result.status }}</span>
                   {% else %}
-                    –
+                    <span class="badge badge-secondary">{{ result.status }}</span>
+                  {% endif %}
+                </td>
+
+                {# Aika sekunteina #}
+                <td class="text-right">
+                  {% if result.finish_time_s %}
+                    <span class="text-monospace">
+                      {{ result.finish_time_s }}
+                    </span>
+                  {% else %}
+                    <span class="text-muted">–</span>
+                  {% endif %}
+                </td>
+
+                {# Ero voittajaan #}
+                <td class="text-right">
+                  {% if result.diff_to_winner_display %}
+                    {% if result.diff_to_winner_display == "0" %}
+                      <span class="text-monospace text-muted">0</span>
+                    {% else %}
+                      <span class="text-monospace">
+                        {{ result.diff_to_winner_display }}
+                      </span>
+                    {% endif %}
+                  {% else %}
+                    <span class="text-muted">–</span>
                   {% endif %}
                 </td>
               </tr>
