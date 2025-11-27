@@ -1,12 +1,14 @@
 {# oraw_app/templates/oraw_app/competitions/result_detail.html #}
 {% extends "oraw_app/base.html" %}
 
-{% block title %}Tulos – {{ result }}{% endblock %}
+{% block title %}Tulos – {{ result.athlete }} / {{ course.name }}{% endblock %}
 
 {% block content %}
 <div class="container my-4">
 
-  <!-- Breadcrumb -->
+  {# ------------------------------------------------------------ #}
+  {# Breadcrumb                                                   #}
+  {# ------------------------------------------------------------ #}
   <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb small bg-transparent px-0 mb-0">
       <li class="breadcrumb-item">
@@ -15,31 +17,29 @@
       <li class="breadcrumb-item">
         <a href="{% url 'oraw_app:competition_list' %}">Kilpailut</a>
       </li>
-      {% if competition %}
-        <li class="breadcrumb-item">
-          <a href="{% url 'oraw_app:competition_detail' competition.pk %}">
-            {{ competition.name }}
-          </a>
-        </li>
-      {% endif %}
-      {% if course %}
-        <li class="breadcrumb-item">
-          <a href="{% url 'oraw_app:course_results' competition_id=competition.pk course_id=course.pk %}">
-            {{ course.name }}
-          </a>
-        </li>
-      {% endif %}
+      <li class="breadcrumb-item">
+        <a href="{% url 'oraw_app:competition_detail' competition.pk %}">
+          {{ competition.name }}
+        </a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'oraw_app:course_results' competition.pk course.pk %}">
+          {{ course.name }}
+        </a>
+      </li>
       <li class="breadcrumb-item active" aria-current="page">
         Tulos
       </li>
     </ol>
   </nav>
 
-  <h1 class="h4 mb-3">
-    Tulos / Result
-  </h1>
-
+  {# ------------------------------------------------------------ #}
+  {# Yhteenveto-kortti                                            #}
+  {# ------------------------------------------------------------ #}
   <div class="card shadow-sm mb-3">
+    <div class="card-header">
+      <h1 class="h5 mb-0">Tulos / Result</h1>
+    </div>
     <div class="card-body">
       <dl class="row mb-0">
         <dt class="col-sm-3">Urheilija / Athlete</dt>
@@ -49,61 +49,117 @@
               {{ result.athlete }}
             </a>
           {% else %}
-            (Tuntematon)
+            –
           {% endif %}
         </dd>
 
         <dt class="col-sm-3">Kilpailu / Competition</dt>
         <dd class="col-sm-9">
-          {% if competition %}
-            {{ competition.name }}
-            {% if competition.date %}
-              ({{ competition.date }})
-            {% endif %}
-          {% else %}
-            –
-          {% endif %}
+          {{ competition.name }}
+          {% if competition.date %} ({{ competition.date|date:"j. F Y" }}){% endif %}
         </dd>
 
         <dt class="col-sm-3">Sarja / Course</dt>
         <dd class="col-sm-9">
-          {% if course %}
-            {{ course.name }}
-          {% else %}
-            –
-          {% endif %}
+          {{ course.name }}
         </dd>
 
         <dt class="col-sm-3">Status</dt>
         <dd class="col-sm-9">
-          {{ result.status }}
+          {% if result.status == "OK" %}
+            <span class="badge badge-success">OK</span>
+          {% elif result.status == "DNF" or result.status == "DSQ" %}
+            <span class="badge badge-danger">{{ result.status }}</span>
+          {% else %}
+            <span class="badge badge-secondary">{{ result.status }}</span>
+          {% endif %}
         </dd>
 
         <dt class="col-sm-3">Aika (s)</dt>
         <dd class="col-sm-9">
           {% if result.finish_time_s %}
-            {{ result.finish_time_s }}
+            <span class="text-monospace">{{ result.finish_time_s }}</span>
           {% else %}
-            –
+            <span class="text-muted">–</span>
           {% endif %}
         </dd>
       </dl>
     </div>
   </div>
 
-  <div class="d-flex gap-2">
-    {% if course and competition %}
-      <a href="{% url 'oraw_app:course_results' competition_id=competition.pk course_id=course.pk %}"
-         class="btn btn-outline-secondary btn-sm">
-        ← Takaisin sarjan tuloksiin
-      </a>
+  {# ------------------------------------------------------------ #}
+  {# Väliajat / Splits                                            #}
+  {# ------------------------------------------------------------ #}
+  <div class="card shadow-sm mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h2 class="h5 mb-0">Väliajat / Splits</h2>
+      <span class="small text-muted">
+        {{ splits|length }} rastia
+      </span>
+    </div>
+
+    {% if splits %}
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0">
+          <thead class="thead-light">
+            <tr>
+              <th style="width: 70px;">#</th>
+              <th style="width: 100px;">Rasti / Control</th>
+              <th class="text-right" style="width: 140px;">Väliaika (s)</th>
+              <th class="text-right" style="width: 160px;">Kumulatiivinen (s)</th>
+              <th>Huomautus / Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for split in splits %}
+              <tr>
+                <td>{{ split.seq }}</td>
+                <td>{{ split.control_code }}</td>
+                <td class="text-right">
+                  {% if split.split_time_s %}
+                    <span class="text-monospace">{{ split.split_time_s }}</span>
+                  {% else %}
+                    <span class="text-muted">–</span>
+                  {% endif %}
+                </td>
+                <td class="text-right">
+                  {% if split.cum_time_s %}
+                    <span class="text-monospace">{{ split.cum_time_s }}</span>
+                  {% else %}
+                    <span class="text-muted">–</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if split.notes %}
+                    {{ split.notes }}
+                  {% else %}
+                    <span class="text-muted">–</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="card-body text-muted">
+        Ei väliaikoja tälle tulokselle. / No split times for this result.
+      </div>
     {% endif %}
-    {% if competition %}
-      <a href="{% url 'oraw_app:competition_detail' competition.pk %}"
-         class="btn btn-outline-secondary btn-sm">
-        ← Takaisin kilpailuun
-      </a>
-    {% endif %}
+  </div>
+
+  {# ------------------------------------------------------------ #}
+  {# Takaisin-linkit                                              #}
+  {# ------------------------------------------------------------ #}
+  <div class="d-flex flex-wrap gap-2">
+    <a href="{% url 'oraw_app:course_results' competition.pk course.pk %}"
+       class="btn btn-outline-secondary btn-sm">
+      ← Takaisin sarjan tuloksiin
+    </a>
+    <a href="{% url 'oraw_app:competition_detail' competition.pk %}"
+       class="btn btn-outline-secondary btn-sm">
+      ← Takaisin kilpailuun
+    </a>
     <a href="{% url 'oraw_app:competition_list' %}"
        class="btn btn-outline-secondary btn-sm">
       ← Kilpailulista

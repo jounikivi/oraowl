@@ -1,84 +1,162 @@
+{# oraw_app/templates/oraw_app/athletes/index.html #}
 {% extends "oraw_app/base.html" %}
 
 {% block title %}Urheilijat / Athletes{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container my-4">
 
-  <!-- Breadcrumb -->
-  <nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
-      <li class="breadcrumb-item"><a href="{% url 'oraw_app:home' %}">Etusivu</a></li>
-      <li class="breadcrumb-item active" aria-current="page">Urheilijat</li>
+  {# ------------------------------------------------------------ #}
+  {# Breadcrumb                                                   #}
+  {# ------------------------------------------------------------ #}
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small bg-transparent px-0 mb-0">
+      <li class="breadcrumb-item">
+        <a href="{% url 'oraw_app:home' %}">Etusivu</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        Urheilijat
+      </li>
     </ol>
   </nav>
 
-  <h2 class="mb-3">Urheilijat / Athletes</h2>
+  {# ------------------------------------------------------------ #}
+  {# Otsikko + määrä                                              #}
+  {# ------------------------------------------------------------ #}
+  <div class="d-flex justify-content-between align-items-end mb-2">
+    <h1 class="h4 mb-0">Urheilijat / Athletes</h1>
+    <span class="small text-muted">
+      {{ athletes|length }} urheilijaa
+    </span>
+  </div>
 
-  <!-- Search Bar -->
-  <form method="get" class="row g-3 mb-4">
-    <div class="col-md-4">
-      <input type="text" name="name" value="{{ request.GET.name }}" class="form-control"
-             placeholder="Etsi nimellä / Search by name">
+  {# ------------------------------------------------------------ #}
+  {# Hakulomake                                                   #}
+  {# ------------------------------------------------------------ #}
+  <div class="card shadow-sm mb-3">
+    <div class="card-body py-3">
+      <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label for="id_name" class="form-label small text-muted mb-1">
+            Etsi nimellä / Search by name
+          </label>
+          <input
+            id="id_name"
+            type="text"
+            name="name"
+            value="{{ request.GET.name }}"
+            class="form-control"
+            placeholder="Esim. Aino Aalto"
+          >
+        </div>
+
+        <div class="col-md-4">
+          <label for="id_club" class="form-label small text-muted mb-1">
+            Seura / Club
+          </label>
+          <input
+            id="id_club"
+            type="text"
+            name="club"
+            value="{{ request.GET.club }}"
+            class="form-control"
+            placeholder="Esim. Angelniemen Ankkuri"
+          >
+        </div>
+
+        <div class="col-md-2 d-grid">
+          <button type="submit" class="btn btn-primary mt-3 mt-md-0">
+            Hae / Search
+          </button>
+        </div>
+
+        <div class="col-md-2 d-grid">
+          <a href="{% url 'oraw_app:athletes_index' %}"
+             class="btn btn-outline-secondary mt-3 mt-md-0">
+            Tyhjennä / Reset
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {# ------------------------------------------------------------ #}
+  {# Taulukko                                                     #}
+  {# ------------------------------------------------------------ #}
+  <div class="card shadow-sm">
+    <div class="card-header">
+      <h2 class="h5 mb-0">Urheilijalista / Athlete list</h2>
     </div>
 
-    <div class="col-md-4">
-      <input type="text" name="club" value="{{ request.GET.club }}" class="form-control"
-             placeholder="Seura / Club">
-    </div>
-
-    <div class="col-md-2 d-grid">
-      <button type="submit" class="btn btn-primary">Hae / Search</button>
-    </div>
-
-    <div class="col-md-2 d-grid">
-      <a href="{% url 'oraw_app:athletes_index' %}" class="btn btn-outline-secondary">Tyhjennä / Reset</a>
-    </div>
-  </form>
-
-  <!-- Table -->
-  <div class="table-responsive">
-    <table class="table table-hover align-middle">
-      <thead class="table-light">
-        <tr>
-          <th>#</th>
-          <th>Nimi / Name</th>
-          <th>Seura / Club</th>
-          <th>Sukupuoli / Gender</th>
-          <th>Syntymävuosi / Birth year</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for athlete in athletes %}
+    <div class="table-responsive">
+      <table class="table table-sm table-hover align-middle mb-0">
+        <thead class="thead-light">
           <tr>
-            <td>{{ forloop.counter }}</td>
-
-            <td>
-              <a class="text-success fw-semibold"
-                 href="{% url 'oraw_app:athletes_detail' athlete.pk %}">
-                {{ athlete.full_name|default:athlete }}
-              </a>
-            </td>
-
-            <td>{{ athlete.club|default:"–" }}</td>
-            <td>{{ athlete.gender|default:"–" }}</td>
-            <td>{{ athlete.birth_year|default:"–" }}</td>
-
-            <td>
-              <a href="{% url 'oraw_app:athletes_detail' athlete.pk %}"
-                 class="btn btn-outline-primary btn-sm">
-                Näytä tiedot →
-              </a>
-            </td>
+            <th style="width: 60px;">#</th>
+            <th>Nimi / Name</th>
+            <th style="width: 220px;">Seura / Club</th>
+            <th style="width: 140px;">Sukupuoli / Gender</th>
+            <th style="width: 140px;">Syntymävuosi / Birth year</th>
+            <th style="width: 130px;"></th>
           </tr>
-        {% empty %}
-          <tr><td colspan="6" class="text-muted text-center py-4">
-            Ei urheilijoita. / No athletes found.
-          </td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {% for athlete in athletes %}
+            <tr>
+              <td class="text-muted">
+                {{ forloop.counter }}
+              </td>
+
+              <td>
+                <a class="text-success fw-semibold"
+                   href="{% url 'oraw_app:athletes_detail' athlete.pk %}">
+                  {{ athlete.full_name|default:athlete }}
+                </a>
+              </td>
+
+              <td>
+                {% if athlete.club %}
+                  {{ athlete.club }}
+                {% else %}
+                  <span class="text-muted">–</span>
+                {% endif %}
+              </td>
+
+              <td>
+                {% if athlete.gender %}
+                  <span class="badge badge-light border">
+                    {{ athlete.gender }}
+                  </span>
+                {% else %}
+                  <span class="text-muted">–</span>
+                {% endif %}
+              </td>
+
+              <td>
+                {% if athlete.birth_year %}
+                  {{ athlete.birth_year }}
+                {% else %}
+                  <span class="text-muted">–</span>
+                {% endif %}
+              </td>
+
+              <td class="text-end">
+                <a href="{% url 'oraw_app:athletes_detail' athlete.pk %}"
+                   class="btn btn-outline-primary btn-sm">
+                  Näytä tiedot →
+                </a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="6" class="text-muted text-center py-4">
+                Ei urheilijoita. / No athletes found.
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 
 </div>

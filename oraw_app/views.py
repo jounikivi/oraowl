@@ -172,7 +172,13 @@ class ResultDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         result = self.object
 
-        context["splits"] = Split.objects.filter(result=result).order_by("leg")
+        # Hae kaikki väliajat tälle tulokselle, järjestys numeron (seq) mukaan
+        context["splits"] = (
+            Split.objects
+            .filter(result=result)
+            .order_by("seq")
+        )
+
         context["competition"] = result.course.competition
         context["course"] = result.course
 
@@ -331,3 +337,21 @@ class UserLogoutView(LogoutView):
 class AdminDashboardView(PermissionRequiredMixin, TemplateView):
     permission_required = "oraw_app.can_access_admin"
     template_name = "oraw_app/admin/dashboard.html"
+    
+# ========================================================================
+# User profile
+# ========================================================================
+
+class UserProfileView(LoginRequiredMixin, TemplateView):
+    template_name = "oraw_app/accounts/profile.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+
+        context["user_obj"] = user
+        context["groups"] = user.groups.all().order_by("name")
+        context["permissions"] = sorted(user.get_all_permissions())
+
+        return context
+

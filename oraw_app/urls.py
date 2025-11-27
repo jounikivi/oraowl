@@ -153,4 +153,6 @@ urlpatterns = [
         views.AdminDashboardView.as_view(),
         name="admin_dashboard",
     ),
+    
+    path("profiili/", views.UserProfileView.as_view(), name="user_profile"),
 ]
