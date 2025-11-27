@@ -8,7 +8,8 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, FormView, TemplateView
-from django.contrib.auth import login
+from django.contrib.auth import login, logout
+from django.shortcuts import redirect
 from django.contrib.auth.views import LogoutView
 from django.http import Http404
 from django.contrib.auth import get_user_model
@@ -330,8 +331,13 @@ class SignupView(FormView):
         return super().form_valid(form)
 
 
-class UserLogoutView(LogoutView):
-    next_page = reverse_lazy("oraw_app:home")
+def logout_view(request):
+    """
+    Kirjaa käyttäjän ulos ja ohjaa etusivulle.
+    Sallii tavallisen GET-pyynnön (napin klikkaus).
+    """
+    logout(request)
+    return redirect("oraw_app:home")
 
 
 class AdminDashboardView(PermissionRequiredMixin, TemplateView):
@@ -354,4 +360,16 @@ class UserProfileView(LoginRequiredMixin, TemplateView):
         context["permissions"] = sorted(user.get_all_permissions())
 
         return context
+    
+    
+# ========================================================================
+
+class PrivacyPolicyView(TemplateView):
+    """Static privacy policy page for demo version."""
+    template_name = "oraw_app/privacy.html"
+
+
+class TermsOfUseView(TemplateView):
+    """Static terms of use page for demo version."""
+    template_name = "oraw_app/terms.html"
 

@@ -79,11 +79,13 @@ urlpatterns = [
         LoginView.as_view(template_name="oraw_app/accounts/login.html"),
         name="login",
     ),
+    
     path(
-        "tili/ulos/",
-        views.UserLogoutView.as_view(),
-        name="logout",
+    "tili/ulos/",
+    views.logout_view,
+    name="logout",
     ),
+
     path(
         "tili/rekisteroidy/",
         views.SignupView.as_view(),
@@ -155,4 +157,17 @@ urlpatterns = [
     ),
     
     path("profiili/", views.UserProfileView.as_view(), name="user_profile"),
+    
+        # Legal pages
+    path(
+        "tietosuoja/",
+        views.PrivacyPolicyView.as_view(),
+        name="privacy",
+    ),
+    path(
+        "kayttoehdot/",
+        views.TermsOfUseView.as_view(),
+        name="terms",
+    ),
+
 ]

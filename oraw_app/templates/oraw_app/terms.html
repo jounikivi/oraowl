@@ -1,0 +1,68 @@
+{% extends "oraw_app/base.html" %}
+
+{% block title %}Käyttöehdot | ORAOwl{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h1 class="h3 mb-3">Käyttöehdot</h1>
+                    <p class="text-muted mb-4">
+                        Nämä ehdot kuvaavat ORAOwl-järjestelmän 1.0 demoversion käyttöä.
+                        Ehtoja voidaan tarkentaa ennen varsinaista tuotantokäyttöä.
+                    </p>
+
+                    <h2 class="h5 mt-3">1. Palvelun tarkoitus</h2>
+                    <p>
+                        ORAOwl on suunnistustulosten arkisto- ja analysointityökalu, jonka avulla
+                        voidaan selata kilpailuja, sarjoja ja urheilijoita sekä tarkastella
+                        tuloksia ja väliaikoja.
+                    </p>
+
+                    <h2 class="h5 mt-3">2. Demoversion luonne</h2>
+                    <p>
+                        Tämä versio on demokäyttöön tarkoitettu ohjelmiston esiversio. Järjestelmässä
+                        voi esiintyä keskeneräisiä ominaisuuksia ja muutoksia voidaan tehdä
+                        ilman erillistä ilmoitusta.
+                    </p>
+
+                    <h2 class="h5 mt-3">3. Käyttäjän vastuut</h2>
+                    <p>
+                        Käyttäjä sitoutuu käyttämään palvelua hyvän tavan mukaisesti ja noudattamaan
+                        mahdollisia järjestelmän ylläpidon antamia ohjeita. Käyttäjä vastaa siitä,
+                        että hänellä on oikeus syöttämäänsä dataan (esimerkiksi tuodut tulostiedostot).
+                    </p>
+
+                    <h2 class="h5 mt-3">4. Henkilötietojen käsittely</h2>
+                    <p>
+                        Henkilötietojen käsittelyä kuvataan tarkemmin tietosuojaselosteessa
+                        (<a href="{% url 'oraw_app:privacy' %}">Tietosuoja</a>). Demovaiheessa
+                        järjestelmän käyttöä voidaan rajata pieneen testikäyttäjäryhmään.
+                    </p>
+
+                    <h2 class="h5 mt-3">5. Vastuunrajoitus</h2>
+                    <p>
+                        Palvelu tarjotaan &quot;sellaisena kuin se on&quot;. ORAOwl-projekti tai
+                        toimeksiantaja ei vastaa mahdollisista virheistä tai datan puutteellisuuksista,
+                        eikä palvelun käytöstä aiheutuvista välillisistä vahingoista.
+                    </p>
+
+                    <h2 class="h5 mt-3">6. Muutokset</h2>
+                    <p>
+                        Järjestelmän toiminnallisuuksia, käyttöehtoja ja tietosuojakäytäntöjä voidaan
+                        päivittää kehitystyön edetessä. Merkittävistä muutoksista voidaan tiedottaa
+                        erikseen käyttäjille.
+                    </p>
+
+                    <p class="text-muted mt-4 mb-0 small">
+                        Tämä dokumentti on tarkoitettu ORAOwl-järjestelmän 1.0 demoversion
+                        taustamateriaaliksi, eikä se ole juridinen lopullinen sopimus.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

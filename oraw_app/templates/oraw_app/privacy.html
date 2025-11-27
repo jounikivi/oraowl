@@ -1,0 +1,75 @@
+{% extends "oraw_app/base.html" %}
+
+{% block title %}Tietosuoja | ORAOwl{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h1 class="h3 mb-3">Tietosuoja</h1>
+                    <p class="text-muted mb-4">
+                        Tämä sivu kuvaa ORAOwl-järjestelmän 1.0 demoversion tietosuojaperiaatteet.
+                        Sisältöä voidaan tarkentaa ennen tuotantokäyttöä.
+                    </p>
+
+                    <h2 class="h5 mt-3">1. Rekisterinpitäjä</h2>
+                    <p>
+                        Rekisterinpitäjänä toimii ORAOwl-projekti / toimeksiantaja. Tarkemmat yhteystiedot
+                        voidaan täydentää lopulliseen versioon.
+                    </p>
+
+                    <h2 class="h5 mt-3">2. Kerättävät henkilötiedot</h2>
+                    <p>
+                        Järjestelmä käsittelee suunnistuskilpailujen tulostietoja, jotka voivat
+                        sisältää esimerkiksi kilpailijan nimen, seuran ja sarjan. Lisäksi
+                        käyttäjätunnusten yhteydessä tallennetaan käyttäjätilin perustiedot
+                        (käyttäjätunnus, nimi, sähköpostiosoite).
+                    </p>
+
+                    <h2 class="h5 mt-3">3. Tietojen käyttötarkoitus</h2>
+                    <p>
+                        Tietoja käytetään suunnistustulosten arkistointiin, selailuun ja
+                        analysointiin sekä viestijoukkueiden valinnan tukemiseen.
+                    </p>
+
+                    <h2 class="h5 mt-3">4. Tietojen säilytys ja suojaus</h2>
+                    <p>
+                        Tiedot tallennetaan suojattuun tietokantaan. Käyttöoikeudet on rajattu
+                        vain niille käyttäjille, joilla on järjestelmän käytön kannalta
+                        perusteltu tarve.
+                    </p>
+
+                    <h2 class="h5 mt-3">5. Oikeus tietojen tarkastamiseen ja poistoon</h2>
+                    <p>
+                        Järjestelmän tavoitteena on tukea henkilön oikeutta pyytää omien tietojensa
+                        tarkastamista sekä tarvittaessa tulosten anonymisointia tai poistamista.
+                        Demovaiheessa pyyntöjä voidaan käsitellä ottamalla yhteyttä järjestelmän
+                        ylläpitoon.
+                    </p>
+
+                    <h2 class="h5 mt-3">6. Evästeet ja lokitiedot</h2>
+                    <p>
+                        Järjestelmää voidaan kehittää hyödyntämällä teknisiä lokitietoja
+                        (esimerkiksi virhelokit ja käyttötilastot). Varsinainen evästekäytäntö voidaan
+                        tarkentaa tuotantokäyttöön siirryttäessä.
+                    </p>
+
+                    <h2 class="h5 mt-3">7. Yhteystiedot</h2>
+                    <p>
+                        Tietosuojaan liittyvissä kysymyksissä tai tietopyynnöissä voi olla yhteydessä
+                        järjestelmän ylläpitoon. Tarkemmat yhteystiedot lisätään lopulliseen
+                        versioon.
+                    </p>
+
+                    <p class="text-muted mt-4 mb-0 small">
+                        Tämä kuvaus on laadittu ORAOwl-järjestelmän 1.0 demoversiota varten, eikä se
+                        korvaa varsinaista juridista tietosuojaselostetta.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
