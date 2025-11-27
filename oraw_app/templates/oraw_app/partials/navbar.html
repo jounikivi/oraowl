@@ -1,65 +1,59 @@
 {% load static %}
-{% comment %}
-FI: Yläpalkki (navigaatiopalkki), joka näkyy kaikilla sivuilla.
-    Sisältää päävalikon, pikalinkit ja kirjautumistilan (login/logout).
-EN: Top navigation bar displayed on all pages.
-    Contains main navigation, quick links and login/logout state.
-{% endcomment %}
 
 <nav class="main-header navbar navbar-expand navbar-white navbar-light" style="background-color: #2E7D32;">
 
   <!-- ========================================================= -->
-  <!-- Left navigation section / Vasen valikko-osio -->
+  <!-- Left side of navbar -->
   <!-- ========================================================= -->
   <ul class="navbar-nav">
 
-    <!-- Menu toggle (hamburger) -->
+    <!-- Hamburger / sidebar toggle button -->
     <li class="nav-item">
       <a class="nav-link" data-widget="pushmenu" href="#" role="button">
         <i class="fas fa-bars text-white"></i>
       </a>
     </li>
 
-    <!-- Home link / Kotilinkki -->
+    <!-- Home -->
     <li class="nav-item d-none d-sm-inline-block">
       <a href="{% url 'oraw_app:home' %}" class="nav-link text-white">
         <i class="fas fa-home"></i> Koti
       </a>
     </li>
 
-    <!-- Competitions / Kilpailut -->
+    <!-- Competitions -->
     <li class="nav-item d-none d-sm-inline-block">
       <a href="{% url 'oraw_app:competition_list' %}" class="nav-link text-white">
         <i class="fas fa-flag-checkered"></i> Kilpailut
       </a>
     </li>
 
-    <!-- FI: Pikalinkki IOFXML-lataukseen (vain staff).
-         EN: Quick link to IOFXML upload (staff only). -->
-    {% if request.user.is_staff %}
-      <!-- Tänne myöhemmin linkki IOFXML-tuontiin -->
-    {% endif %}
+    <!-- Athletes -->
+    <li class="nav-item d-none d-sm-inline-block">
+      <a href="{% url 'oraw_app:athletes_index' %}" class="nav-link text-white">
+        <i class="fas fa-running"></i> Urheilijat
+      </a>
+    </li>
+
   </ul>
 
   <!-- ========================================================= -->
-  <!-- Right navigation section / Oikea valikko-osio -->
+  <!-- Right side (login / logout / profile) -->
   <!-- ========================================================= -->
   <ul class="navbar-nav ml-auto">
 
     {% if request.user.is_authenticated %}
-      <!-- FI: Näyttää kirjautuneen käyttäjän nimen ja valikon.
-           EN: Displays logged-in user's name and dropdown menu. -->
       <li class="nav-item dropdown">
         <a class="nav-link text-white" data-toggle="dropdown" href="#">
           <i class="fas fa-user-circle"></i> {{ request.user.username }}
         </a>
         <div class="dropdown-menu dropdown-menu-right">
           <a href="#" class="dropdown-item disabled">
-            <i class="fas fa-user mr-2"></i> Profiili
+            <i class="fas fa-user mr-2"></i> Profiili (tulossa)
           </a>
           <div class="dropdown-divider"></div>
 
-          <!-- Logout (POST) -->
+          <!-- logout -->
           <form method="post" action="{% url 'oraw_app:logout' %}" class="dropdown-item p-0 m-0">
             {% csrf_token %}
             <button type="submit" class="btn btn-link dropdown-item w-100 text-left">
@@ -68,16 +62,16 @@ EN: Top navigation bar displayed on all pages.
           </form>
         </div>
       </li>
+
     {% else %}
-      <!-- FI: Kirjautumislinkki näkyy, jos käyttäjä ei ole sisäänkirjautunut.
-           EN: Login link is shown when user is not authenticated. -->
+
       <li class="nav-item">
         <a href="{% url 'oraw_app:login' %}" class="nav-link text-white">
           <i class="fas fa-sign-in-alt"></i> Kirjaudu sisään
         </a>
       </li>
+
     {% endif %}
 
   </ul>
 </nav>
-<!-- /.navbar -->
