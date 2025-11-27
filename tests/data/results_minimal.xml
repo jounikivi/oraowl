@@ -4,9 +4,9 @@
             iofVersion="3.0"
             createTime="2025-01-01T12:00:00+00:00">
   <Event>
-    <Name>Test Event</Name>
+    <Name>Test Event2</Name>
     <StartTime>
-      <Date>2025-01-01</Date>
+      <Date>2024-01-01</Date>
     </StartTime>
     <Organiser>
       <Name>Test Club</Name>
