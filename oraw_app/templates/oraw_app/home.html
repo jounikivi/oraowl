@@ -1,21 +1,30 @@
 {% extends "oraw_app/base.html" %}
+{% load static %}
 
-{% block title %} ORAOwl – Orienteering Result Archive {% endblock %}
+{% block title %}ORAOwl – Orienteering Result Archive{% endblock %}
 
 {% block content %}
 <div class="container py-5">
 
     <!-- HERO SECTION -->
     <div class="text-center mb-5">
+
+        <!-- Logo -->
+        <div class="mb-3">
+            <img src="{% static 'adminlte/img/oraowl_logo_web.png' %}"
+                 alt="ORAOwl logo"
+                 style="max-height: 120px; width: auto;">
+        </div>
+
         <h1 class="display-5 fw-bold">ORAOwl – Orienteering Result Archive</h1>
-        <p class="lead text-muted">
+        <p class="lead text-muted mb-0">
             Suomen moderni suunnistustulosten arkisto ja analysointityökalu.
         </p>
     </div>
 
+    <!-- MAIN INTRO CARD -->
     <div class="row justify-content-center mb-5">
         <div class="col-lg-10">
-
             <div class="p-4 p-lg-5 bg-white shadow-sm rounded-3 border">
 
                 <div class="row">
@@ -34,19 +43,19 @@
                         <!-- Action buttons -->
                         <div class="d-flex flex-wrap gap-3 mt-4">
                             <a href="{% url 'oraw_app:competition_list' %}"
-                               class="btn btn-success btn-lg px-4">
+                               class="btn btn-success btn-lg px-4 me-2 mb-2">
                                 Selaa kilpailuja / Browse competitions →
                             </a>
-                            
+
                             <a href="{% url 'oraw_app:athletes_index' %}"
-                               class="btn btn-outline-success btn-lg px-4">
+                               class="btn btn-outline-success btn-lg px-4 mb-2">
                                 Etsi urheilijoita / Search athletes →
                             </a>
                         </div>
                     </div>
 
                     <div class="col-lg-5 mt-4 mt-lg-0">
-                        <div class="bg-light border rounded p-3 small">
+                        <div class="bg-light border rounded p-3 small h-100">
                             <strong>Miksi ORAOwl?</strong>
                             <ul class="mt-2 mb-0">
                                 <li>Moderni digitaalinen tulospankki suunnistajille ja seuroille.</li>
@@ -59,17 +68,57 @@
                 </div>
 
             </div>
-
         </div>
     </div>
 
+    <!-- WHO IS ORAOWL FOR? -->
+    <div class="row g-4 justify-content-center mb-5">
+        <div class="col-md-4">
+            <div class="bg-white p-4 shadow-sm rounded-3 border h-100 text-center">
+                <div class="mb-3">
+                    <i class="fas fa-chalkboard-teacher fa-2x text-success"></i>
+                </div>
+                <h5>Valmentajille</h5>
+                <p class="text-muted small mb-0">
+                    Helpottaa viestijoukkueiden valintaa ja urheilijoiden kehityksen seurantaa
+                    yhdestä paikasta.
+                </p>
+            </div>
+        </div>
 
-    <!-- BOTTOM CARDS (OPTIONAL SECTIONS) -->
+        <div class="col-md-4">
+            <div class="bg-white p-4 shadow-sm rounded-3 border h-100 text-center">
+                <div class="mb-3">
+                    <i class="fas fa-running fa-2x text-success"></i>
+                </div>
+                <h5>Urheilijoille</h5>
+                <p class="text-muted small mb-0">
+                    Mahdollisuus tarkastella omaa tuloshistoriaa, parhaita sijoituksia ja
+                    kehityssuuntaa eri kilpailuissa.
+                </p>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="bg-white p-4 shadow-sm rounded-3 border h-100 text-center">
+                <div class="mb-3">
+                    <i class="fas fa-flag-checkered fa-2x text-success"></i>
+                </div>
+                <h5>Kilpailunjärjestäjille</h5>
+                <p class="text-muted small mb-0">
+                    Yhtenäinen tapa tallettaa ja julkaista tuloksia IOFXML-muodossa
+                    tulevaa analytiikkaa varten.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- BOTTOM CARDS -->
     <div class="row g-4 justify-content-center">
 
         <!-- Competitions info -->
         <div class="col-md-5">
-            <div class="bg-white p-4 shadow-sm rounded-3 border">
+            <div class="bg-white p-4 shadow-sm rounded-3 border h-100">
                 <h4>Kilpailut ja sarjat</h4>
                 <p class="text-muted small">
                     Selaa kilpailuja, ratoja ja sarjoja – sprintistä pitkään matkaan.
@@ -84,7 +133,7 @@
 
         <!-- Athlete info -->
         <div class="col-md-5">
-            <div class="bg-white p-4 shadow-sm rounded-3 border">
+            <div class="bg-white p-4 shadow-sm rounded-3 border h-100">
                 <h4>Urheilijat ja kehityksen seuranta</h4>
                 <p class="text-muted small">
                     Katso urheilijan kilpailuhistoria, paras sijoitus ja kehityssuunta.

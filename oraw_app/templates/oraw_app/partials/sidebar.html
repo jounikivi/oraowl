@@ -16,7 +16,13 @@ EN: Application sidebar containing ORAOwl branding, user info,
   <!-- ========================================================= -->
   {# FI: Logo, joka vie etusivulle. EN: Logo that links to the home page. #}
   <a href="{% url 'oraw_app:home' %}" class="brand-link text-center">
-    <span class="brand-text font-weight-light text-white">ORAOwl</span>
+    <img src="{% static 'adminlte/img/oraowl_logo_simple.png' %}"
+         alt="ORAOwl logo"
+         class="brand-image img-circle elevation-3"
+         style="opacity: .95;">
+    <span class="brand-text font-weight-light text-white ml-1">
+      ORAOwl
+    </span>
   </a>
 
   <!-- ========================================================= -->
@@ -27,15 +33,22 @@ EN: Application sidebar containing ORAOwl branding, user info,
     <!-- ========================================================= -->
     <!-- User Panel / Käyttäjäpaneeli                             -->
     <!-- ========================================================= -->
-    <div class="user-panel mt-3 pb-3 mb-3 d-flex">
-      <div class="image">
-        {# Optional user image could go here #}
+    <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center border-bottom border-success">
+      <div class="image mr-2">
+        <i class="fas fa-user-circle text-white-50" style="font-size: 1.7rem;"></i>
       </div>
       <div class="info">
         {% if request.user.is_authenticated %}
-          <a href="#" class="d-block text-white">{{ request.user.username }}</a>
+          <span class="d-block text-white small">
+            Kirjautunut käyttäjä
+          </span>
+          <span class="d-block text-white font-weight-semibold">
+            {{ request.user.username }}
+          </span>
         {% else %}
-          <a href="{% url 'oraw_app:login' %}" class="d-block text-white">Ei kirjautunut</a>
+          <a href="{% url 'oraw_app:login' %}" class="d-block text-white">
+            Ei kirjautunut
+          </a>
         {% endif %}
       </div>
     </div>
@@ -52,7 +65,7 @@ EN: Application sidebar containing ORAOwl branding, user info,
       >
 
         <!-- ----------------------------------------------------- -->
-        <!-- Dashboard / Yleisnäkymä                              -->
+        <!-- Dashboard / Etusivu                                  -->
         <!-- ----------------------------------------------------- -->
         <li class="nav-item">
           <a href="{% url 'oraw_app:home' %}" class="nav-link text-white">
@@ -101,17 +114,17 @@ EN: Application sidebar containing ORAOwl branding, user info,
         {% endif %}
 
         <!-- ----------------------------------------------------- -->
-        <!-- Logout / Kirjaudu ulos                               -->
+        <!-- Login / Logout                                       -->
         <!-- ----------------------------------------------------- -->
         {% if request.user.is_authenticated %}
-        <li class="nav-item">
+        <li class="nav-item mt-2">
           <a href="{% url 'oraw_app:logout' %}" class="nav-link text-white">
             <i class="nav-icon fas fa-sign-out-alt"></i>
             <p>Kirjaudu ulos</p>
           </a>
         </li>
         {% else %}
-        <li class="nav-item">
+        <li class="nav-item mt-2">
           <a href="{% url 'oraw_app:login' %}" class="nav-link text-white">
             <i class="nav-icon fas fa-sign-in-alt"></i>
             <p>Kirjaudu sisään</p>
