@@ -56,7 +56,7 @@ class CompetitionDetailView(DetailView):
     Shows single competition with summary cards and list of courses.
     """
     model = Competition
-    template_name = "oraw_app/competition_detail.html"
+    template_name = "oraw_app/competitions/competition_detail.html"
     context_object_name = "competition"
 
     def get_context_data(self, **kwargs):
@@ -152,13 +152,14 @@ class AthleteListView(ListView):
         name = self.request.GET.get("name")
         club = self.request.GET.get("club")
         gender = self.request.GET.get("gender")
-
+        
         if name:
             qs = qs.filter(
                 Q(first_name__icontains=name)
                 | Q(last_name__icontains=name)
-                | Q(display_name__icontains=name)
+                | Q(public_alias__icontains=name)
             )
+
 
         if club:
             qs = qs.filter(club__icontains=club)
