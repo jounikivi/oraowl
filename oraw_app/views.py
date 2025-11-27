@@ -86,9 +86,14 @@ class CompetitionDetailView(DetailView):
 # Course results
 # ========================================================================
 
+# ========================================================================
+# Course results view
+# ========================================================================
+
 class CourseResultsView(DetailView):
     """
     Shows result list for a single course.
+    Public view: no login required.
     """
     model = Course
     pk_url_kwarg = "course_id"
@@ -96,10 +101,17 @@ class CourseResultsView(DetailView):
     context_object_name = "course"
 
     def get_context_data(self, **kwargs):
+        """
+        Adds:
+        - results: list of Result objects for this course
+        - competition: parent Competition
+        - result.diff_to_winner_display: time difference to course winner
+        """
         context = super().get_context_data(**kwargs)
         course = self.object
 
-        results = (
+        # Hae kaikki julkiset tulokset tälle radalle
+        results_qs = (
             Result.objects.filter(
                 course=course,
                 is_public=True,
@@ -108,11 +120,44 @@ class CourseResultsView(DetailView):
             .select_related("athlete", "course", "course__competition")
         )
 
+        # Selvitä voittaja: ensimmäinen OK-tulos, jolla on aika
+        winner = (
+            results_qs
+            .filter(status="OK", finish_time_s__isnull=False)
+            .order_by("finish_time_s")
+            .first()
+        )
+        winner_time = winner.finish_time_s if winner else None
+
+        # Laske ero voittajaan jokaiselle tulokselle
+        results = []
+        for r in results_qs:
+            r.diff_to_winner_display = None  # oletus, templaten "–"
+
+            if (
+                winner_time is not None
+                and r.status == "OK"
+                and r.finish_time_s is not None
+            ):
+                diff = r.finish_time_s - winner_time
+
+                if diff <= 0:
+                    # voittaja itse
+                    r.diff_to_winner_display = "0"
+                else:
+                    minutes, seconds = divmod(diff, 60)
+                    if minutes:
+                        # esim. +1:23
+                        r.diff_to_winner_display = f"+{minutes}:{seconds:02d}"
+                    else:
+                        # esim. +7
+                        r.diff_to_winner_display = f"+{seconds}"
+
+            results.append(r)
+
         context["results"] = results
         context["competition"] = course.competition
-
         return context
-
 
 # ========================================================================
 # Result detail (Splits)
