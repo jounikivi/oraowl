@@ -52,6 +52,9 @@ class CompetitionListView(ListView):
 
 
 class CompetitionDetailView(DetailView):
+    """
+    Shows single competition with summary cards and list of courses.
+    """
     model = Competition
     template_name = "oraw_app/competition_detail.html"
     context_object_name = "competition"
@@ -60,22 +63,21 @@ class CompetitionDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         competition = self.object
 
-        # Kaikki radat tälle kilpailulle
+        # All courses for this competition
         courses_qs = (
             competition.courses
             .prefetch_related("results")
             .order_by("name")
         )
 
-        # Kaikki tulokset tälle kilpailulle
-        context["ok_result_count"] = results_qs.filter(status="OK").count()
-        
+        # All results in this competition
+        results_qs = Result.objects.filter(course__competition=competition)
+
+        # Summary numbers for the info cards
         context["courses"] = courses_qs
         context["course_count"] = courses_qs.count()
         context["result_count"] = results_qs.count()
-        context["ok_result_count"] = results_qs.filter(
-            status=Result.Status.OK
-        ).count()
+        context["ok_result_count"] = results_qs.filter(status="OK").count()
 
         return context
 
@@ -85,6 +87,9 @@ class CompetitionDetailView(DetailView):
 # ========================================================================
 
 class CourseResultsView(DetailView):
+    """
+    Shows result list for a single course.
+    """
     model = Course
     pk_url_kwarg = "course_id"
     template_name = "oraw_app/competitions/course_results.html"
@@ -98,7 +103,6 @@ class CourseResultsView(DetailView):
             Result.objects.filter(
                 course=course,
                 is_public=True,
-                deleted_at__isnull=True
             )
             .order_by("position")
             .select_related("athlete", "course", "course__competition")
@@ -142,7 +146,6 @@ class AthleteListView(ListView):
     def get_queryset(self):
         qs = Athlete.objects.filter(
             is_public=True,
-            deleted_at__isnull=True
         ).order_by("last_name", "first_name")
 
         # Search filters
@@ -167,7 +170,7 @@ class AthleteListView(ListView):
 
 
 # ========================================================================
-# Athlete detail — TÄRKEIN KORJAUS / YHTEENVETO & KILPAILUHISTORIA
+# Athlete detail — summary & competition history
 # ========================================================================
 
 class AthleteDetailView(DetailView):
@@ -179,14 +182,11 @@ class AthleteDetailView(DetailView):
         context = super().get_context_data(**kwargs)
         athlete = self.object
 
-        # -------------------------------
-        # Tulokset
-        # -------------------------------
+        # All public results for this athlete
         results = (
             Result.objects.filter(
                 athlete=athlete,
                 is_public=True,
-                deleted_at__isnull=True,
                 course__competition__isnull=False,
             )
             .select_related("course", "course__competition")
@@ -194,9 +194,7 @@ class AthleteDetailView(DetailView):
         )
         context["results"] = results
 
-        # -------------------------------
-        # YHTEENVETO / STATISTICS
-        # -------------------------------
+        # Summary statistics
         total_results = results.count()
         competitions = {r.course.competition_id for r in results}
         competitions_count = len(competitions)
@@ -240,27 +238,30 @@ class IOFXMLUploadView(LoginRequiredMixin, FormView):
         uploaded_file = form.cleaned_data["file"]
         xml_bytes = uploaded_file.read()
 
-        # Saa yhden ImportReport-olion, ei tuplaa
-        report = import_iofxml_result_list(xml_bytes)
+        # Import returns a single ImportReport object
+        report = import_iofxml_result_list(
+            xml_bytes,
+            filename=uploaded_file.name,
+            uploaded_by=self.request.user,
+        )
 
-        # HUOM: kenttien nimet voivat olla hieman erilaisia,
-        # mutta idea on tämä – säädä nimet ImportReport-luokan mukaan
-        created = getattr(report, "created_results", 0)
-        updated = getattr(report, "updated_results", 0)
-        errors = getattr(report, "errors", [])
+        created = getattr(report, "results_created", 0)
+        updated = getattr(report, "results_updated", 0)
+        warnings_list = report.warnings or []
 
         messages.success(
             self.request,
             f"Tuonti valmis: {created} uutta tulosta, {updated} päivitettyä."
         )
 
-        if errors:
+        if warnings_list:
             messages.warning(
                 self.request,
-                f"{len(errors)} virhettä tiedostossa."
+                f"{len(warnings_list)} varoitusta IOFXML-tiedostosta."
             )
 
         return super().form_valid(form)
+
 
 # ========================================================================
 # Signup, Logout, Admin dashboard
