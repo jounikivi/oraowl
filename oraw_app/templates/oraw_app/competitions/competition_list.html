@@ -1,12 +1,14 @@
 {# oraw_app/templates/oraw_app/competitions/competition_list.html #}
 {% extends "oraw_app/base.html" %}
 
-{% block title %}Kilpailut{% endblock %}
+{% block title %}Kilpailut / Competitions{% endblock %}
 
 {% block content %}
 <div class="container my-4">
 
-  <!-- Breadcrumb / Sivupolku -->
+  {# ------------------------------------------------------------ #}
+  {# Breadcrumb                                                   #}
+  {# ------------------------------------------------------------ #}
   <nav aria-label="breadcrumb" class="mb-3">
     <ol class="breadcrumb small bg-transparent px-0 mb-0">
       <li class="breadcrumb-item">
@@ -18,82 +20,158 @@
     </ol>
   </nav>
 
-  <h1 class="h3 mb-3">
-    Kilpailut / Competitions
-  </h1>
+  {# ------------------------------------------------------------ #}
+  {# Otsikko + määrä                                              #}
+  {# ------------------------------------------------------------ #}
+  <div class="d-flex justify-content-between align-items-end mb-2">
+    <h1 class="h4 mb-0">Kilpailut / Competitions</h1>
 
-  <!-- Hakulomake -->
-  <div class="card mb-3">
-    <div class="card-body">
-      <form method="get" class="row g-2">
-        <div class="col-12 col-md-9">
+    <span class="small text-muted">
+      {% if is_paginated %}
+        Näytetään
+        {{ page_obj.start_index }}–{{ page_obj.end_index }}
+        / {{ page_obj.paginator.count }} kilpailua
+      {% else %}
+        {{ competitions|length }} kilpailua
+      {% endif %}
+    </span>
+  </div>
+
+  {# ------------------------------------------------------------ #}
+  {# Hakulomake                                                   #}
+  {# ------------------------------------------------------------ #}
+  <div class="card shadow-sm mb-3">
+    <div class="card-body py-3">
+      <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-6 col-lg-4">
+          <label for="id_q" class="form-label small text-muted mb-1">
+            Haku / Search
+          </label>
           <input
+            id="id_q"
             type="text"
             name="q"
-            value="{{ q }}"
+            value="{{ search_query }}"
             class="form-control"
-            placeholder="Hae kilpailuja nimellä, järjestäjällä tai paikkakunnalla..."
+            placeholder="Kilpailun nimi, paikka tai järjestäjä"
           >
         </div>
-        <div class="col-6 col-md-2">
-          <button type="submit" class="btn btn-primary w-100">
-            Hae
+
+        <div class="col-md-4 col-lg-3">
+          <button type="submit" class="btn btn-primary">
+            Hae kilpailuja
           </button>
-        </div>
-        <div class="col-6 col-md-1">
-          <a href="{% url 'oraw_app:competition_list' %}" class="btn btn-outline-secondary w-100">
-            Tyhjennä
-          </a>
+          {% if search_query %}
+            <a href="{% url 'oraw_app:competition_list' %}" class="btn btn-link btn-sm">
+              Tyhjennä haku
+            </a>
+          {% endif %}
         </div>
       </form>
     </div>
   </div>
 
-  {% if competitions %}
-    <div class="row g-3">
-      {% for competition in competitions %}
-        <div class="col-12 col-md-6 col-lg-4">
-          <div class="card shadow-sm h-100">
-            <div class="card-body d-flex flex-column">
-
-              <h2 class="h5 card-title mb-1">
-                {{ competition.name }}
-              </h2>
-
-              {% if competition.date or competition.location %}
-                <p class="card-subtitle text-muted small mb-2">
-                  {% if competition.date %}{{ competition.date }}{% endif %}
-                  {% if competition.location %} · {{ competition.location }}{% endif %}
-                </p>
-              {% endif %}
-
-              {% if competition.organiser %}
-                <p class="small text-muted mb-3">
-                  Järjestäjä / Organizer: {{ competition.organiser }}
-                </p>
-              {% endif %}
-
-              <div class="mt-auto pt-2">
-                <a
-                  href="{% url 'oraw_app:competition_detail' competition.pk %}"
-                  class="btn btn-outline-primary btn-sm w-100"
-                >
-                  Näytä kilpailu / View competition →
-                </a>
-              </div>
-            </div>
-          </div>
+  {# ------------------------------------------------------------ #}
+  {# Kilpailulista / table                                       #}
+  {# ------------------------------------------------------------ #}
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      {% if competitions %}
+        <div class="table-responsive">
+          <table class="table table-hover mb-0 align-middle">
+            <thead class="table-light">
+              <tr>
+                <th scope="col">Pvm / Date</th>
+                <th scope="col">Kilpailu / Competition</th>
+                <th scope="col">Paikka / Location</th>
+                <th scope="col">Järjestäjä / Organizer</th>
+                <th scope="col" class="text-end">Ratoja</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for competition in competitions %}
+                <tr>
+                  <td class="small text-nowrap">
+                    {{ competition.date|date:"d.m.Y" }}
+                  </td>
+                  <td>
+                    <a href="{% url 'oraw_app:competition_detail' competition.pk %}">
+                      {{ competition.name }}
+                    </a>
+                  </td>
+                  <td class="small">
+                    {{ competition.location|default:"–" }}
+                  </td>
+                  <td class="small">
+                    {{ competition.organizer|default:"–" }}
+                  </td>
+                  <td class="text-end small text-muted">
+                    {{ competition.courses.count }}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <p class="text-muted mt-3">
-      {% if q %}
-        Ei kilpailuja haulla "<strong>{{ q }}</strong>".
       {% else %}
-        Ei kilpailuja. / No competitions.
+        <div class="p-4 text-center text-muted">
+          Ei kilpailuja hakuehdoilla.
+        </div>
       {% endif %}
-    </p>
+    </div>
+  </div>
+
+  {# ------------------------------------------------------------ #}
+  {# Sivutus (pagination)                                        #}
+  {# ------------------------------------------------------------ #}
+  {% if is_paginated %}
+    <nav aria-label="Kilpailulistan sivutus" class="mt-3">
+      <ul class="pagination pagination-sm justify-content-center mb-0">
+
+        {# Edellinen #}
+        <li class="page-item {% if not page_obj.has_previous %}disabled{% endif %}">
+          <a
+            class="page-link"
+            href="{% if page_obj.has_previous %}
+                     ?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}
+                   {% else %}# {% endif %}"
+          >
+            « Edellinen
+          </a>
+        </li>
+
+        {# Sivu numerot #}
+        {% for num in paginator.page_range %}
+          {% if num == page_obj.number %}
+            <li class="page-item active">
+              <span class="page-link">{{ num }}</span>
+            </li>
+          {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <li class="page-item">
+              <a
+                class="page-link"
+                href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}"
+              >
+                {{ num }}
+              </a>
+            </li>
+          {% endif %}
+        {% endfor %}
+
+        {# Seuraava #}
+        <li class="page-item {% if not page_obj.has_next %}disabled{% endif %}">
+          <a
+            class="page-link"
+            href="{% if page_obj.has_next %}
+                     ?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}
+                   {% else %}# {% endif %}"
+          >
+            Seuraava »
+          </a>
+        </li>
+
+      </ul>
+    </nav>
   {% endif %}
 
 </div>

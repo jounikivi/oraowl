@@ -34,22 +34,32 @@ class HomeView(TemplateView):
 # ========================================================================
 
 class CompetitionListView(ListView):
+    """
+    Public competition list with simple search and pagination.
+    """
     model = Competition
     template_name = "oraw_app/competitions/competition_list.html"
     context_object_name = "competitions"
+    paginate_by = 20  # show 20 competitions per page
 
     def get_queryset(self):
-        queryset = Competition.objects.all().order_by("-date")
+        qs = Competition.objects.all().order_by("-date")
 
         query = self.request.GET.get("q")
         if query:
-            queryset = queryset.filter(
+            qs = qs.filter(
                 Q(name__icontains=query)
                 | Q(location__icontains=query)
                 | Q(organizer__icontains=query)
             )
 
-        return queryset
+        return qs
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # so template can easily re-fill the search box
+        context["search_query"] = self.request.GET.get("q", "")
+        return context
 
 
 class CompetitionDetailView(DetailView):
@@ -71,8 +81,11 @@ class CompetitionDetailView(DetailView):
             .order_by("name")
         )
 
-        # All results in this competition
-        results_qs = Result.objects.filter(course__competition=competition)
+        # All public results in this competition
+        results_qs = Result.objects.filter(
+            course__competition=competition,
+            is_public=True,
+        )
 
         # Summary numbers for the info cards
         context["courses"] = courses_qs
@@ -81,6 +94,7 @@ class CompetitionDetailView(DetailView):
         context["ok_result_count"] = results_qs.filter(status="OK").count()
 
         return context
+
 
 
 # ========================================================================
