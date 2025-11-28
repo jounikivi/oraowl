@@ -1,10 +1,10 @@
 """
 FI: ORAOwl-sovelluksen asetukset (settings.py)
     Tämä tiedosto sisältää kaikki keskeiset Django-asetukset.
-    Kaikki kommentit ovat kaksikielisiä (FI/EN) projektin sääntöjen mukaisesti.
+    Kommentit ovat suomeksi ja englanniksi projektin sääntöjen mukaisesti.
 
 EN: Django settings for the ORAOwl project.
-    Includes all main configurations with bilingual comments (FI/EN).
+    Includes all main configurations with Finnish/English comments.
 """
 
 from pathlib import Path
@@ -17,42 +17,64 @@ import environ
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # ============================================================================
-# Environment variables / Ympäristömuuttujien lataus
+# Environment configuration / Ympäristömuuttujat
 # ============================================================================
-env = environ.Env(DEBUG=(bool, False))
-environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
+# FI: Käytetään django-environ -kirjastoa lukemaan .env-tiedoston arvot.
+# EN: Use django-environ to read environment variables from .env file.
+env = environ.Env(
+    DEBUG=(bool, True),
+)
+
+# FI: Luetaan .env-tiedosto projektin juuressa (jos se on olemassa).
+# EN: Read .env file from project root (if it exists).
+env_file = BASE_DIR / ".env"
+if env_file.exists():
+    environ.Env.read_env(env_file)
 
 # ============================================================================
-# Security / Tietoturva
+# Security / Turvallisuus
 # ============================================================================
-# FI: Salainen avain (.env-tiedostossa, ei koskaan julkisesti)
-# EN: Secret key (stored in .env, never committed to repository)
-SECRET_KEY = env("SECRET_KEY")
+# FI: Tuotannossa SECRET_KEY tulee aina .env-tiedostosta tai Renderin env-muuttujista.
+# EN: In production, SECRET_KEY must come from .env or Render environment variables.
+SECRET_KEY = env("SECRET_KEY", default="dev-secret-key-change-me")
 
-# FI: Kehityksessä DEBUG=True, tuotannossa False
-# EN: DEBUG=True for development, False for production
-DEBUG = env("DEBUG")
+# FI: DEBUG luetaan ympäristöstä. Paikallisesti True, Renderissä False.
+# EN: DEBUG comes from environment. True for local dev, False on Render.
+DEBUG = env.bool("DEBUG", default=True)
 
-# FI: Sallitut isäntäosoitteet (kehityksessä voidaan asettaa oletus)
-# EN: Allowed hosts list (can define a default for development)
-ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["127.0.0.1", "localhost"])
+# FI: Render-ympäristössä ALLOWED_HOSTS asetetaan env-muuttujalla, esim.:
+#     ALLOWED_HOSTS=oraowl.onrender.com
+# EN: On Render, set ALLOWED_HOSTS via env, e.g.:
+#     ALLOWED_HOSTS=oraowl.onrender.com
+ALLOWED_HOSTS = env.list(
+    "ALLOWED_HOSTS",
+    default=["127.0.0.1", "localhost"]
+)
 
 # ============================================================================
 # Application definition / Sovelluksen määrittely
 # ============================================================================
 INSTALLED_APPS = [
+    # Django core apps / Djangon ydin-sovellukset
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
+    # Third-party apps / Kolmannen osapuolen sovellukset
+    "sass_processor",  # jos käytätte SASSia
+
+    # Local apps / Paikalliset sovellukset
     "oraw_app",
-    "sass_processor",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # FI: Whitenoise voidaan lisätä myöhemmin, jos halutaan palvella staticeja suoraan.
+    # EN: Whitenoise can be added later if you want to serve static files via app server.
+    # "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -63,16 +85,18 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "oraowl.urls"
 
-# ============================================================================
-# Templates / Templatet
-# ============================================================================
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [
+            # FI: Voit lisätä erillisen templates-kansion tänne, jos tarvitset.
+            # EN: You can add extra template dirs here if needed.
+            # BASE_DIR / "templates",
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
+                "django.template.context_processors.debug",
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
@@ -84,8 +108,10 @@ TEMPLATES = [
 WSGI_APPLICATION = "oraowl.wsgi.application"
 
 # ============================================================================
-# Database / Tietokanta
+# Database / Tietokanta (SQLite demoa varten)
 # ============================================================================
+# FI: Demoversiossa käytetään SQLiteä. Myöhemmin voidaan vaihtaa PostgreSQL:ään.
+# EN: Use SQLite for the demo. You can switch to PostgreSQL later.
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -97,66 +123,61 @@ DATABASES = {
 # Password validation / Salasanavalidointi
 # ============================================================================
 AUTH_PASSWORD_VALIDATORS = [
-    {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
-    {"NAME": "django.contrib.auth.password_validation.MinimumLengthValidator"},
-    {"NAME": "django.contrib.auth.password_validation.CommonPasswordValidator"},
-    {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
+    {
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",  # noqa: E501
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+    },
+    {
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+    },
 ]
 
 # ============================================================================
-# Internationalization / Kansainvälistäminen
+# Internationalization / Kieli- ja aikavyöhykeasetukset
 # ============================================================================
-# FI: Käytetään suomen kieltä ja Suomen aikavyöhykettä.
-# EN: Use Finnish language and Finnish time zone.
 LANGUAGE_CODE = "fi"
 TIME_ZONE = "Europe/Helsinki"
-
 USE_I18N = True
+USE_L10N = True
 USE_TZ = True
 
 # ============================================================================
-# Static and media files / Staattiset ja mediatiedostot
+# Static files (CSS, JS, images) / Staattiset tiedostot
 # ============================================================================
+# FI: STATIC_ROOT = polku, johon collectstatic kerää tiedostot.
+# EN: STATIC_ROOT = where collectstatic will collect static files.
 STATIC_URL = "/static/"
-STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
-STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
-# FI: SCSS-käännös ja hakupolut
-# EN: SCSS compilation and search paths
-STATICFILES_FINDERS = [
-    "django.contrib.staticfiles.finders.FileSystemFinder",
-    "django.contrib.staticfiles.finders.AppDirectoriesFinder",
-    "sass_processor.finders.CssFinder",
+# FI: STATICFILES_DIRS = omat staattiset tiedostot (esim. /static).
+# EN: STATICFILES_DIRS = your own static directories (e.g. /static).
+STATICFILES_DIRS = [
+    BASE_DIR / "static",
 ]
 
+# FI: SASS-processori: mistä SASS-tiedostot löytyvät.
+# EN: SASS processor settings.
 SASS_PROCESSOR_ENABLED = True
-SASS_PROCESSOR_ROOT = os.path.join(BASE_DIR, "static")
+SASS_PROCESSOR_ROOT = BASE_DIR / "static"
 
-MEDIA_ROOT = BASE_DIR / "media"
-MEDIA_URL = "/media/"
-
-# ============================================================================
-# Authentication and Email / Kirjautuminen ja sähköposti
-# ============================================================================
-LOGIN_URL = "oraw_app:login"             # FI: minne @login_required ohjaa
-LOGIN_REDIRECT_URL = "oraw_app:home"     # FI: minne siirrytään kirjautumisen jälkeen
-
-# FI: Kehityksessä sähköpostit tulostetaan konsoliin.
-# EN: In development, emails are printed to console.
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
-DEFAULT_FROM_EMAIL = "ORAOwl <no-reply@oraowl.local>"
+# Jos myöhemmin otetaan Whitenoise käyttöön:
+# STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # ============================================================================
-# GDPR & Privacy (for future extension) / GDPR ja tietosuoja (laajennettava)
+# Authentication redirects / Kirjautumisen uudelleenohjaukset
 # ============================================================================
-# FI: Näitä asetuksia voidaan täydentää myöhemmin (esim. tietojen anonymisointi, auditointi).
-# EN: Reserved for future GDPR-related settings (e.g., anonymization, audit logging).
-
-# Example placeholders:
-# PRIVACY_ALLOW_ANONYMIZATION = True
-# PRIVACY_AUDIT_ENABLED = True
+# FI: Voit säätää nämä projektin URL-nimien mukaisiksi.
+# EN: Adjust these to match your URL names.
+LOGIN_URL = "oraw_app:login"
+LOGIN_REDIRECT_URL = "oraw_app:home"
+LOGOUT_REDIRECT_URL = "oraw_app:home"
 
 # ============================================================================
-# Default primary key / Oletus-ID
+# Default primary key / Oletus-ID-tyyppi
 # ============================================================================
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
