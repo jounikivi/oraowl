@@ -239,10 +239,14 @@ class AthleteListView(ListView):
 
 
 # ========================================================================
-# Athlete detail — summary & competition history
+# Athlete detail
 # ========================================================================
 
-class AthleteDetailView(DetailView):
+class AthleteDetailView(LoginRequiredMixin, DetailView):
+    """
+    Shows a single athlete with basic profile information and
+    a list of their results.
+    """
     model = Athlete
     template_name = "oraw_app/athletes/detail.html"
     context_object_name = "athlete"
@@ -252,46 +256,36 @@ class AthleteDetailView(DetailView):
         athlete = self.object
 
         # All public results for this athlete
-        results = (
-            Result.objects.filter(
-                athlete=athlete,
-                is_public=True,
-                course__competition__isnull=False,
-            )
-            .select_related("course", "course__competition")
+        athlete_results = (
+            Result.objects
+            .filter(athlete=athlete, is_public=True)
+            .select_related("course__competition")
             .order_by("-course__competition__date")
         )
-        context["results"] = results
 
-        # Summary statistics
-        total_results = results.count()
-        competitions = {r.course.competition_id for r in results}
-        competitions_count = len(competitions)
-        ok_results = results.filter(status="OK").count()
+        # Simple stats for header cards
+        total_results = athlete_results.count()
+        ok_results = athlete_results.filter(status="OK").count()
+        dnf_results = athlete_results.filter(status="DNF").count()
+        dsq_results = athlete_results.filter(status="DSQ").count()
 
         best_position = (
-            results.filter(position__isnull=False)
+            athlete_results
+            .exclude(position=None)
             .order_by("position")
             .values_list("position", flat=True)
             .first()
         )
 
-        latest_date = (
-            results.values_list("course__competition__date", flat=True).first()
-            if total_results > 0
-            else None
-        )
-
-        context["stats"] = {
-            "total_results": total_results,
-            "competitions_count": competitions_count,
-            "ok_results": ok_results,
-            "podiums": results.filter(position__in=[1, 2, 3]).count(),
-            "best_position": best_position,
-            "latest_date": latest_date,
-        }
+        context["results"] = athlete_results
+        context["total_results"] = total_results
+        context["ok_results"] = ok_results
+        context["dnf_results"] = dnf_results
+        context["dsq_results"] = dsq_results
+        context["best_position"] = best_position
 
         return context
+
 
 
 # ========================================================================
@@ -365,6 +359,9 @@ class AdminDashboardView(PermissionRequiredMixin, TemplateView):
 # ========================================================================
 
 class UserProfileView(LoginRequiredMixin, TemplateView):
+    """
+    Shows the logged-in user's profile information, groups and permissions.
+    """
     template_name = "oraw_app/accounts/profile.html"
 
     def get_context_data(self, **kwargs):
@@ -373,9 +370,11 @@ class UserProfileView(LoginRequiredMixin, TemplateView):
 
         context["user_obj"] = user
         context["groups"] = user.groups.all().order_by("name")
+        # permissions as a sorted list of strings, e.g. "oraw_app.add_result"
         context["permissions"] = sorted(user.get_all_permissions())
 
         return context
+
     
     
 # ========================================================================
