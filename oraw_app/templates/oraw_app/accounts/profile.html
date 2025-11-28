@@ -108,7 +108,7 @@
     </div>
 
     {# ---------------------------------------------------------- #}
-    {# Ryhmät, oikeudet ja toiminnot                              #}
+    {# Ryhmät, oikeudet, toiminnot ja lisäoikeusinfo              #}
     {# ---------------------------------------------------------- #}
     <div class="col-lg-6">
 
@@ -117,6 +117,8 @@
           <h2 class="h6 mb-0">Käyttöoikeudet / Access</h2>
         </div>
         <div class="card-body">
+
+          {# Ryhmät #}
           <h6 class="small text-uppercase text-muted mb-1">
             Ryhmät / Groups
           </h6>
@@ -134,17 +136,16 @@
           {% endif %}
 
           <p class="small text-muted mb-3">
-            Ryhmien kautta määritellään mm. oikeudet tulosten tuontiin ja
-            hallintanäkymien käyttöön. Jos tarvitset lisäoikeuksia, ota yhteyttä
-            järjestelmän ylläpitäjään.
+            Ryhmät määrittävät esimerkiksi tulosten tuonnin ja hallintanäkymien oikeudet.
           </p>
 
+          {# Tekniset oikeudet #}
           <h6 class="small text-uppercase text-muted mb-1">
-            Tekniset oikeudet
+            Tekniset oikeudet / Permissions
           </h6>
 
           {% if permissions %}
-            <div class="border rounded p-2 bg-light small" style="max-height: 220px; overflow-y: auto;">
+            <div class="border rounded p-2 bg-light small" style="max-height: 200px; overflow-y: auto;">
               <ul class="list-unstyled mb-0">
                 {% for perm in permissions %}
                   <li><code>{{ perm }}</code></li>
@@ -153,10 +154,40 @@
             </div>
           {% else %}
             <p class="small text-muted mb-0">
-              Ei erillisiä käyttöoikeuksia. Peruskäyttäjä näkee julkiset
-              kilpailut ja tulokset.
+              Ei erillisiä teknisiä käyttöoikeuksia.
             </p>
           {% endif %}
+
+          <hr class="my-3">
+
+          {# ------------------------------------------------------ #}
+          {# Lisäoikeuspyyntö – SIJAINTI TÄSSÄ, SELKEÄ JA TYYLIKÄS #}
+          {# ------------------------------------------------------ #}
+          <h6 class="small text-uppercase text-muted mb-1">
+            Lisäoikeudet
+          </h6>
+
+          <p class="small text-muted mt-1 mb-2">
+            Jos tarvitset lisäoikeuksia (esimerkiksi <strong>tulosten tuontiin</strong>
+            tai seuran <strong>tulosvastaavan rooliin</strong>), ota yhteyttä
+            järjestelmän ylläpitoon.
+          </p>
+
+          <div class="alert alert-light border small mb-0">
+            <p class="mb-1">
+              Lähetä viesti:
+            </p>
+            <p class="mb-1">
+              <strong>Sähköposti:</strong> <code>jounikivipera@gmail.com</code>
+            </p>
+            <p class="mb-0">
+              Kerro lyhyesti:
+              <br>– Kuka olet  
+              <br>– Mihin seuraan/ryhmään kuulut  
+              <br>– Miksi tarvitset oikeudet
+            </p>
+          </div>
+
         </div>
       </div>
 
@@ -178,9 +209,8 @@
           </div>
 
           <p class="small text-muted mb-0">
-            Salasanan vaihto ja uloskirjautuminen tapahtuvat turvallisesti
-            ORAOwl-järjestelmän kautta. Jos havaitset virheitä profiilitiedoissasi
-            tai käyttöoikeuksissasi, ota yhteyttä järjestelmän ylläpitoon.
+            Jos havaitset virheitä profiilitiedoissasi tai käyttöoikeuksissasi,
+            ota yhteyttä järjestelmän ylläpitoon.
           </p>
         </div>
       </div>
@@ -189,7 +219,7 @@
   </div>
 
   {# ------------------------------------------------------------ #}
-  {# Tietosuoja-info                                              #}
+  {# GDPR info                                                    #}
   {# ------------------------------------------------------------ #}
   <div class="row mt-3">
     <div class="col-lg-12">
