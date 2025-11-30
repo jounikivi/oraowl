@@ -93,6 +93,11 @@ class IOFXMLImporterMinimalTests(TestCase):
             uploaded_by=None,
         )
 
+        # FI: Varmistetaan, että ensimmäinen ajo myös raportoi luodut objektit.
+        # EN: Ensure the first run reports created objects as expected.
+        self.assertEqual(first_report.competitions_created, 1)
+        self.assertEqual(first_report.results_created, 1)
+
         self.assertEqual(Competition.objects.count(), 1)
         self.assertEqual(Course.objects.count(), 1)
         self.assertEqual(Athlete.objects.count(), 1)
