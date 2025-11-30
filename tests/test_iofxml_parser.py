@@ -6,7 +6,7 @@
 
 from __future__ import annotations
 
-#import os
+# import os
 from pathlib import Path
 import unittest
 
@@ -31,6 +31,9 @@ class IOFXMLParserMinimalTests(unittest.TestCase):
         EN: Ensure that basic fields are parsed correctly.
         """
         xml_path = DATA_DIR / "results_minimal.xml"
+        if not xml_path.exists():
+            self.skipTest(f"Test data file not found: {xml_path}")
+
         with xml_path.open("rb") as f:
             xml_bytes = f.read()
 
@@ -90,6 +93,9 @@ class IOFXMLParserSampleFileTests(unittest.TestCase):
         EN: Ensure that structure and counts are parsed correctly.
         """
         xml_path = DATA_DIR / "ORAOWL_ResultList_sample.xml"
+        if not xml_path.exists():
+            self.skipTest(f"Test data file not found: {xml_path}")
+
         with xml_path.open("rb") as f:
             xml_bytes = f.read()
 
@@ -116,6 +122,9 @@ class IOFXMLParserSampleFileTests(unittest.TestCase):
         EN: Check that statuses and control cards are present in parsed data.
         """
         xml_path = DATA_DIR / "ORAOWL_ResultList_sample.xml"
+        if not xml_path.exists():
+            self.skipTest(f"Test data file not found: {xml_path}")
+
         with xml_path.open("rb") as f:
             xml_bytes = f.read()
 
@@ -139,7 +148,10 @@ class IOFXMLParserSampleFileTests(unittest.TestCase):
         first = results_by_bib[0]
         self.assertEqual(first.status, "OK")
         self.assertIsNotNone(first.control_card)
-        self.assertTrue(first.control_card.startswith("SI-") or first.control_card.startswith("SI"))
+        self.assertTrue(
+            first.control_card.startswith("SI-")
+            or first.control_card.startswith("SI")
+        )
 
         # Yksi tulos on Disqualified / DSQ-tyyppinen
         statuses = {r.status for r in h21a.results}
