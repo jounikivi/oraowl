@@ -5,13 +5,13 @@
 from django.contrib import messages
 from django.db.models import Q
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.shortcuts import render
+#from django.shortcuts import render
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, FormView, TemplateView
 from django.contrib.auth import login, logout
 from django.shortcuts import redirect
-from django.contrib.auth.views import LogoutView
-from django.http import Http404
+#from django.contrib.auth.views import LogoutView
+#from django.http import Http404
 from django.contrib.auth import get_user_model
 
 from oraw_app.models import Competition, Athlete, Result, Course, Split
