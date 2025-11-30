@@ -58,4 +58,4 @@ python manage.py purge_uploadedfiles
 2. **Komentorivi:**  
    - Aja `purge_uploadedfiles` säännöllisesti (esim. kerran kuussa), jotta vanhat tiedostot poistuvat.
 3. **Dokumentointi:**  
-   - Kaikki ajot kannattaa kirjata ylläpidon lokiin (päivämäärä, mitä poistettiin).
+   - Kaikki ajot kannattaa kirjata ylläpidon lokiin (päivämäärä, mitä poistettiin)
