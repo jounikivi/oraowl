@@ -1,9 +1,8 @@
 from __future__ import annotations
-
 import os
 from datetime import date
 from django.core.management.base import BaseCommand
-from django.utils.timezone import now
+#from django.utils.timezone import now
 from django.db import transaction
 
 from oraw_app.models.uploaded_file import UploadedFile
