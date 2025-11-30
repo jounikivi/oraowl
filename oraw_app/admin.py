@@ -1,6 +1,5 @@
 # oraw_app/admin.py
 from __future__ import annotations
-from django.contrib import admin
 from django.contrib import admin, messages
 from django.utils.timezone import now
 from django.utils.safestring import mark_safe

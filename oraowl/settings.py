@@ -8,7 +8,7 @@ EN: Django settings for the ORAOwl project.
 """
 
 from pathlib import Path
-import os
+#import os
 import environ
 
 # ============================================================================
