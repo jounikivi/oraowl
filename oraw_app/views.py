@@ -17,6 +17,7 @@ from django.contrib.auth import get_user_model
 from oraw_app.models import Competition, Athlete, Result, Course, Split
 from oraw_app.forms import SignupForm, IOFXMLUploadForm
 from oraw_app.utils.iofxml_importer import import_iofxml_result_list
+from django.conf import settings
 
 User = get_user_model()
 
@@ -333,12 +334,24 @@ class IOFXMLUploadView(LoginRequiredMixin, FormView):
 class SignupView(FormView):
     template_name = "oraw_app/accounts/signup.html"
     form_class = SignupForm
+    # success_url ei ole nyt niin tärkeä, mutta voi jäädä varalle
     success_url = reverse_lazy("oraw_app:home")
 
     def form_valid(self, form):
-        user = form.save()
-        login(self.request, user)
-        return super().form_valid(form)
+        # 1) Luodaan käyttäjätili
+        form.save()
+
+        # 2) Lisätään onnistumisviesti
+        messages.success(
+            self.request,
+            "Käyttäjätilin luominen onnistui. Voit nyt kirjautua sisään. "
+            "— User account created successfully. You can now log in."
+)
+
+
+        # 3) Ohjataan login-sivulle käyttäen settings.LOGIN_URL
+        #    -> ei rikota mitään, vaikka URL-nimi olisi jotain muuta
+        return redirect(settings.LOGIN_URL)
 
 
 def logout_view(request):

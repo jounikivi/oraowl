@@ -110,6 +110,7 @@ class IOFXMLUploadForm(forms.Form):
         widget=forms.ClearableFileInput(
             attrs={
                 "class": "form-control",
+                "accept": ".xml,application/xml,text/xml",
             }
         ),
     )
