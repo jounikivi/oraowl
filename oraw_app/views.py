@@ -331,7 +331,7 @@ class IOFXMLUploadView(LoginRequiredMixin, FormView):
 # ========================================================================
 
 class SignupView(FormView):
-    template_name = "oraw_app/account/signup.html"
+    template_name = "oraw_app/accounts/signup.html"
     form_class = SignupForm
     success_url = reverse_lazy("oraw_app:home")
 
