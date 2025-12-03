@@ -8,7 +8,7 @@ from django.db.models import Q
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.urls import reverse_lazy
 from django.views.generic import ListView, DetailView, FormView, TemplateView
-from django.contrib.auth import login, logout
+from django.contrib.auth import logout
 from django.shortcuts import redirect
 from django.contrib.auth import get_user_model
 
