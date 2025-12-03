@@ -97,11 +97,6 @@ class CompetitionDetailView(DetailView):
         return context
 
 
-
-# ========================================================================
-# Course results
-# ========================================================================
-
 # ========================================================================
 # Course results view
 # ========================================================================
@@ -122,6 +117,7 @@ class CourseResultsView(DetailView):
         - results: list of Result objects for this course
         - competition: parent Competition
         - result.diff_to_winner_display: time difference to course winner
+        - laskee tarvittaessa sijan (position), jos sitä ei ole XML:ssä
         """
         context = super().get_context_data(**kwargs)
         course = self.object
@@ -139,7 +135,7 @@ class CourseResultsView(DetailView):
         # Selvitä voittaja: ensimmäinen OK-tulos, jolla on aika
         winner = (
             results_qs
-            .filter(status="OK", finish_time_s__isnull=False)
+            .filter(status=Result.STATUS_OK, finish_time_s__isnull=False)
             .order_by("finish_time_s")
             .first()
         )
@@ -152,7 +148,7 @@ class CourseResultsView(DetailView):
 
             if (
                 winner_time is not None
-                and r.status == "OK"
+                and r.status == Result.STATUS_OK
                 and r.finish_time_s is not None
             ):
                 diff = r.finish_time_s - winner_time
@@ -170,6 +166,28 @@ class CourseResultsView(DetailView):
                         r.diff_to_winner_display = f"+{seconds}"
 
             results.append(r)
+
+        # ------------------------------------------------------------
+        # KOHTA 6: Laske position, jos XML ei sisältänyt sitä ollenkaan
+        # ------------------------------------------------------------
+        any_position = any(r.position is not None for r in results)
+
+        if not any_position:
+            # Otetaan vain OK-tulokset, joilla on aika
+            ok_with_time = [
+                r for r in results
+                if r.status == Result.STATUS_OK and r.finish_time_s is not None
+            ]
+
+            # Järjestetään ne ajan mukaan
+            ok_with_time.sort(key=lambda r: r.finish_time_s)
+
+            # Annetaan sijat 1, 2, 3, ...
+            current_pos = 1
+            for r in ok_with_time:
+                r.position = current_pos
+                current_pos += 1
+            # DNF/DSQ/MP ym. jäävät ilman position-arvoa -> templaatissa näkyy "–"
 
         context["results"] = results
         context["competition"] = course.competition
