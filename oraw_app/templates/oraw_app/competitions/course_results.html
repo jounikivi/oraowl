@@ -132,15 +132,15 @@
                 </td>
 
                 {# Aika sekunteina #}
-                <td class="text-right">
-                  {% if result.finish_time_s %}
-                    <span class="text-monospace">
-                      {{ result.finish_time_s }}
-                    </span>
-                  {% else %}
-                    <span class="text-muted">–</span>
-                  {% endif %}
-                </td>
+               <td class="text-right">
+                {% if result.finish_time_s %}
+                <span class="text-monospace">
+                  {{ result.finish_time_hms }}
+                </span>
+                {% else %}
+                <span class="text-muted">–</span>
+                {% endif %}
+              </td>
 
                 {# Ero voittajaan #}
                 <td class="text-right">

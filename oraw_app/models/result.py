@@ -96,6 +96,25 @@ class Result(models.Model):
             models.Index(fields=["deleted_at"]),
             models.Index(fields=["pace_s_per_km"]),
         ]
+        
+    @property
+    def finish_time_hms(self) -> str:
+        """
+        FI: Palauttaa kokonaisajan muodossa H:MM:SS.
+            Jos aikaa ei ole (esim. DSQ), palauttaa '-'.
+        EN: Returns finish time in H:MM:SS format.
+            Returns '-' if time is missing (e.g. DSQ).
+        """
+        if self.finish_time_s is None:
+            return "-"
+
+        total_seconds = int(self.finish_time_s)
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        seconds = total_seconds % 60
+
+        return f"{hours:d}:{minutes:02d}:{seconds:02d}"
+
 
     def __str__(self) -> str:
         athlete = getattr(self.athlete, "display_name", lambda: "Athlete")()
