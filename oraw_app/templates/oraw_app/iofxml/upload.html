@@ -1,0 +1,65 @@
+{# oraw_app/templates/oraw_app/iofxml/upload.html #}
+{% extends "oraw_app/base.html" %}
+
+{% block title %}
+  IOFXML-tuonti / IOFXML import
+{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+
+  {# ---------------------------------------------------------- #}
+  {# Breadcrumb / Sivupolku                                      #}
+  {# ---------------------------------------------------------- #}
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small mb-0">
+      <li class="breadcrumb-item">
+        <a href="{% url 'oraw_app:home' %}">Etusivu</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="{% url 'oraw_app:admin_dashboard' %}">Hallintapaneeli</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        IOFXML-tuonti
+      </li>
+    </ol>
+  </nav>
+
+  {# ---------------------------------------------------------- #}
+  {# Otsikko                                                     #}
+  {# ---------------------------------------------------------- #}
+  <h1 class="h3 mb-3">
+    IOFXML-tuonti / IOFXML Import
+  </h1>
+
+  <p class="text-muted mb-4">
+    Lataa IOF Data Standard 3.0 <strong>ResultList</strong> -muotoinen XML-tiedosto
+    ja tuo kilpailun tulokset ORAOwl-järjestelmään.
+  </p>
+
+  {# ---------------------------------------------------------- #}
+  {# Lomake                                                      #}
+  {# ---------------------------------------------------------- #}
+  <div class="card shadow-sm">
+    <div class="card-body">
+
+      <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="mb-3">
+          <label for="fileInput" class="form-label">
+            Valitse IOFXML ResultList -tiedosto (.xml)
+          </label>
+          {{ form.file }}
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+          Tuo tiedosto / Import file
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

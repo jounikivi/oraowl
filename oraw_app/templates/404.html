@@ -1,0 +1,39 @@
+{% extends "oraw_app/base.html" %}
+
+{# 
+  FI: 404 – Sivua ei löytynyt
+  EN: 404 – Page not found
+#}
+
+{% block title %}Sivua ei löytynyt / Page not found{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow-sm border-0">
+        <div class="card-body py-5 text-center">
+          <h1 class="display-4 mb-3">404</h1>
+
+          <p class="lead mb-3">
+            Sivua ei löytynyt. / The page you requested could not be found.
+          </p>
+
+          <p class="text-muted mb-4">
+            FI: Tarkista, että osoite on oikein tai palaa etusivulle.
+            <br>
+            EN: Check that the address is correct or return to the home page.
+          </p>
+
+          <a href="{% url 'oraw_app:home' %}" class="btn btn-primary me-2">
+            ← Etusivulle / Back to home
+          </a>
+          <a href="{% url 'oraw_app:competition_list' %}" class="btn btn-outline-secondary">
+            Kilpailut / Competitions
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,58 +1,71 @@
 {% load static %}
 {% comment %}
-FI: Sovelluksen sivupalkki (sidebar), joka sisältää OraOwl-brändilogon,
+FI: Sovelluksen sivupalkki (sidebar), joka sisältää ORAOwl-brändilogon,
     käyttäjätiedot ja päävalikon linkit.
-EN: Application sidebar containing OraOwl branding, user info,
+EN: Application sidebar containing ORAOwl branding, user info,
     and main navigation links.
 {% endcomment %}
 
 <!-- ========================================================= -->
-<!-- Main Sidebar Container / Pääsivupalkin säilö -->
+<!-- Main Sidebar Container / Pääsivupalkin säilö              -->
 <!-- ========================================================= -->
 <aside class="main-sidebar sidebar-dark-primary elevation-4" style="background-color: #2E7D32;">
 
   <!-- ========================================================= -->
-  <!-- Brand Logo / Brändilogo -->
+  <!-- Brand Logo / Brändilogo                                  -->
   <!-- ========================================================= -->
   {# FI: Logo, joka vie etusivulle. EN: Logo that links to the home page. #}
   <a href="{% url 'oraw_app:home' %}" class="brand-link text-center">
-    <span class="brand-text font-weight-light text-white">ORAOwl</span>
+    <img src="{% static 'adminlte/img/oraowl_logo_simple.png' %}"
+         alt="ORAOwl logo"
+         class="brand-image img-circle elevation-3"
+         style="opacity: .95;">
+    <span class="brand-text font-weight-light text-white ml-1">
+      ORAOwl
+    </span>
   </a>
 
   <!-- ========================================================= -->
-  <!-- Sidebar Content / Sivupalkin sisältö -->
+  <!-- Sidebar Content / Sivupalkin sisältö                      -->
   <!-- ========================================================= -->
   <div class="sidebar">
 
     <!-- ========================================================= -->
-    <!-- User Panel / Käyttäjäpaneeli -->
+    <!-- User Panel / Käyttäjäpaneeli                             -->
     <!-- ========================================================= -->
-    <div class="user-panel mt-3 pb-3 mb-3 d-flex">
-      <div class="image">
-        <img src="{% static 'adminlte/img/user2-160x160.jpg' %}"
-             class="img-circle elevation-2"
-             alt="User Image">
+    <div class="user-panel mt-3 pb-3 mb-3 d-flex align-items-center border-bottom border-success">
+      <div class="image mr-2">
+        <i class="fas fa-user-circle text-white-50" style="font-size: 1.7rem;"></i>
       </div>
       <div class="info">
         {% if request.user.is_authenticated %}
-          <a href="#" class="d-block text-white">{{ request.user.username }}</a>
+          <span class="d-block text-white small">
+            Kirjautunut käyttäjä
+          </span>
+          <span class="d-block text-white font-weight-semibold">
+            {{ request.user.username }}
+          </span>
         {% else %}
-          <a href="{% url 'oraw_app:login' %}" class="d-block text-white">Ei kirjautunut</a>
+          <a href="{% url 'oraw_app:login' %}" class="d-block text-white">
+            Ei kirjautunut
+          </a>
         {% endif %}
       </div>
     </div>
 
     <!-- ========================================================= -->
-    <!-- Sidebar Menu / Päävalikko -->
+    <!-- Sidebar Menu / Päävalikko                                -->
     <!-- ========================================================= -->
     <nav class="mt-2">
-      <ul class="nav nav-pills nav-sidebar flex-column"
-          data-widget="treeview"
-          role="menu"
-          data-accordion="false">
+      <ul
+        class="nav nav-pills nav-sidebar flex-column"
+        data-widget="treeview"
+        role="menu"
+        data-accordion="false"
+      >
 
         <!-- ----------------------------------------------------- -->
-        <!-- Dashboard / Yleisnäkymä -->
+        <!-- Dashboard / Etusivu                                  -->
         <!-- ----------------------------------------------------- -->
         <li class="nav-item">
           <a href="{% url 'oraw_app:home' %}" class="nav-link text-white">
@@ -62,17 +75,17 @@ EN: Application sidebar containing OraOwl branding, user info,
         </li>
 
         <!-- ----------------------------------------------------- -->
-        <!-- Competitions / Kilpailut -->
+        <!-- Competitions / Kilpailut                             -->
         <!-- ----------------------------------------------------- -->
         <li class="nav-item">
-          <a href="{% url 'oraw_app:competitions_index' %}" class="nav-link text-white">
+          <a href="{% url 'oraw_app:competition_list' %}" class="nav-link text-white">
             <i class="nav-icon fas fa-flag-checkered"></i>
             <p>Kilpailut</p>
           </a>
         </li>
 
         <!-- ----------------------------------------------------- -->
-        <!-- Athletes / Urheilijat -->
+        <!-- Athletes / Urheilijat                                -->
         <!-- ----------------------------------------------------- -->
         <li class="nav-item">
           <a href="{% url 'oraw_app:athletes_index' %}" class="nav-link text-white">
@@ -82,29 +95,36 @@ EN: Application sidebar containing OraOwl branding, user info,
         </li>
 
         <!-- ----------------------------------------------------- -->
-        <!-- IOFXML Import (staff only) / IOFXML-tuonti (vain staff) -->
+        <!-- IOFXML Import + Admin (vain oikeutetut käyttäjät)     -->
         <!-- ----------------------------------------------------- -->
-        {% if request.user.is_staff %}
+        {% if request.user.is_authenticated and perms.oraw_app.can_import_iofxml %}
         <li class="nav-item">
-          <a href="{% url 'oraw_app:upload_iofxml' %}" class="nav-link text-white">
-            <i class="nav-icon fas fa-file-upload"></i>
-            <p>Lataa IOFXML</p>
+          <a href="{% url 'oraw_app:iofxml_upload' %}" class="nav-link text-white">
+            <i class="nav-icon fas fa-file-import"></i>
+            <p>IOFXML-tuonti</p>
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a href="{% url 'oraw_app:admin_dashboard' %}" class="nav-link text-white">
+            <i class="nav-icon fas fa-tools"></i>
+            <p>Hallinta / Admin</p>
           </a>
         </li>
         {% endif %}
 
         <!-- ----------------------------------------------------- -->
-        <!-- Logout / Kirjaudu ulos -->
+        <!-- Login / Logout                                       -->
         <!-- ----------------------------------------------------- -->
         {% if request.user.is_authenticated %}
-        <li class="nav-item">
+        <li class="nav-item mt-2">
           <a href="{% url 'oraw_app:logout' %}" class="nav-link text-white">
             <i class="nav-icon fas fa-sign-out-alt"></i>
             <p>Kirjaudu ulos</p>
           </a>
         </li>
         {% else %}
-        <li class="nav-item">
+        <li class="nav-item mt-2">
           <a href="{% url 'oraw_app:login' %}" class="nav-link text-white">
             <i class="nav-icon fas fa-sign-in-alt"></i>
             <p>Kirjaudu sisään</p>

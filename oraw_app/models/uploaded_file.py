@@ -1,4 +1,3 @@
-# oraw_app/models/uploaded_file.py
 from __future__ import annotations
 
 import uuid
@@ -30,6 +29,13 @@ class UploadedFile(models.Model):
     # EN: Upload timestamp.
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
+    # 🔹 UUSI KENTTÄ: säilytysaika IOFXML-tiedostolle
+    # FI: Päivämäärä, johon asti IOFXML-tiedostoa säilytetään. Kun tämä on menneisyydessä,
+    #     tiedosto voidaan poistaa esim. `purge_uploadedfiles`-komennolla.
+    # EN: Date until which this IOFXML file may be retained. When in the past,
+    #     the file can be purged by a management command.
+    retention_until = models.DateField(null=True, blank=True)
+
     # FI: (Valinnainen) lähdeviite (kuka / mistä saatu).
     # EN: (Optional) provenance info (who/where it came from).
     source_name = models.CharField(max_length=120, null=True, blank=True)
@@ -46,6 +52,11 @@ class UploadedFile(models.Model):
         indexes = [
             models.Index(fields=["uploaded_at"]),
             models.Index(fields=["sha256"]),
+            # Halutessa tänne voisi myöhemmin lisätä myös:
+            # models.Index(fields=["retention_until"]),
+        ]
+        permissions = [
+            ("can_import_iofxml", "Can import IOF XML result files"),
         ]
 
     def __str__(self) -> str:

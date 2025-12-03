@@ -1,0 +1,237 @@
+{# oraw_app/templates/oraw_app/accounts/profile.html #}
+{% extends "oraw_app/base.html" %}
+
+{% block title %}Käyttäjäprofiili / User profile{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+
+  {# ------------------------------------------------------------ #}
+  {# Breadcrumb                                                   #}
+  {# ------------------------------------------------------------ #}
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb small bg-transparent px-0 mb-0">
+      <li class="breadcrumb-item">
+        <a href="{% url 'oraw_app:home' %}">Etusivu</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        Käyttäjäprofiili
+      </li>
+    </ol>
+  </nav>
+
+  {# ------------------------------------------------------------ #}
+  {# Otsikko                                                      #}
+  {# ------------------------------------------------------------ #}
+  <div class="d-flex justify-content-between align-items-end mb-3">
+    <div>
+      <h1 class="h4 mb-1">Käyttäjäprofiili / User profile</h1>
+      <p class="small text-muted mb-0">
+        Kirjautuneena käyttäjänä: <strong>{{ user_obj.username }}</strong>
+      </p>
+    </div>
+  </div>
+
+  <div class="row g-3">
+
+    {# ---------------------------------------------------------- #}
+    {# Tilin perustiedot                                          #}
+    {# ---------------------------------------------------------- #}
+    <div class="col-lg-6">
+      <div class="card shadow-sm h-100">
+        <div class="card-header">
+          <h2 class="h6 mb-0">Tilin tiedot / Account details</h2>
+        </div>
+        <div class="card-body">
+          <dl class="row mb-0 small">
+            <dt class="col-sm-4">Käyttäjänimi</dt>
+            <dd class="col-sm-8">{{ user_obj.username }}</dd>
+
+            <dt class="col-sm-4">Nimi</dt>
+            <dd class="col-sm-8">
+              {% if user_obj.get_full_name %}
+                {{ user_obj.get_full_name }}
+              {% else %}
+                <span class="text-muted">–</span>
+              {% endif %}
+            </dd>
+
+            <dt class="col-sm-4">Sähköposti</dt>
+            <dd class="col-sm-8">
+              {% if user_obj.email %}
+                <a href="mailto:{{ user_obj.email }}">{{ user_obj.email }}</a>
+              {% else %}
+                <span class="text-muted">–</span>
+              {% endif %}
+            </dd>
+
+            <dt class="col-sm-4">Tilin tila</dt>
+            <dd class="col-sm-8">
+              {% if user_obj.is_active %}
+                <span class="badge badge-success">Voimassa / Active</span>
+              {% else %}
+                <span class="badge badge-danger">Ei aktiivinen</span>
+              {% endif %}
+            </dd>
+
+            <dt class="col-sm-4">Rooli</dt>
+            <dd class="col-sm-8">
+              {% if user_obj.is_superuser %}
+                <span class="badge badge-dark">Ylläpitäjä (superuser)</span>
+              {% elif user_obj.is_staff %}
+                <span class="badge badge-primary">Ylläpitäjä (staff)</span>
+              {% else %}
+                <span class="badge badge-secondary">Peruskäyttäjä</span>
+              {% endif %}
+            </dd>
+
+            <dt class="col-sm-4">Liittynyt</dt>
+            <dd class="col-sm-8">
+              {% if user_obj.date_joined %}
+                {{ user_obj.date_joined|date:"d.m.Y H:i" }}
+              {% else %}
+                <span class="text-muted">–</span>
+              {% endif %}
+            </dd>
+
+            <dt class="col-sm-4">Viimeisin kirjautuminen</dt>
+            <dd class="col-sm-8">
+              {% if user_obj.last_login %}
+                {{ user_obj.last_login|date:"d.m.Y H:i" }}
+              {% else %}
+                <span class="text-muted">Ei kirjautumisia tallennettu</span>
+              {% endif %}
+            </dd>
+          </dl>
+        </div>
+      </div>
+    </div>
+
+    {# ---------------------------------------------------------- #}
+    {# Ryhmät, oikeudet, toiminnot ja lisäoikeusinfo              #}
+    {# ---------------------------------------------------------- #}
+    <div class="col-lg-6">
+
+      <div class="card shadow-sm mb-3">
+        <div class="card-header">
+          <h2 class="h6 mb-0">Käyttöoikeudet / Access</h2>
+        </div>
+        <div class="card-body">
+
+          {# Ryhmät #}
+          <h6 class="small text-uppercase text-muted mb-1">
+            Ryhmät / Groups
+          </h6>
+
+          {% if groups %}
+            <p class="mb-2">
+              {% for group in groups %}
+                <span class="badge badge-info mr-1 mb-1">{{ group.name }}</span>
+              {% endfor %}
+            </p>
+          {% else %}
+            <p class="text-muted small mb-2">
+              Et kuulu tällä hetkellä yhteenkään ryhmään.
+            </p>
+          {% endif %}
+
+          <p class="small text-muted mb-3">
+            Ryhmät määrittävät esimerkiksi tulosten tuonnin ja hallintanäkymien oikeudet.
+          </p>
+
+          {# Tekniset oikeudet #}
+          <h6 class="small text-uppercase text-muted mb-1">
+            Tekniset oikeudet / Permissions
+          </h6>
+
+          {% if permissions %}
+            <div class="border rounded p-2 bg-light small" style="max-height: 200px; overflow-y: auto;">
+              <ul class="list-unstyled mb-0">
+                {% for perm in permissions %}
+                  <li><code>{{ perm }}</code></li>
+                {% endfor %}
+              </ul>
+            </div>
+          {% else %}
+            <p class="small text-muted mb-0">
+              Ei erillisiä teknisiä käyttöoikeuksia.
+            </p>
+          {% endif %}
+
+          <hr class="my-3">
+
+          {# ------------------------------------------------------ #}
+          {# Lisäoikeuspyyntö – SIJAINTI TÄSSÄ, SELKEÄ JA TYYLIKÄS #}
+          {# ------------------------------------------------------ #}
+          <h6 class="small text-uppercase text-muted mb-1">
+            Lisäoikeudet
+          </h6>
+
+          <p class="small text-muted mt-1 mb-2">
+            Jos tarvitset lisäoikeuksia (esimerkiksi <strong>tulosten tuontiin</strong>
+            tai seuran <strong>tulosvastaavan rooliin</strong>), ota yhteyttä
+            järjestelmän ylläpitoon.
+          </p>
+
+          <div class="alert alert-light border small mb-0">
+            <p class="mb-1">
+              Lähetä viesti:
+            </p>
+            <p class="mb-1">
+              <strong>Sähköposti:</strong> <code>jounikivipera@gmail.com</code>
+            </p>
+            <p class="mb-0">
+              Kerro lyhyesti:
+              <br>– Kuka olet  
+              <br>– Mihin seuraan/ryhmään kuulut  
+              <br>– Miksi tarvitset oikeudet
+            </p>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="card shadow-sm">
+        <div class="card-header">
+          <h2 class="h6 mb-0">Tilinhallinta / Account actions</h2>
+        </div>
+        <div class="card-body">
+          <div class="d-flex flex-wrap gap-2 mb-2">
+            <a href="{% url 'oraw_app:password_change' %}"
+               class="btn btn-outline-primary btn-sm mr-2 mb-2">
+              Vaihda salasana / Change password
+            </a>
+
+            <a href="{% url 'oraw_app:logout' %}"
+               class="btn btn-outline-danger btn-sm mb-2">
+              Kirjaudu ulos / Log out
+            </a>
+          </div>
+
+          <p class="small text-muted mb-0">
+            Jos havaitset virheitä profiilitiedoissasi tai käyttöoikeuksissasi,
+            ota yhteyttä järjestelmän ylläpitoon.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  {# ------------------------------------------------------------ #}
+  {# GDPR info                                                    #}
+  {# ------------------------------------------------------------ #}
+  <div class="row mt-3">
+    <div class="col-lg-12">
+      <div class="alert alert-secondary small mb-0">
+        Tämä profiilisivu on näkyvissä vain kirjautuneelle käyttäjälle.
+        Lisätietoja löydät
+        <a href="{% url 'oraw_app:privacy' %}" class="alert-link">tietosuojaselosteesta</a>
+        ja
+        <a href="{% url 'oraw_app:terms' %}" class="alert-link">käyttöehdoista</a>.
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

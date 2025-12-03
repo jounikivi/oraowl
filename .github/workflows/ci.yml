@@ -1,37 +1,56 @@
 name: CI (minimal)
+
 on:
   push:
-    branches: [ main, dev, "feature/**" ]
+    branches:
+      - main
+      - dev
+      - Demo-release-v1.0
+      - iofxml-v3-rewrite
+      - "feature/**"
   pull_request:
-    branches: [ main, dev ]
+    branches:
+      - main
+      - dev
+      - Demo-release-v1.0
+      - iofxml-v3-rewrite
+      - "feature/**"
 
 jobs:
   test:
+    name: Lint & Test
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+    env:
+      DJANGO_SETTINGS_MODULE: oraowl.settings
+      SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      ALLOWED_HOSTS: "127.0.0.1,localhost"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install deps
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt || true
-          pip install pytest pytest-django ruff
+          pip install -r requirements.txt
+          pip install ruff pytest pytest-django
 
-      # ✅ Ruff vaihe 1: vain vakavat virheet, jotta CI pysyy vihreänä
-      # - name: Ruff (lint — phase 1)
-      #   run: ruff check . --select E9,F63,F7,F82
-
-      - name: Ruff (lint — phase 2)
+      - name: Run Ruff (lint E + F)
         run: ruff check . --select E,F
 
-
-      - name: Pytest
-        env:
-          DJANGO_SETTINGS_MODULE: oraowl.settings
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          ALLOWED_HOSTS: "127.0.0.1,localhost"
+      - name: Run pytest
         run: pytest -q

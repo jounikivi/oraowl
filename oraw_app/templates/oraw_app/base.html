@@ -4,6 +4,19 @@
 <html lang="fi">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    {% comment %}
+    FI: Sivun otsikko. Lapsitemplatet voivat ylikirjoittaa tämän blockin.
+    EN: Page title. Child templates can override this block.
+    {% endcomment %}
+    <title>{% block title %}ORAOwl – Orienteering Result Archive{% endblock %}</title>
+
+    {% comment %}
+    FI: Favicon (selaimen välilehden ikoni).
+    EN: Favicon (browser tab icon).
+    {% endcomment %}
+    <link rel="icon" type="image/png" href="{% static 'adminlte/img/favicon.png' %}">
 
     {% comment %}
     FI: Sivupohjan yhteiset tyylit ja kirjastot
@@ -19,12 +32,15 @@
     <!-- AdminLTE main theme -->
     <link rel="stylesheet" href="{% static 'adminlte/css/adminlte.min.css' %}">
 
-    <!-- SCSS compilation (custom styles) -->
+    <!-- Custom SCSS (compiled) -->
     <link rel="stylesheet" href="{% sass_src 'adminlte/scss/main.scss' %}">
 
+    <!-- Toastify notifications (CSS) - NEW -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
+
     {% comment %}
-    FI: Mahdollisuus lisätä sivukohtaista CSS:ää lapsipohjista käsin.
-    EN: Placeholder for page-specific CSS defined in child templates.
+    FI: Mahdollinen sivukohtainen CSS lapsitemplateista.
+    EN: Optional per-page CSS from child templates.
     {% endcomment %}
     {% block extra_css %}{% endblock %}
 </head>
@@ -33,28 +49,28 @@
 <div class="wrapper">
 
     {% comment %}
-    FI: Yläpalkki (navigaatio) – sisällytetään erillisestä osatiedostosta.
-    EN: Top navigation bar – included from partial template.
+    FI: Yläpalkki (navigaatio)
+    EN: Top navigation bar
     {% endcomment %}
     {% include 'oraw_app/partials/navbar.html' %}
 
     {% comment %}
-    FI: Sivupaneeli (valikko) – sisällytetään erillisestä osatiedostosta.
-    EN: Sidebar menu – included from partial template.
+    FI: Sivupaneeli (valikko)
+    EN: Sidebar menu
     {% endcomment %}
     {% include 'oraw_app/partials/sidebar.html' %}
 
     {% comment %}
-    FI: Sivun varsinainen sisältöalue, jonka lapsitemplatet täyttävät.
-    EN: Main content area populated by child templates.
+    FI: Varsinainen sisältöalue
+    EN: Main content area
     {% endcomment %}
     <div class="content-wrapper">
         {% block content %}{% endblock %}
     </div>
 
     {% comment %}
-    FI: Alatunniste (footer) – sisällytetään erillisestä osatiedostosta.
-    EN: Footer section – included from partial template.
+    FI: Alatunniste (footer)
+    EN: Footer section
     {% endcomment %}
     {% include 'oraw_app/partials/footer.html' %}
 </div>
@@ -67,9 +83,26 @@ EN: Required JavaScript libraries and plugins.
 <script src="{% static 'adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 <script src="{% static 'adminlte/js/adminlte.min.js' %}"></script>
 
+<!-- Toastify notifications (JS) - NEW -->
+<script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+<script>
+    // Show Django messages as Toastify notifications
+    {% if messages %}
+        {% for message in messages %}
+            Toastify({
+                text: "{{ message|escapejs }}",
+                duration: 4000,
+                close: true,
+                gravity: "top",
+                position: "right"
+            }).showToast();
+        {% endfor %}
+    {% endif %}
+</script>
+
 {% comment %}
-FI: Mahdollisuus lisätä sivukohtaista JavaScriptiä lapsipohjista käsin.
-EN: Placeholder for page-specific JavaScript from child templates.
+FI: Mahdollinen sivukohtainen JavaScript lapsitemplateista.
+EN: Optional per-page JavaScript from child templates.
 {% endcomment %}
 {% block extra_js %}{% endblock %}
 </body>

@@ -1,7 +1,9 @@
 # oraw_app/admin.py
 from __future__ import annotations
+from django.contrib import admin, messages
+from django.utils.timezone import now
+from django.utils.safestring import mark_safe
 
-from django.contrib import admin
 
 from .models import (
     Athlete,
@@ -142,11 +144,76 @@ class UploadedFileAdmin(admin.ModelAdmin):
     list_display = (
         "original_name",
         "uploaded_at",
+        "retention_until",
         "size_bytes",
-        "sha256",
+        "sha256_short",
         "source_name",
     )
     search_fields = ("original_name", "sha256", "source_name", "source_url")
-    list_filter = ("uploaded_at",)
+    list_filter = ("uploaded_at", "retention_until")
     ordering = ("-uploaded_at",)
     readonly_fields = ("uploaded_at", "created_at", "updated_at", "sha256", "size_bytes")
+
+    actions = ["preview_retention_purge"]
+
+    def sha256_short(self, obj):
+        """
+        FI: Näytä SHA256-tiiviste lyhennettynä listanäkymässä.
+        EN: Show shortened SHA256 in list view.
+        """
+        return obj.sha256[:12] + "..."
+
+    sha256_short.short_description = "SHA256"
+
+    def preview_retention_purge(self, request, queryset):
+        """
+        FI: Admin-toiminto, joka näyttää kaikki UploadedFile-rivit, joiden
+            retention_until on menneisyydessä. EI poista mitään – toimii
+            dry-runina purge_uploadedfiles-komennolle.
+
+        EN: Admin action that shows all UploadedFile rows whose retention_until
+            is in the past. Does NOT delete anything – dry-run for
+            purge_uploadedfiles command.
+        """
+        today = now().date()
+
+        # Lasketaan aina retention_pohjalta, ei pelkästään valituista riveistä
+        qs = UploadedFile.objects.filter(
+            retention_until__isnull=False,
+            retention_until__lt=today,
+        )
+
+        count = qs.count()
+
+        if count == 0:
+            self.message_user(
+                request,
+                "Ei poistettavia IOFXML-tiedostoja retention_until-kentän perusteella.",
+                level=messages.SUCCESS,
+            )
+            return
+
+        lines = []
+        for f in qs:
+            lines.append(
+                f"{f.original_name} "
+                f"(uploaded: {f.uploaded_at.date()}, "
+                f"retention_until: {f.retention_until}, "
+                f"sha256: {f.sha256[:12]}...)"
+            )
+
+        html_list = "<br>".join(lines)
+
+        self.message_user(
+            request,
+            mark_safe(
+                f"<strong>Poistettavia tiedostoja: {count} kpl</strong><br>"
+                f"{html_list}"
+            ),
+            level=messages.WARNING,
+        )
+
+    preview_retention_purge.short_description = (
+        "Esikatsele retention-purgen kohteet (dry-run)"
+    )
+

@@ -83,6 +83,9 @@ class Split(models.Model):
     # ------------------------------------------------------------
     # ⚙️ Model configuration
     # ------------------------------------------------------------
+        # ------------------------------------------------------------
+    # ⚙️ Model configuration
+    # ------------------------------------------------------------
     class Meta:
         db_table = "oraw_app_split"
         verbose_name = "Split"
@@ -95,15 +98,21 @@ class Split(models.Model):
         ]
 
         constraints = [
+            # FI: Jokaisella tuloksella saa olla vain yksi tietty seq-numero,
+            #     mutta samaa rastikoodia voidaan käyttää useamman kerran.
+            # EN: Each result can only have one given seq number, but the same
+            #     control code may appear multiple times on the same course.
             models.UniqueConstraint(
                 fields=["result", "seq"],
                 name="uniq_split_per_result_seq",
             ),
-            models.UniqueConstraint(
-                fields=["result", "control_code"],
-                name="uniq_split_per_result_code",
-            ),
+            # HUOM: Poistettu tämä, jotta sama control_code voi esiintyä useammin:
+            # models.UniqueConstraint(
+            #     fields=["result", "control_code"],
+            #     name="uniq_split_per_result_code",
+            # ),
         ]
+
 
     # ------------------------------------------------------------
     # 🧠 String representation
