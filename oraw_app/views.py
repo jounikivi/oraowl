@@ -128,7 +128,7 @@ class CourseResultsView(DetailView):
                 course=course,
                 is_public=True,
             )
-            .order_by("position")
+            #.order_by("position")
             .select_related("athlete", "course", "course__competition")
         )
 
