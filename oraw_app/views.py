@@ -44,7 +44,7 @@ class CompetitionListView(ListView):
     model = Competition
     template_name = "oraw_app/competitions/competition_list.html"
     context_object_name = "competitions"
-    paginate_by = 20  # FI: 20 kilpailua sivulla / EN: 20 competitions per page
+    paginate_by = 50
 
     def get_queryset(self):
         qs = Competition.objects.all().order_by("-date")
@@ -287,33 +287,75 @@ class AthleteListView(ListView):
     model = Athlete
     template_name = "oraw_app/athletes/index.html"
     context_object_name = "athletes"
-    paginate_by = 50
+    paginate_by = 50  # FI: 50 urheilijaa per sivu / EN: 50 athletes per page
 
     def get_queryset(self):
+        """
+        FI:
+        - Näyttää vain julkiset urheilijat.
+        - Tukee hakua nimellä (etu- ja sukunimi), seuralla ja sukupuolella.
+        - Trimmataan mahdolliset välilyönnit nimen alusta ja lopusta.
+
+        EN:
+        - Shows only public athletes.
+        - Supports searching by name (first + last), club and gender.
+        - Strips leading/trailing whitespace from name input.
+        """
         qs = Athlete.objects.filter(
             is_public=True,
         ).order_by("last_name", "first_name")
 
-        # FI: Hakusuodattimet nimeen, seuraan ja sukupuoleen.
-        # EN: Search filters for name, club, and gender.
-        name = self.request.GET.get("name")
+        # FI: Haetaan hakuehdot GET-parametreista.
+        # EN: Read filter values from GET parameters.
+        name = self.request.GET.get("name", "")
         club = self.request.GET.get("club")
         gender = self.request.GET.get("gender")
 
+        # FI: Poistetaan ylimääräiset välilyönnit alusta ja lopusta.
+        # EN: Strip extra whitespace from beginning and end.
+        name = name.strip()
+
         if name:
-            qs = qs.filter(
-                Q(first_name__icontains=name)
-                | Q(last_name__icontains=name)
-                | Q(public_alias__icontains=name)
-            )
+            # FI: Pilkotaan nimi osiin. Esim. "Emma Stenvall".
+            # EN: Split name into parts. E.g. "Emma Stenvall".
+            parts = name.split()
+
+            if len(parts) >= 2:
+                # FI: Oletetaan muoto "Etunimi Sukunimi" (tai toisin päin).
+                # EN: Assume "First Last" (or reversed).
+                first = parts[0]
+                last = parts[-1]
+
+                qs = qs.filter(
+                    (
+                        Q(first_name__icontains=first)
+                        & Q(last_name__icontains=last)
+                    )
+                    | (
+                        Q(first_name__icontains=last)
+                        & Q(last_name__icontains=first)
+                    )
+                    | Q(public_alias__icontains=name)
+                )
+            else:
+                # FI: Yksi sana -> haetaan sekä etu- että sukunimestä ja aliaksesta.
+                # EN: Single word -> search in first name, last name, and alias.
+                qs = qs.filter(
+                    Q(first_name__icontains=name)
+                    | Q(last_name__icontains=name)
+                    | Q(public_alias__icontains=name)
+                )
 
         if club:
-            qs = qs.filter(club__icontains=club)
+            club = club.strip()
+            if club:
+                qs = qs.filter(club__icontains=club)
 
         if gender and gender != "ALL":
             qs = qs.filter(gender=gender)
 
         return qs
+
 
 
 # ========================================================================
