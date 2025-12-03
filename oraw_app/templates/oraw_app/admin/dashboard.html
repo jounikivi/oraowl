@@ -1,4 +1,3 @@
-{# oraw_app/templates/oraw_app/admin/dashboard.html #}
 {% extends "oraw_app/base.html" %}
 
 {% block title %}
@@ -35,11 +34,11 @@
   </p>
 
   {# ------------------------------------------------------------------ #}
-  {# Yhteenvetokortit (kilpailut, urheilijat, tulokset)                 #}
+  {# Yhteenvetokortit (tilastot)                                        #}
   {# ------------------------------------------------------------------ #}
   <div class="row g-3 mb-4">
 
-    <div class="col-12 col-md-4">
+    <div class="col-12 col-md-3">
       <div class="card shadow-sm h-100">
         <div class="card-body d-flex align-items-center">
           <div class="me-3">
@@ -55,7 +54,23 @@
       </div>
     </div>
 
-    <div class="col-12 col-md-4">
+    <div class="col-12 col-md-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body d-flex align-items-center">
+          <div class="me-3">
+            <i class="fas fa-map fa-2x text-warning"></i>
+          </div>
+          <div>
+            <div class="text-muted small">Ratoja / Courses</div>
+            <div class="h4 mb-0">
+              {{ course_count|default:"–" }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-3">
       <div class="card shadow-sm h-100">
         <div class="card-body d-flex align-items-center">
           <div class="me-3">
@@ -71,7 +86,7 @@
       </div>
     </div>
 
-    <div class="col-12 col-md-4">
+    <div class="col-12 col-md-3">
       <div class="card shadow-sm h-100">
         <div class="card-body d-flex align-items-center">
           <div class="me-3">
@@ -90,7 +105,30 @@
   </div>
 
   {# ------------------------------------------------------------------ #}
-  {# Pikalinkit                                                         #}
+  {# Yhteenvetokortit – jatko (splits)                                  #}
+  {# ------------------------------------------------------------------ #}
+  <div class="row g-3 mb-4">
+
+    <div class="col-12 col-md-3">
+      <div class="card shadow-sm h-100">
+        <div class="card-body d-flex align-items-center">
+          <div class="me-3">
+            <i class="fas fa-stopwatch fa-2x text-danger"></i>
+          </div>
+          <div>
+            <div class="text-muted small">Väliaikoja / Split times</div>
+            <div class="h4 mb-0">
+              {{ split_count|default:"–" }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  {# ------------------------------------------------------------------ #}
+  {# Pikalinkit                                                          #}
   {# ------------------------------------------------------------------ #}
   <div class="row g-3 mb-4">
 
@@ -136,12 +174,10 @@
         </div>
       </div>
     </div>
-
   </div>
 
   {# ------------------------------------------------------------------ #}
-  {# Ylläpitotyökalut / Maintenance tools                               #}
-  {# (pelkkä informaatio + linkit, ei aja komentoja suoraan)            #}
+  {# Ylläpitotyökalut                                                    #}
   {# ------------------------------------------------------------------ #}
   <div class="row g-3">
 
@@ -150,9 +186,7 @@
         <div class="card-body d-flex flex-column">
           <h2 class="h5">Django-admin</h2>
           <p class="text-muted small flex-grow-1">
-            Täydet ylläpito-oikeudet tietokantaan ja malleihin. Täällä voit
-            tarkastella ja muokata kilpailuja, urheilijoita ja IOFXML-tiedostoja
-            suoraan Django-adminin kautta.
+            Täydet ylläpito-oikeudet tietokantaan ja malleihin.
           </p>
           <a href="{% url 'admin:index' %}" class="btn btn-outline-secondary mt-auto">
             Avaa Django-admin →
@@ -164,16 +198,12 @@
     <div class="col-12 col-lg-4">
       <div class="card shadow-sm h-100">
         <div class="card-body d-flex flex-column">
-          <h2 class="h5">IOFXML-tiedostot ja säilytysaika</h2>
+          <h2 class="h5">IOFXML-tiedostot</h2>
           <p class="text-muted small flex-grow-1">
-            <strong>UploadedFile</strong>-näkymässä (Django-admin) voit määrittää
-            IOFXML-tiedostoille <code>retention_until</code>-päivän. Admin-napilla
-            “Esikatsele retention-purgen kohteet (dry-run)” näet, mitkä tiedostot
-            voidaan poistaa. Varsinainen poisto tehdään komentoriviltä:
-            <code>python manage.py purge_uploadedfiles --yes</code>.
+            Hallinnoi ladattuja IOFXML-tiedostoja ja retention-aikoja.
           </p>
           <a href="{% url 'admin:oraw_app_uploadedfile_changelist' %}" class="btn btn-outline-secondary mt-auto">
-            Avaa IOFXML-tiedostot Django-adminissa →
+            Avaa tiedostolista →
           </a>
         </div>
       </div>
@@ -184,14 +214,10 @@
         <div class="card-body d-flex flex-column">
           <h2 class="h5">GDPR / Anonymisointi</h2>
           <p class="text-muted small flex-grow-1">
-            Urheilijan tietojen anonymisointi tehdään erillisellä komennolla.
-            Ylläpitäjä voi käyttää komentoriviä esim:
-            <code>python manage.py anonymize_athlete --id &lt;athlete_uuid&gt; --yes</code>.
-            Komento piilottaa nimen, poistaa tunnisteet ja kirjaa tapahtuman
-            <em>AuditLog</em>-lokitauluun.
+            Suorita anonymisointeja ylläpitäjille tarkoitetuilla komennoilla.
           </p>
           <a href="{% url 'oraw_app:athletes_index' %}" class="btn btn-outline-secondary mt-auto">
-            Avaa urheilijalista (GDPR-pyynnöt) →
+            Avaa urheilijalista →
           </a>
         </div>
       </div>

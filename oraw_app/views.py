@@ -502,6 +502,22 @@ class AdminDashboardView(PermissionRequiredMixin, TemplateView):
     permission_required = "oraw_app.can_access_admin"
     template_name = "oraw_app/admin/dashboard.html"
 
+    def get_context_data(self, **kwargs):
+        """
+        FI: Lisää kilpailujen, ratojen, urheilijoiden, tulosten ja väliaikojen määrät.
+        EN: Adds counts of competitions, courses, athletes, results and splits.
+        """
+        context = super().get_context_data(**kwargs)
+
+        context["competition_count"] = Competition.objects.count()
+        context["course_count"] = Course.objects.count()
+        context["athlete_count"] = Athlete.objects.count()
+        context["result_count"] = Result.objects.count()
+        context["split_count"] = Split.objects.count()
+
+        return context
+
+
 
 # ========================================================================
 # User profile / Käyttäjäprofiili
