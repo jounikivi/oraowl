@@ -13,17 +13,21 @@
 ===========================================================
 """
 
-from .settings import *  # Import all base settings / Tuo kaikki perusasetukset
+# Import all base settings from the main settings module.
+# Tuo kaikki perusasetukset pääasetustiedostosta.
+from .settings import *  # noqa: F403
 
 
 # ---------------------------------------------------------
 # General Django Settings / Yleiset Django-asetukset
 # ---------------------------------------------------------
 
-DEBUG = False  # Never enable DEBUG in production / Ei koskaan DEBUG=True tuotannossa
+# Never enable DEBUG in production.
+# Ei koskaan DEBUG=True tuotannossa.
+DEBUG = False
 
-# Allowed domain names for the deployed site
-# Sallitut domainit julkaistulle sivustolle
+# Allowed domain names for the deployed site.
+# Sallitut domainit julkaistulle sivustolle.
 ALLOWED_HOSTS = [
     "oraowl.fi",
     "www.oraowl.fi",
@@ -35,27 +39,27 @@ ALLOWED_HOSTS = [
 # Turvallisuus (CSRF / Luotetut alkuperät)
 # ---------------------------------------------------------
 
-# Domains trusted for CSRF protection
-# CSRF-suojauksessa luotetut domainit
+# Domains trusted for CSRF protection.
+# CSRF-suojauksessa luotetut domainit.
 CSRF_TRUSTED_ORIGINS = [
     "https://oraowl.fi",
     "https://www.oraowl.fi",
 ]
 
-# Security options – enable later once HTTPS is fully verified on Tietokettu
-# Turva-asetukset – ota käyttöön, kun HTTPS toimii varmasti Tietoketussa
+# Security options – enable once HTTPS has been confirmed working.
+# Turva-asetukset – ota käyttöön, kun HTTPS toimii varmasti.
 # SECURE_SSL_REDIRECT = True
 # SESSION_COOKIE_SECURE = True
 # CSRF_COOKIE_SECURE = True
 
 
 # ---------------------------------------------------------
-# Static Files / Staattiset tiedostot (CSS, JS, kuvat)
+# Static Files / Staattiset tiedostot
 # ---------------------------------------------------------
 
 # Directory where collectstatic places compiled static files.
 # Hakemisto, johon collectstatic kerää valmiit staattiset tiedostot.
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = BASE_DIR / "staticfiles"  # noqa: F405
 
 
 # ---------------------------------------------------------
@@ -84,8 +88,9 @@ REGISTRATION_OPEN = False
 #     },
 # }
 
+
 """
 End of Tietokettu production settings.
 Tietoketun tuotantoasetusten loppu.
 """
-
+# ============================================================================
