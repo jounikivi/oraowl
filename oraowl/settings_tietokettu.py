@@ -88,3 +88,4 @@ REGISTRATION_OPEN = False
 End of Tietokettu production settings.
 Tietoketun tuotantoasetusten loppu.
 """
+
