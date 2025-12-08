@@ -11,7 +11,7 @@ from django.views.generic import ListView, DetailView, FormView, TemplateView
 from django.contrib.auth import logout
 from django.shortcuts import redirect
 from django.contrib.auth import get_user_model
-
+#from django.conf import settings
 from oraw_app.models import Competition, Athlete, Result, Course, Split
 from oraw_app.forms import SignupForm, IOFXMLUploadForm
 from oraw_app.utils.iofxml_importer import import_iofxml_result_list
@@ -469,6 +469,26 @@ class SignupView(FormView):
     # success_url ei ole kriittinen, koska redirectataan LOGIN_URL:iin.
     success_url = reverse_lazy("oraw_app:home")
 
+    def dispatch(self, request, *args, **kwargs):
+        """
+        FI: Estetään rekisteröityminen, jos REGISTRATION_OPEN=False.
+        EN: Block signup when REGISTRATION_OPEN=False.
+        """
+        if not getattr(settings, "REGISTRATION_OPEN", False):
+            messages.warning(
+                request,
+                (
+                    "Uusien käyttäjätilien luominen on tällä hetkellä estetty. "
+                    "Ota yhteyttä ylläpitoon, jos tarvitset tunnukset. "
+                    "New user registration is currently disabled. "
+                    "Please contact the administrator if you need an account."
+                ),
+            )
+            # Ohjataan kirjautumissivulle (tai etusivulle, jos haluat).
+            return redirect(settings.LOGIN_URL)
+
+        return super().dispatch(request, *args, **kwargs)
+
     def form_valid(self, form):
         # FI: Luodaan käyttäjä mutta ei kirjauduta automaattisesti sisään.
         # EN: Create the user but do not log in automatically.
@@ -483,6 +503,7 @@ class SignupView(FormView):
         # FI: Ohjataan kirjautumissivulle (settings.LOGIN_URL).
         # EN: Redirect to login page (settings.LOGIN_URL).
         return redirect(settings.LOGIN_URL)
+
 
 
 def logout_view(request):

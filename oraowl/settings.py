@@ -11,6 +11,11 @@ from pathlib import Path
 #import os
 import environ
 
+# FI: Voiko käyttäjä rekisteröityä itse?
+# EN: Is self-service user registration allowed?
+# devissä True, livessä voidaan asettaa False
+REGISTRATION_OPEN = False 
+
 # ============================================================================
 # Base directory / Peruspolku
 # ============================================================================
