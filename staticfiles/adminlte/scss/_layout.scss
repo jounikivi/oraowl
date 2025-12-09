@@ -1,0 +1,25 @@
+body {
+  background-color: $color-secondary;
+  color: $color-dark;
+  font-family: 'Arial', sans-serif;
+}
+
+.navbar {
+  background-color: $color-primary;
+  color: white;
+}
+
+a {
+  color: $color-primary;
+}
+
+a:hover {
+  color: $color-accent;
+}
+
+.footer {
+  background-color: $color-dark;
+  color: white;
+  text-align: center;
+  padding: 10px 0;
+}
