@@ -31,6 +31,9 @@ DEBUG = False
 ALLOWED_HOSTS = [
     "oraowl.fi",
     "www.oraowl.fi",
+    "localhost",
+    "127.0.0.1",
+    
 ]
 
 
