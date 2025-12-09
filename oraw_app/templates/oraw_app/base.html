@@ -1,5 +1,5 @@
 {% load static %}
-{% load sass_tags %}
+{% comment %} {% load sass_tags %} {% endcomment %}
 <!DOCTYPE html>
 <html lang="fi">
 <head>
@@ -30,7 +30,7 @@
     <link rel="stylesheet" href="{% static 'adminlte/plugins/bootstrap/css/bootstrap.min.css' %}">
 
     <!-- AdminLTE main theme -->
-    <link rel="stylesheet" href="{% static 'adminlte/css/adminlte.min.css' %}">
+    {% comment %} <link rel="stylesheet" href="{% static 'adminlte/css/adminlte.min.css' %}"> {% endcomment %}
     <link rel="stylesheet" href="{% static 'adminlte/css/oraowl-theme.css' %}">
 
     <!-- Custom SCSS (compiled) -->
