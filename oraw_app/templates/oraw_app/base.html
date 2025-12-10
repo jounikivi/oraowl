@@ -1,5 +1,13 @@
 {% load static %}
+{% comment %}
+FI: SASS-työkalut (sass_tags) poistettu käytöstä Tietoketun tuotannossa,
+    koska SCSS käännetään etukäteen lokalisti (oraowl-theme.css).
+EN: SASS tools (sass_tags) disabled in production on Tietokettu,
+    because SCSS is precompiled locally into oraowl-theme.css.
+
+Alkuperäinen rivi / Original line:
 {% load sass_tags %}
+{% endcomment %}
 <!DOCTYPE html>
 <html lang="fi">
 <head>
@@ -19,8 +27,8 @@
     <link rel="icon" type="image/png" href="{% static 'adminlte/img/favicon.png' %}">
 
     {% comment %}
-    FI: Sivupohjan yhteiset tyylit ja kirjastot
-    EN: Common stylesheets and libraries for all pages
+    FI: Sivupohjan yhteiset tyylit ja kirjastot.
+    EN: Common stylesheets and libraries for all pages.
     {% endcomment %}
 
     <!-- FontAwesome icon library -->
@@ -31,11 +39,20 @@
 
     <!-- AdminLTE main theme -->
     <link rel="stylesheet" href="{% static 'adminlte/css/adminlte.min.css' %}">
+    <link rel="stylesheet" href="{% static 'adminlte/css/oraowl-theme.css' %}">
 
     <!-- Custom SCSS (compiled) -->
-    <link rel="stylesheet" href="{% sass_src 'adminlte/scss/main.scss' %}">
+    {% comment %}
+    FI: Alkuperäinen SCSS-lataus sass_src-tagilla poistettu käytöstä tuotannossa.
+        Tuotannossa käytetään valmiiksi käännettyä CSS-tiedostoa (oraowl-theme.css).
+    EN: Original SCSS load via sass_src disabled in production.
+        In production we use precompiled CSS file (oraowl-theme.css).
 
-    <!-- Toastify notifications (CSS) - NEW -->
+    Alkuperäinen rivi / Original line:
+    <link rel="stylesheet" href="{% sass_src 'adminlte/scss/main.scss' %}">
+    {% endcomment %}
+
+    <!-- Toastify notifications (CSS) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
 
     {% comment %}
@@ -49,49 +66,53 @@
 <div class="wrapper">
 
     {% comment %}
-    FI: Yläpalkki (navigaatio)
-    EN: Top navigation bar
+    FI: Yläpalkki (navigaatio).
+    EN: Top navigation bar.
     {% endcomment %}
     {% include 'oraw_app/partials/navbar.html' %}
 
     {% comment %}
-    FI: Sivupaneeli (valikko)
-    EN: Sidebar menu
+    FI: Sivupaneeli (valikko).
+    EN: Sidebar menu.
     {% endcomment %}
     {% include 'oraw_app/partials/sidebar.html' %}
 
     {% comment %}
-    FI: Varsinainen sisältöalue
-    EN: Main content area
+    FI: Varsinainen sisältöalue.
+    EN: Main content area.
     {% endcomment %}
     <div class="content-wrapper">
         {% block content %}{% endblock %}
     </div>
 
     {% comment %}
-    FI: Alatunniste (footer)
-    EN: Footer section
+    FI: Alatunniste (footer).
+    EN: Footer section.
     {% endcomment %}
     {% include 'oraw_app/partials/footer.html' %}
 </div>
 
 {% comment %}
-FI: Sivun tarvitsemat JavaScript-kirjastot ja lisäosat.
-EN: Required JavaScript libraries and plugins.
+FI: Yhteiset JavaScript-kirjastot (jQuery, Bootstrap, AdminLTE).
+EN: Common JavaScript libraries (jQuery, Bootstrap, AdminLTE).
 {% endcomment %}
 <script src="{% static 'adminlte/plugins/jquery/jquery.min.js' %}"></script>
 <script src="{% static 'adminlte/plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
 <script src="{% static 'adminlte/js/adminlte.min.js' %}"></script>
 
-<!-- Toastify notifications (JS) - NEW -->
+<!-- Toastify notifications (JS) -->
 <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+
+{% comment %}
+FI: Django messages → Toastify-ilmoitukset.
+EN: Django messages → Toastify notifications.
+{% endcomment %}
 <script>
-    // Show Django messages as Toastify notifications
     {% if messages %}
         {% for message in messages %}
             Toastify({
                 text: "{{ message|escapejs }}",
-                duration: 4000,
+                duration: 5000,
                 close: true,
                 gravity: "top",
                 position: "right"
