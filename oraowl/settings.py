@@ -73,6 +73,7 @@ INSTALLED_APPS = [
 
     # Local apps / Paikalliset sovellukset
     "oraw_app",
+    "django_extensions",
 ]
 
 MIDDLEWARE = [
