@@ -1,0 +1,42 @@
+body {
+  background-color: #F5EDD6;
+  color: #212121;
+  font-family: "Arial", sans-serif;
+}
+
+.navbar {
+  background-color: #2E7D32;
+  color: white;
+}
+
+a {
+  color: #2E7D32;
+}
+
+a:hover {
+  color: #FFB300;
+}
+
+.footer {
+  background-color: #212121;
+  color: white;
+  text-align: center;
+  padding: 10px 0;
+}
+
+.btn-oraowl {
+  background-color: #2E7D32;
+  color: white;
+}
+.btn-oraowl:hover {
+  background-color: #FFB300;
+  color: black;
+}
+
+.btn-accent {
+  background-color: #FFB300;
+  border-color: #FFB300;
+  color: black;
+}
+
+/*# sourceMappingURL=oraowl-theme.css.map */
